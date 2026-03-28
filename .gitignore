@@ -1,0 +1,6 @@
+node_modules/
+cdk.out/
+deployment-outputs.txt
+*.js
+*.d.ts
+!jest.config.js
