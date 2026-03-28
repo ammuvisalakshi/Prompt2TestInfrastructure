@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prompt2Test — CI/CD & Infrastructure Handover Guide</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f1f5f9; color: #1e293b; font-size: 14px; }
+
+  .page { max-width: 1200px; margin: 0 auto; padding: 40px 32px; }
+
+  /* ── Header ── */
+  .header { background: #0f172a; color: #e2e8f0; border-radius: 14px; padding: 32px 36px; margin-bottom: 32px; }
+  .header h1 { font-size: 26px; font-weight: 800; color: #fff; margin-bottom: 8px; }
+  .header .meta { display: flex; gap: 24px; flex-wrap: wrap; margin-top: 14px; }
+  .header .meta-item { font-size: 13px; color: #94a3b8; }
+  .header .meta-item span { color: #7dd3fc; font-weight: 600; }
+
+  /* ── Summary bar ── */
+  .summary-bar { display: flex; gap: 0; background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; margin-bottom: 32px; }
+  .summary-item { flex: 1; padding: 18px 20px; text-align: center; border-right: 1px solid #e2e8f0; }
+  .summary-item:last-child { border-right: none; }
+  .summary-item .val { font-size: 26px; font-weight: 800; margin-bottom: 4px; }
+  .summary-item .lbl { font-size: 12px; color: #64748b; }
+
+  /* ── Section ── */
+  .section { margin-bottom: 32px; }
+  .section-title {
+    font-size: 12px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; color: #64748b; margin-bottom: 14px;
+  }
+
+  /* ── Cards ── */
+  .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 22px 24px; margin-bottom: 16px; }
+  .card-title { font-size: 15px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .card-title .icon { font-size: 18px; }
+
+  .row { display: flex; gap: 16px; margin-bottom: 16px; }
+  .row .card { flex: 1; margin-bottom: 0; }
+
+  /* ── Tables ── */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: #f8fafc; font-weight: 700; color: #475569; text-align: left; padding: 10px 14px; border-bottom: 2px solid #e2e8f0; }
+  td { padding: 10px 14px; border-bottom: 1px solid #f1f5f9; vertical-align: top; line-height: 1.6; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #f8fafc; }
+
+  /* ── Code blocks ── */
+  pre {
+    background: #0f172a; color: #e2e8f0; border-radius: 8px;
+    padding: 16px 18px; font-size: 12.5px; line-height: 1.8;
+    overflow-x: auto; margin: 10px 0;
+  }
+  code { font-family: 'Cascadia Code', 'Consolas', monospace; }
+  pre code { color: #e2e8f0; }
+  .inline-code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 12px; background: #f1f5f9; color: #4338ca;
+    padding: 2px 6px; border-radius: 4px;
+  }
+
+  /* ── Step list ── */
+  .step-list { list-style: none; }
+  .step-list li { display: flex; gap: 14px; margin-bottom: 14px; align-items: flex-start; }
+  .step-num {
+    width: 28px; height: 28px; border-radius: 50%; display: flex;
+    align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 800; flex-shrink: 0; margin-top: 1px;
+  }
+  .step-content { flex: 1; }
+  .step-content strong { display: block; font-size: 14px; margin-bottom: 4px; color: #0f172a; }
+  .step-content p { color: #475569; line-height: 1.6; }
+
+  /* ── Pipeline flow ── */
+  .pipeline { display: flex; align-items: center; gap: 0; flex-wrap: wrap; margin: 10px 0; }
+  .pipe-box {
+    background: #f8fafc; border: 1px solid #e2e8f0;
+    border-radius: 8px; padding: 8px 14px;
+    font-size: 12px; font-weight: 600; color: #334155;
+    white-space: nowrap;
+  }
+  .pipe-arrow { font-size: 18px; color: #94a3b8; padding: 0 6px; }
+
+  /* ── Badges ── */
+  .badge {
+    display: inline-block; font-size: 11px; font-weight: 700;
+    padding: 3px 8px; border-radius: 5px; margin: 2px 2px 2px 0;
+  }
+  .badge-blue   { background: #dbeafe; color: #1d4ed8; }
+  .badge-green  { background: #dcfce7; color: #15803d; }
+  .badge-orange { background: #ffedd5; color: #c2410c; }
+  .badge-purple { background: #ede9fe; color: #6d28d9; }
+  .badge-teal   { background: #ccfbf1; color: #0f766e; }
+  .badge-red    { background: #fee2e2; color: #b91c1c; }
+  .badge-gray   { background: #f1f5f9; color: #475569; }
+  .badge-yellow { background: #fef9c3; color: #a16207; }
+
+  /* ── Alert box ── */
+  .alert { border-radius: 8px; padding: 14px 16px; margin: 12px 0; font-size: 13px; line-height: 1.6; }
+  .alert-blue   { background: #eff6ff; border-left: 4px solid #3b82f6; color: #1e40af; }
+  .alert-green  { background: #f0fdf4; border-left: 4px solid #22c55e; color: #15803d; }
+  .alert-yellow { background: #fefce8; border-left: 4px solid #eab308; color: #854d0e; }
+
+  /* ── File tree ── */
+  .file-tree { background: #0f172a; color: #e2e8f0; border-radius: 8px; padding: 18px 20px; font-family: 'Cascadia Code', 'Consolas', monospace; font-size: 13px; line-height: 2; }
+  .file-tree .dir  { color: #7dd3fc; font-weight: 600; }
+  .file-tree .file { color: #e2e8f0; }
+  .file-tree .comment { color: #64748b; }
+
+  /* ── Color themes for cards ── */
+  .theme-blue   { background: #eff6ff; border-color: #bfdbfe; }
+  .theme-purple { background: #faf5ff; border-color: #ddd6fe; }
+  .theme-green  { background: #f0fdf4; border-color: #bbf7d0; }
+  .theme-orange { background: #fff7ed; border-color: #fed7aa; }
+  .theme-teal   { background: #f0fdfa; border-color: #99f6e4; }
+  .theme-rose   { background: #fff1f2; border-color: #fecdd3; }
+  .theme-indigo { background: #eef2ff; border-color: #c7d2fe; }
+
+  /* ── IAM permission row highlight ── */
+  .perm-action { font-family: 'Cascadia Code', 'Consolas', monospace; font-size: 12px; color: #4338ca; }
+  .perm-resource { font-family: 'Cascadia Code', 'Consolas', monospace; font-size: 11px; color: #059669; }
+
+  /* ── Footer ── */
+  .footer { text-align: center; font-size: 13px; color: #94a3b8; margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; }
+
+  .divider { height: 1px; background: #e2e8f0; margin: 28px 0; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>🚀 Prompt2Test — CI/CD & Infrastructure Handover Guide</h1>
+    <p style="color:#94a3b8; font-size:14px; margin-top:6px;">Everything a CI/CD or infrastructure engineer needs to deploy and maintain the Prompt2Test platform.</p>
+    <div class="meta">
+      <div class="meta-item">Repo <span>github.com/ammuvisalakshi/Prompt2TestInfrastructure</span></div>
+      <div class="meta-item">Stack <span>AWS CDK (TypeScript)</span></div>
+      <div class="meta-item">Region <span>us-east-1</span></div>
+      <div class="meta-item">Updated <span>2026-03-28</span></div>
+    </div>
+  </div>
+
+  <!-- Summary bar -->
+  <div class="summary-bar">
+    <div class="summary-item"><div class="val" style="color:#3b82f6;">1</div><div class="lbl">CDK Stack</div></div>
+    <div class="summary-item"><div class="val" style="color:#22c55e;">5</div><div class="lbl">GitHub Repos</div></div>
+    <div class="summary-item"><div class="val" style="color:#a855f7;">3</div><div class="lbl">CodePipelines</div></div>
+    <div class="summary-item"><div class="val" style="color:#f97316;">18</div><div class="lbl">AWS Services</div></div>
+    <div class="summary-item"><div class="val" style="color:#14b8a6;">2</div><div class="lbl">IAM Roles</div></div>
+    <div class="summary-item"><div class="val" style="color:#ec4899;">1</div><div class="lbl">Deploy Command</div></div>
+  </div>
+
+  <!-- Overview -->
+  <div class="section">
+    <div class="section-title">Overview</div>
+    <div class="card">
+      <div style="font-size:14px; line-height:1.9; color:#334155;">
+        This repo contains the <strong>complete infrastructure</strong> for the Prompt2Test platform — an AI-powered test case generation and browser automation tool.
+        Everything is defined as code using <strong>AWS CDK (TypeScript)</strong>. A single command (<span class="inline-code">./deploy.sh</span>) deploys the entire platform to a new AWS account — VPC, databases, Lambda, ECS, AI agent, CI/CD pipelines, and the React UI hosting.
+      </div>
+      <div class="alert alert-green" style="margin-top:14px;">
+        <strong>TL;DR for a new account:</strong> Fill in <span class="inline-code">cdk.json</span>, run <span class="inline-code">./deploy.sh</span>, follow 3 browser prompts. Done.
+      </div>
+    </div>
+  </div>
+
+  <!-- Repository Structure -->
+  <div class="section">
+    <div class="section-title">Repository Structure</div>
+    <div class="card">
+      <div class="file-tree">
+        <div><span class="dir">Prompt2TestInfrastructure/</span></div>
+        <div>&nbsp;&nbsp;├── <span class="dir">bin/</span></div>
+        <div>&nbsp;&nbsp;│&nbsp;&nbsp; └── <span class="file">infrastructure.ts</span> &nbsp;&nbsp;<span class="comment"># CDK entry point — reads cdk.json context, instantiates stack</span></div>
+        <div>&nbsp;&nbsp;├── <span class="dir">lib/</span></div>
+        <div>&nbsp;&nbsp;│&nbsp;&nbsp; └── <span class="file">prompt2test-stack.ts</span> &nbsp;&nbsp;<span class="comment"># ★ ALL AWS resources defined here — one file, one stack</span></div>
+        <div>&nbsp;&nbsp;├── <span class="file">cdk.json</span> &nbsp;&nbsp;<span class="comment"># CDK config — set githubOwner + githubConnectionArn before deploy</span></div>
+        <div>&nbsp;&nbsp;├── <span class="file">deploy.sh</span> &nbsp;&nbsp;<span class="comment"># ★ End-to-end automated deployment script</span></div>
+        <div>&nbsp;&nbsp;├── <span class="file">lambda-pipeline.yaml</span> &nbsp;&nbsp;<span class="comment"># CloudFormation template for Lambda CodePipeline</span></div>
+        <div>&nbsp;&nbsp;├── <span class="file">package.json</span> &nbsp;&nbsp;<span class="comment"># CDK + TypeScript dependencies</span></div>
+        <div>&nbsp;&nbsp;├── <span class="file">Prompt2Test_Architecture.html</span> &nbsp;&nbsp;<span class="comment"># Architecture diagram</span></div>
+        <div>&nbsp;&nbsp;├── <span class="file">Prompt2Test_ArchitectureDecisions.html</span> &nbsp;&nbsp;<span class="comment"># Architecture decision records (ADRs)</span></div>
+        <div>&nbsp;&nbsp;└── <span class="file">Prompt2Test_DeploymentGuide.html</span> &nbsp;&nbsp;<span class="comment"># Detailed step-by-step deployment reference</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Prerequisites -->
+  <div class="section">
+    <div class="section-title">Prerequisites</div>
+    <div class="card">
+      <table>
+        <tr><th>Tool</th><th>Required Version</th><th>Install</th></tr>
+        <tr><td><strong>AWS CLI</strong></td><td><span class="badge badge-blue">v2</span></td><td><span class="inline-code">https://aws.amazon.com/cli</span></td></tr>
+        <tr><td><strong>Node.js</strong></td><td><span class="badge badge-green">v18+</span></td><td><span class="inline-code">https://nodejs.org</span></td></tr>
+        <tr><td><strong>AWS CDK</strong></td><td><span class="badge badge-purple">v2.x</span></td><td><span class="inline-code">npm install -g aws-cdk</span></td></tr>
+      </table>
+      <div style="margin-top:14px; font-size:13px; color:#475569;">Configure AWS credentials with <strong>AdministratorAccess</strong>:</div>
+      <pre><code>aws configure
+aws sts get-caller-identity   # verify credentials are working</code></pre>
+    </div>
+  </div>
+
+  <!-- What the CDK Stack Creates -->
+  <div class="section">
+    <div class="section-title">What the CDK Stack Creates</div>
+    <div class="card">
+      <div style="font-size:13px; color:#475569; margin-bottom:14px;">Everything is in <span class="inline-code">lib/prompt2test-stack.ts</span> — one file, one stack (<span class="inline-code">Prompt2TestStack</span>).</div>
+      <table>
+        <tr><th>#</th><th>Resource</th><th>Name / Detail</th></tr>
+        <tr><td>1</td><td><span class="badge badge-gray">VPC</span></td><td><span class="inline-code">prompt2test-vpc</span> — 2 public subnets, no NAT gateway</td></tr>
+        <tr><td>2</td><td><span class="badge badge-purple">Cognito User Pool</span></td><td><span class="inline-code">prompt2test-users</span> — email login, admin-only signup</td></tr>
+        <tr><td>2</td><td><span class="badge badge-purple">Cognito Identity Pool</span></td><td><span class="inline-code">prompt2test_identity</span> — maps users to IAM role</td></tr>
+        <tr><td>3</td><td><span class="badge badge-rose" style="background:#fff1f2;color:#be123c;">Aurora Serverless v2</span></td><td><span class="inline-code">prompt2test-vectors</span> — PostgreSQL 16 + pgvector, auto-pauses at idle</td></tr>
+        <tr><td>3</td><td><span class="badge badge-red">Secrets Manager</span></td><td><span class="inline-code">prompt2test/aurora/credentials</span> — Aurora password</td></tr>
+        <tr><td>3.5</td><td><span class="badge badge-orange">DynamoDB</span></td><td><span class="inline-code">prompt2test-config</span> — service configs + test accounts per team/env</td></tr>
+        <tr><td>4</td><td><span class="badge badge-yellow">Lambda (schema init)</span></td><td><span class="inline-code">p2t-schema-init</span> — custom resource, runs DB schema on first deploy</td></tr>
+        <tr><td>5</td><td><span class="badge badge-yellow">Lambda ×2</span></td><td><span class="inline-code">p2t-testcase-writer</span>, <span class="inline-code">p2t-testcase-reader</span></td></tr>
+        <tr><td>6</td><td><span class="badge badge-teal">ECR ×2</span></td><td><span class="inline-code">prompt2test-agent</span>, <span class="inline-code">prompt2test-playwright-mcp</span></td></tr>
+        <tr><td>7</td><td><span class="badge badge-green">ECS Fargate Cluster</span></td><td><span class="inline-code">prompt2test-playwright-cluster</span></td></tr>
+        <tr><td>7</td><td><span class="badge badge-green">ECS Task Definition</span></td><td><span class="inline-code">prompt2test-playwright-mcp</span> — ARM64, 2 vCPU / 4 GB</td></tr>
+        <tr><td>8</td><td><span class="badge badge-gray">SSM Parameters</span></td><td><span class="inline-code">/prompt2test/playwright/*</span> and <span class="inline-code">/prompt2test/aurora/*</span></td></tr>
+        <tr><td>9</td><td><span class="badge badge-blue">CodePipeline ×3</span></td><td><span class="inline-code">prompt2test-lambda</span>, <span class="inline-code">prompt2test-agent-pipeline</span>, <span class="inline-code">prompt2test-playwright-mcp-pipeline</span></td></tr>
+        <tr><td>10</td><td><span class="badge badge-orange">IAM Role</span></td><td><span class="inline-code">prompt2test-agentcore-role</span> — Bedrock, ECS, DynamoDB, SSM, ECR</td></tr>
+        <tr><td>11</td><td><span class="badge badge-orange">IAM Role</span></td><td><span class="inline-code">prompt2test-cognito-auth-role</span> — Lambda, DynamoDB, Bedrock, Cognito admin</td></tr>
+        <tr><td>12</td><td><span class="badge badge-blue">Amplify Hosting</span></td><td><span class="inline-code">Prompt2TestUI</span> — React app via CloudFront CDN</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- IAM Roles -->
+  <div class="section">
+    <div class="section-title">IAM Roles</div>
+    <div class="row">
+
+      <!-- AgentCore Role -->
+      <div class="card theme-orange">
+        <div class="card-title"><span class="icon">🤖</span> prompt2test-agentcore-role</div>
+        <div style="font-size:12px; color:#92400e; margin-bottom:12px;">Used by the Bedrock AgentCore runtime container · Trust: <span class="inline-code">bedrock.amazonaws.com</span> · <span class="inline-code">bedrock-agentcore.amazonaws.com</span> · <span class="inline-code">ecs-tasks.amazonaws.com</span></div>
+        <table>
+          <tr><th>Permission</th><th>Resource</th><th>Purpose</th></tr>
+          <tr><td class="perm-action">bedrock:InvokeModel<br>InvokeModelWithResponseStream</td><td class="perm-resource">Anthropic Claude ARNs</td><td>Run AI agent</td></tr>
+          <tr><td class="perm-action">ecs:RunTask / StopTask<br>DescribeTasks / ListTasks</td><td class="perm-resource">playwright cluster + task def</td><td>Spin up browser sessions</td></tr>
+          <tr><td class="perm-action">iam:PassRole</td><td class="perm-resource">ECS task roles</td><td>Required for RunTask</td></tr>
+          <tr><td class="perm-action">dynamodb:Query / GetItem</td><td class="perm-resource">prompt2test-config</td><td>Read service config during test generation</td></tr>
+          <tr><td class="perm-action">ssm:GetParameter</td><td class="perm-resource">/prompt2test/playwright/*</td><td>Read ECS infra config</td></tr>
+          <tr><td class="perm-action">secretsmanager:GetSecretValue</td><td class="perm-resource">prompt2test/*</td><td>Aurora credentials</td></tr>
+          <tr><td class="perm-action">ecr:GetAuthorizationToken<br>+ BatchGetImage etc.</td><td class="perm-resource">*</td><td>Pull Docker images</td></tr>
+          <tr><td class="perm-action">logs:CreateLogGroup<br>CreateLogStream / PutLogEvents</td><td class="perm-resource">*</td><td>CloudWatch logging</td></tr>
+          <tr><td class="perm-action">elasticloadbalancing:<br>DescribeTargetHealth</td><td class="perm-resource">*</td><td>Check browser task health</td></tr>
+          <tr><td class="perm-action">ec2:DescribeNetworkInterfaces</td><td class="perm-resource">*</td><td>Get task public IP</td></tr>
+        </table>
+      </div>
+
+      <!-- Cognito Auth Role -->
+      <div class="card theme-purple">
+        <div class="card-title"><span class="icon">🔐</span> prompt2test-cognito-auth-role</div>
+        <div style="font-size:12px; color:#5b21b6; margin-bottom:12px;">Granted to browser users after Cognito login via Identity Pool</div>
+        <table>
+          <tr><th>Permission</th><th>Resource</th><th>Purpose</th></tr>
+          <tr><td class="perm-action">lambda:InvokeFunction</td><td class="perm-resource">writer + reader Lambda ARNs</td><td>Save/fetch test cases</td></tr>
+          <tr><td class="perm-action">dynamodb:Query / GetItem<br>PutItem / DeleteItem</td><td class="perm-resource">prompt2test-config</td><td>Manage service configs + accounts</td></tr>
+          <tr><td class="perm-action">bedrock:InvokeAgentRuntime</td><td class="perm-resource">*</td><td>Call AgentCore from browser</td></tr>
+          <tr><td class="perm-action">cognito-idp:ListUsers<br>AdminCreateUser<br>AdminDeleteUser<br>AdminSetUserPassword</td><td class="perm-resource">User Pool</td><td>Admin user management</td></tr>
+          <tr><td class="perm-action">cognito-idp:CreateGroup<br>DeleteGroup / ListGroups<br>AdminAddUserToGroup<br>AdminRemoveUserFromGroup<br>AdminListGroupsForUser</td><td class="perm-resource">User Pool</td><td>Team group management</td></tr>
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Deploying to a New Account -->
+  <div class="section">
+    <div class="section-title">Deploying to a New AWS Account</div>
+    <div class="card">
+      <div class="alert alert-blue" style="margin-bottom:20px;">
+        <strong>Shortcut:</strong> Run <span class="inline-code">./deploy.sh</span> — it handles everything automatically and only pauses 3 times for browser steps.
+      </div>
+      <ul class="step-list">
+        <li>
+          <div class="step-num" style="background:#dbeafe; color:#1d4ed8;">1</div>
+          <div class="step-content">
+            <strong>Verify prerequisites</strong>
+            <pre><code>aws --version              # must be v2
+node --version             # must be v18+
+cdk --version              # must be v2.x
+aws sts get-caller-identity  # confirm credentials</code></pre>
+          </div>
+        </li>
+        <li>
+          <div class="step-num" style="background:#ede9fe; color:#6d28d9;">2</div>
+          <div class="step-content">
+            <strong>Enable Bedrock model access (browser)</strong>
+            <p>AWS Console → Amazon Bedrock → Model access → Manage model access<br>
+            Enable: <strong>Claude Sonnet 4.5</strong> (Anthropic) and <strong>Titan Embed Text v2</strong> (Amazon)</p>
+          </div>
+        </li>
+        <li>
+          <div class="step-num" style="background:#dcfce7; color:#15803d;">3</div>
+          <div class="step-content">
+            <strong>Create GitHub CodeStar Connection (browser)</strong>
+            <p>AWS Console → Developer Tools → Settings → Connections → Create connection → GitHub<br>
+            Name it <span class="inline-code">Prompt2TestGitHub</span>, authorize, connect. Copy the Connection ARN.</p>
+          </div>
+        </li>
+        <li>
+          <div class="step-num" style="background:#ffedd5; color:#c2410c;">4</div>
+          <div class="step-content">
+            <strong>Update cdk.json with your values</strong>
+            <pre><code>{
+  "context": {
+    "githubOwner": "your-github-username",
+    "githubConnectionArn": "arn:aws:codeconnections:us-east-1:ACCOUNT:connection/UUID"
+  }
+}</code></pre>
+          </div>
+        </li>
+        <li>
+          <div class="step-num" style="background:#ccfbf1; color:#0f766e;">5</div>
+          <div class="step-content">
+            <strong>Run the deploy script</strong>
+            <pre><code>npm install
+cdk bootstrap aws://&lt;ACCOUNT_ID&gt;/us-east-1
+./deploy.sh</code></pre>
+            <p style="margin-top:8px;">The script will: deploy CDK stack → trigger 3 pipelines → create AgentCore runtime → set Amplify env vars → create admin user. All output values saved to <span class="inline-code">deployment-outputs.txt</span>.</p>
+          </div>
+        </li>
+        <li>
+          <div class="step-num" style="background:#ede9fe; color:#6d28d9;">6</div>
+          <div class="step-content">
+            <strong>Connect Amplify to GitHub (browser)</strong>
+            <p>AWS Console → Amplify → Prompt2TestUI → Connect branch → GitHub → <span class="inline-code">Prompt2TestUI</span> repo → branch: <span class="inline-code">master</span> → Save and deploy</p>
+          </div>
+        </li>
+        <li>
+          <div class="step-num" style="background:#dcfce7; color:#15803d;">7</div>
+          <div class="step-content">
+            <strong>Add teams and services (UI)</strong>
+            <p>Log in as admin → Config tab → create team groups, add users, add services and accounts. All config stored in DynamoDB — no CLI needed.</p>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- GitHub Repositories -->
+  <div class="section">
+    <div class="section-title">GitHub Repositories</div>
+    <div class="card">
+      <table>
+        <tr><th>Repo</th><th>Language</th><th>Purpose</th><th>How it deploys</th></tr>
+        <tr>
+          <td><strong>Prompt2TestUI</strong></td>
+          <td><span class="badge badge-blue">React / TypeScript</span></td>
+          <td>React frontend — all UI pages</td>
+          <td>Push to <span class="inline-code">master</span> → Amplify auto-rebuilds (~2 min)</td>
+        </tr>
+        <tr>
+          <td><strong>Prompt2TestInfrastructure</strong></td>
+          <td><span class="badge badge-purple">CDK / TypeScript</span></td>
+          <td>All AWS infrastructure (this repo)</td>
+          <td>Manual — <span class="inline-code">./deploy.sh</span> or <span class="inline-code">cdk deploy</span></td>
+        </tr>
+        <tr>
+          <td><strong>Prompt2TestAgent</strong></td>
+          <td><span class="badge badge-orange">Python</span></td>
+          <td>Bedrock AgentCore container — AI test generation logic</td>
+          <td>Push → <span class="inline-code">prompt2test-agent-pipeline</span> → ECR</td>
+        </tr>
+        <tr>
+          <td><strong>Prompt2TestPlaywrightMCP</strong></td>
+          <td><span class="badge badge-green">Python / Docker</span></td>
+          <td>Playwright + noVNC browser automation container</td>
+          <td>Push → <span class="inline-code">prompt2test-playwright-mcp-pipeline</span> → ECR</td>
+        </tr>
+        <tr>
+          <td><strong>Prompt2TestLambda</strong></td>
+          <td><span class="badge badge-orange">Python</span></td>
+          <td>Lambda functions — test case writer + reader</td>
+          <td>Push → <span class="inline-code">prompt2test-lambda</span> → Lambda update</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- CI/CD Pipelines -->
+  <div class="section">
+    <div class="section-title">CI/CD Pipelines</div>
+
+    <div class="row">
+      <div class="card theme-blue">
+        <div class="card-title"><span class="icon">🤖</span> prompt2test-agent-pipeline</div>
+        <div class="pipeline">
+          <div class="pipe-box">Push to Prompt2TestAgent</div>
+          <div class="pipe-arrow">→</div>
+          <div class="pipe-box">CodeBuild</div>
+          <div class="pipe-arrow">→</div>
+          <div class="pipe-box">Docker build</div>
+          <div class="pipe-arrow">→</div>
+          <div class="pipe-box">ECR: prompt2test-agent</div>
+        </div>
+        <div style="font-size:12px; color:#475569; margin-top:8px;">AgentCore picks up the new image on next invocation.</div>
+      </div>
+      <div class="card theme-green">
+        <div class="card-title"><span class="icon">🎭</span> prompt2test-playwright-mcp-pipeline</div>
+        <div class="pipeline">
+          <div class="pipe-box">Push to Prompt2TestPlaywrightMCP</div>
+          <div class="pipe-arrow">→</div>
+          <div class="pipe-box">CodeBuild</div>
+          <div class="pipe-arrow">→</div>
+          <div class="pipe-box">Docker build</div>
+          <div class="pipe-arrow">→</div>
+          <div class="pipe-box">ECR: prompt2test-playwright-mcp</div>
+        </div>
+        <div style="font-size:12px; color:#475569; margin-top:8px;">ECS tasks pull the latest image on each test run.</div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="card theme-indigo">
+        <div class="card-title"><span class="icon">⚡</span> prompt2test-lambda</div>
+        <div class="pipeline">
+          <div class="pipe-box">Push to Prompt2TestLambda</div>
+          <div class="pipe-arrow">→</div>
+          <div class="pipe-box">CodeBuild</div>
+          <div class="pipe-arrow">→</div>
+          <div class="pipe-box">Zip artifact</div>
+          <div class="pipe-arrow">→</div>
+          <div class="pipe-box">lambda update-function-code ×2</div>
+        </div>
+        <div style="font-size:12px; color:#475569; margin-top:8px;">Updates both p2t-testcase-writer and p2t-testcase-reader simultaneously.</div>
+      </div>
+      <div class="card theme-teal">
+        <div class="card-title"><span class="icon">🌍</span> Amplify (UI)</div>
+        <div class="pipeline">
+          <div class="pipe-box">Push to master (Prompt2TestUI)</div>
+          <div class="pipe-arrow">→</div>
+          <div class="pipe-box">Amplify detects push</div>
+          <div class="pipe-arrow">→</div>
+          <div class="pipe-box">npm build</div>
+          <div class="pipe-arrow">→</div>
+          <div class="pipe-box">Live in ~2 min</div>
+        </div>
+        <div style="font-size:12px; color:#475569; margin-top:8px;">Fully automatic — no manual trigger needed.</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:0;">
+      <div class="card-title"><span class="icon">▶</span> Manually Trigger a Pipeline</div>
+      <pre><code>aws codepipeline start-pipeline-execution --name prompt2test-agent-pipeline --region us-east-1
+aws codepipeline start-pipeline-execution --name prompt2test-playwright-mcp-pipeline --region us-east-1
+aws codepipeline start-pipeline-execution --name prompt2test-lambda --region us-east-1</code></pre>
+    </div>
+  </div>
+
+  <!-- Post-Deploy -->
+  <div class="section">
+    <div class="section-title">Post-Deploy: Adding Teams & Services</div>
+    <div class="card">
+      <div class="alert alert-green" style="margin-bottom:16px;">
+        After deploy, all configuration is done through the <strong>UI Config tab</strong> — no CLI needed. Everything is stored in DynamoDB (<span class="inline-code">prompt2test-config</span>).
+      </div>
+      <table>
+        <tr><th>Task</th><th>Where</th><th>Detail</th></tr>
+        <tr><td><strong>Create team groups</strong></td><td>Config tab → Teams</td><td>Create a group (e.g. <span class="inline-code">teama</span>) — maps to Cognito group</td></tr>
+        <tr><td><strong>Add users to teams</strong></td><td>Config tab → Users</td><td>Assign user to group; team resolved from JWT <span class="inline-code">cognito:groups</span> claim</td></tr>
+        <tr><td><strong>Add services</strong></td><td>Config tab → Services</td><td>Add service name + URL per environment (dev/qa/uat/prod)</td></tr>
+        <tr><td><strong>Add test accounts</strong></td><td>Config tab → Accounts</td><td>Add account credentials per environment for browser tests</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- Key Design Decisions -->
+  <div class="section">
+    <div class="section-title">Key Design Decisions</div>
+    <div class="card">
+      <table>
+        <tr><th>Decision</th><th>Choice</th><th>Reason</th></tr>
+        <tr><td><strong>Config storage</strong></td><td><span class="badge badge-orange">DynamoDB</span> not SSM</td><td>Browser can call DynamoDB directly via Cognito IAM; SSM requires server-side proxy</td></tr>
+        <tr><td><strong>Team membership</strong></td><td><span class="badge badge-purple">Cognito Groups</span></td><td>JWT <span class="inline-code">cognito:groups</span> claim — no extra DB lookup needed at runtime</td></tr>
+        <tr><td><strong>Browser sessions</strong></td><td><span class="badge badge-green">ECS Fargate on-demand</span></td><td>One task per test run, stopped after completion — zero idle cost</td></tr>
+        <tr><td><strong>Agent runtime</strong></td><td><span class="badge badge-orange">Bedrock AgentCore</span></td><td>Managed container runtime — no server to maintain, scales automatically</td></tr>
+        <tr><td><strong>Test case storage</strong></td><td><span class="badge badge-rose" style="background:#fff1f2;color:#be123c;">Aurora Serverless v2 + pgvector</span></td><td>Semantic search via vector embeddings for duplicate detection</td></tr>
+      </table>
+      <div style="font-size:12px; color:#64748b; margin-top:12px;">Full decision log: <span class="inline-code">Prompt2Test_ArchitectureDecisions.html</span></div>
+    </div>
+  </div>
+
+  <!-- Useful Commands -->
+  <div class="section">
+    <div class="section-title">Useful CLI Commands</div>
+    <div class="card">
+      <pre><code># Check CDK stack outputs
+aws cloudformation describe-stacks --stack-name Prompt2TestStack \
+  --query "Stacks[0].Outputs" --region us-east-1
+
+# Check pipeline status
+aws codepipeline list-pipeline-executions \
+  --pipeline-name prompt2test-agent-pipeline --max-results 1
+
+# Check AgentCore runtime status
+aws bedrock-agentcore-control list-agent-runtimes --region us-east-1
+
+# Check running ECS tasks
+aws ecs list-tasks --cluster prompt2test-playwright-cluster --region us-east-1
+
+# View Lambda logs (live tail)
+aws logs tail /aws/lambda/p2t-testcase-reader --follow --region us-east-1
+aws logs tail /aws/lambda/p2t-testcase-writer --follow --region us-east-1
+
+# Manually trigger all 3 pipelines
+for P in prompt2test-lambda prompt2test-agent-pipeline prompt2test-playwright-mcp-pipeline; do
+  aws codepipeline start-pipeline-execution --name $P --region us-east-1
+done</code></pre>
+    </div>
+  </div>
+
+  <!-- Further Reading -->
+  <div class="section">
+    <div class="section-title">Further Reading</div>
+    <div class="row">
+      <div class="card theme-blue" style="text-align:center; cursor:pointer;" onclick="window.open('Prompt2Test_Architecture.html')">
+        <div style="font-size:28px; margin-bottom:8px;">🗺️</div>
+        <div style="font-weight:700; margin-bottom:4px;">Architecture Diagram</div>
+        <div style="font-size:12px; color:#475569;">Full AWS architecture with data flows</div>
+      </div>
+      <div class="card theme-green" style="text-align:center; cursor:pointer;" onclick="window.open('Prompt2Test_DeploymentGuide.html')">
+        <div style="font-size:28px; margin-bottom:8px;">📋</div>
+        <div style="font-weight:700; margin-bottom:4px;">Deployment Guide</div>
+        <div style="font-size:12px; color:#475569;">Detailed step-by-step deployment reference</div>
+      </div>
+      <div class="card theme-purple" style="text-align:center; cursor:pointer;" onclick="window.open('Prompt2Test_ArchitectureDecisions.html')">
+        <div style="font-size:28px; margin-bottom:8px;">📐</div>
+        <div style="font-weight:700; margin-bottom:4px;">Architecture Decisions</div>
+        <div style="font-size:12px; color:#475569;">Why each technology was chosen (14 ADRs)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    Prompt2Test Infrastructure · AWS us-east-1 · Updated 2026-03-28
+  </div>
+
+</div>
+</body>
+</html>
