@@ -15,6 +15,7 @@ import * as codebuild  from 'aws-cdk-lib/aws-codebuild'
 import * as cr         from 'aws-cdk-lib/custom-resources'
 import * as logs       from 'aws-cdk-lib/aws-logs'
 import * as amplify    from 'aws-cdk-lib/aws-amplify'
+import * as dynamodb   from 'aws-cdk-lib/aws-dynamodb'
 
 
 export interface Prompt2TestStackProps extends cdk.StackProps {
@@ -132,6 +133,21 @@ export class Prompt2TestStack extends cdk.Stack {
 
 
     // ══════════════════════════════════════════════════════════════════════
+    // 3.5 DYNAMODB — prompt2test-config
+    //     Stores service configs and test accounts per team per environment
+    //     pk = SERVICE#{team}#{env} or ACCOUNT#{env}
+    //     sk = {svc}#{key}  or  {id}#{NAME|CODE}
+    // ══════════════════════════════════════════════════════════════════════
+    const configTable = new dynamodb.Table(this, 'ConfigTable', {
+      tableName: 'prompt2test-config',
+      partitionKey: { name: 'pk', type: dynamodb.AttributeType.STRING },
+      sortKey:      { name: 'sk', type: dynamodb.AttributeType.STRING },
+      billingMode:  dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+    })
+
+
+    // ══════════════════════════════════════════════════════════════════════
     // 4. DB SCHEMA INIT (Custom Resource — runs once after Aurora is ready)
     // ══════════════════════════════════════════════════════════════════════
     const schemaInitRole = new iam.Role(this, 'SchemaInitRole', {
@@ -240,7 +256,7 @@ def handler(event, context):
     //    CodePipeline (Section 9c) deploys the real code after first run.
     // ══════════════════════════════════════════════════════════════════════
     const lambdaRole = new iam.Role(this, 'LambdaRole', {
-      roleName: 'prompt2test-lambda-role',
+      roleName: 'p2t-testcase-lambda-role',
       assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
       managedPolicies: [
         iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
@@ -385,6 +401,25 @@ def handler(event, context):
       parameterName: '/prompt2test/playwright/security-group-id',
       stringValue:   ecsSg.securityGroupId,
       description:   'Security group for playwright-mcp tasks',
+    })
+
+    // ── Aurora connection params (read by Lambda at runtime) ────────────
+    new ssm.StringParameter(this, 'SsmAuroraClusterArn', {
+      parameterName: '/prompt2test/aurora/cluster-arn',
+      stringValue:   auroraCluster.clusterArn,
+      description:   'Aurora cluster ARN for RDS Data API',
+    })
+
+    new ssm.StringParameter(this, 'SsmAuroraDatabase', {
+      parameterName: '/prompt2test/aurora/database',
+      stringValue:   'prompt2test',
+      description:   'Aurora database name',
+    })
+
+    new ssm.StringParameter(this, 'SsmAuroraSecretArn', {
+      parameterName: '/prompt2test/aurora/secret-arn',
+      stringValue:   dbSecret.secretArn,
+      description:   'Secrets Manager ARN for Aurora credentials',
     })
 
 
@@ -580,50 +615,95 @@ def handler(event, context):
 
 
     // ══════════════════════════════════════════════════════════════════════
-    // 10. AGENTCORE IAM ROLE (used when creating the runtime manually)
+    // 10. AGENTCORE IAM ROLE
+    //     Used by the Bedrock AgentCore runtime container.
+    //     Trust: bedrock + bedrock-agentcore + ecs-tasks (for RunTask self-calls)
     // ══════════════════════════════════════════════════════════════════════
     const agentCoreRole = new iam.Role(this, 'AgentCoreRole', {
       roleName: 'prompt2test-agentcore-role',
+      description: 'Role for Prompt2Test Bedrock AgentCore runtime',
       assumedBy: new iam.CompositePrincipal(
         new iam.ServicePrincipal('bedrock.amazonaws.com'),
-        new iam.ServicePrincipal('agentcore.bedrock.amazonaws.com'), // AgentCore service
+        new iam.ServicePrincipal('bedrock-agentcore.amazonaws.com'),
+        new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
       ),
       inlinePolicies: {
-        main: new iam.PolicyDocument({ statements: [
+        BedrockModels: new iam.PolicyDocument({ statements: [
           new iam.PolicyStatement({
-            sid: 'BedrockModels',
-            actions: ['bedrock:InvokeModel', 'bedrock:ConverseStream', 'bedrock:InvokeModelWithResponseStream'],
+            sid: 'AllowBedrockInvoke',
+            actions: ['bedrock:InvokeModel', 'bedrock:InvokeModelWithResponseStream', 'bedrock:ConverseStream'],
+            resources: [
+              'arn:aws:bedrock:*::foundation-model/anthropic.claude*',
+              `arn:aws:bedrock:*:${this.account}:inference-profile/us.anthropic.claude*`,
+            ],
+          }),
+        ]}),
+        EcrAccess: new iam.PolicyDocument({ statements: [
+          new iam.PolicyStatement({
+            sid: 'AllowECRPull',
+            actions: [
+              'ecr:GetAuthorizationToken',
+              'ecr:GetDownloadUrlForLayer',
+              'ecr:BatchGetImage',
+              'ecr:BatchCheckLayerAvailability',
+            ],
             resources: ['*'],
           }),
+        ]}),
+        CloudWatchLogs: new iam.PolicyDocument({ statements: [
           new iam.PolicyStatement({
-            sid: 'SsmConfig',
+            sid: 'AllowLogs',
+            actions: ['logs:CreateLogGroup', 'logs:CreateLogStream', 'logs:PutLogEvents'],
+            resources: ['*'],
+          }),
+        ]}),
+        SsmConfig: new iam.PolicyDocument({ statements: [
+          new iam.PolicyStatement({
+            sid: 'ReadPlaywrightSSMParams',
             actions: ['ssm:GetParameter', 'ssm:GetParametersByPath'],
-            resources: [`arn:aws:ssm:${this.region}:${this.account}:parameter/prompt2test/*`],
+            resources: [`arn:aws:ssm:${this.region}:${this.account}:parameter/prompt2test/playwright/*`],
+          }),
+        ]}),
+        SecretsAccess: new iam.PolicyDocument({ statements: [
+          new iam.PolicyStatement({
+            sid: 'AllowSecretsRead',
+            actions: ['secretsmanager:GetSecretValue'],
+            resources: [`arn:aws:secretsmanager:${this.region}:${this.account}:secret:prompt2test/*`],
+          }),
+        ]}),
+        DynamoDBConfig: new iam.PolicyDocument({ statements: [
+          new iam.PolicyStatement({
+            sid: 'AllowDynamoDBConfig',
+            actions: ['dynamodb:Query', 'dynamodb:GetItem'],
+            resources: [configTable.tableArn],
+          }),
+        ]}),
+        PlaywrightTaskManagement: new iam.PolicyDocument({ statements: [
+          new iam.PolicyStatement({
+            sid: 'ECSRunTask',
+            actions: ['ecs:RunTask', 'ecs:StopTask', 'ecs:DescribeTasks', 'ecs:ListTasks'],
+            resources: [
+              `arn:aws:ecs:${this.region}:${this.account}:task-definition/prompt2test-playwright-mcp:*`,
+              ecsCluster.clusterArn,
+              `arn:aws:ecs:${this.region}:${this.account}:task/prompt2test-playwright-cluster/*`,
+            ],
           }),
           new iam.PolicyStatement({
-            sid: 'EcsTasks',
-            actions: ['ecs:RunTask', 'ecs:DescribeTasks', 'ecs:StopTask'],
-            resources: ['*'],
+            sid: 'PassECSRoles',
+            actions: ['iam:PassRole'],
+            resources: [`arn:aws:iam::${this.account}:role/*`],
+            conditions: {
+              StringLike: { 'iam:PassedToService': 'ecs-tasks.amazonaws.com' },
+            },
           }),
           new iam.PolicyStatement({
-            sid: 'Eni',
+            sid: 'GetTaskPublicIP',
             actions: ['ec2:DescribeNetworkInterfaces'],
             resources: ['*'],
           }),
           new iam.PolicyStatement({
-            sid: 'PassRoleToEcs',
-            actions: ['iam:PassRole'],
-            resources: [taskRole.roleArn, taskExecRole.roleArn],
-          }),
-          new iam.PolicyStatement({
-            sid: 'Ecr',
-            actions: ['ecr:GetAuthorizationToken', 'ecr:BatchCheckLayerAvailability',
-                      'ecr:GetDownloadUrlForLayer', 'ecr:BatchGetImage'],
-            resources: ['*'],
-          }),
-          new iam.PolicyStatement({
-            sid: 'Logs',
-            actions: ['logs:CreateLogGroup', 'logs:CreateLogStream', 'logs:PutLogEvents'],
+            sid: 'DescribeTargetHealth',
+            actions: ['elasticloadbalancing:DescribeTargetHealth'],
             resources: ['*'],
           }),
         ]}),
@@ -633,7 +713,11 @@ def handler(event, context):
 
     // ══════════════════════════════════════════════════════════════════════
     // 11. COGNITO IDENTITY POOL AUTH ROLE
-    //     Grants browser SDK calls: Lambda, SSM, Bedrock, Cognito IDP
+    //     Grants browser SDK calls after Cognito login.
+    //     - Lambda: invoke writer/reader functions
+    //     - DynamoDB: read/write prompt2test-config (service configs + accounts)
+    //     - Bedrock: invoke AgentCore runtime
+    //     - Cognito: user + group management (admin panel)
     // ══════════════════════════════════════════════════════════════════════
     const authenticatedRole = new iam.Role(this, 'CognitoAuthRole', {
       roleName: 'prompt2test-cognito-auth-role',
@@ -646,32 +730,52 @@ def handler(event, context):
         'sts:AssumeRoleWithWebIdentity',
       ),
       inlinePolicies: {
-        main: new iam.PolicyDocument({ statements: [
+        InvokeLambda: new iam.PolicyDocument({ statements: [
           new iam.PolicyStatement({
             sid: 'InvokeLambda',
             actions: ['lambda:InvokeFunction'],
             resources: [writerFn.functionArn, readerFn.functionArn],
           }),
+        ]}),
+        DynamoDBConfig: new iam.PolicyDocument({ statements: [
           new iam.PolicyStatement({
-            sid: 'SsmConfig',
+            sid: 'DynamoDBConfigReadWrite',
             actions: [
-              'ssm:GetParameter', 'ssm:GetParametersByPath',
-              'ssm:PutParameter',  'ssm:DeleteParameter',
+              'dynamodb:Query',
+              'dynamodb:GetItem',
+              'dynamodb:PutItem',
+              'dynamodb:DeleteItem',
             ],
-            resources: [`arn:aws:ssm:${this.region}:${this.account}:parameter/prompt2test/*`],
+            resources: [configTable.tableArn],
           }),
+        ]}),
+        BedrockAgent: new iam.PolicyDocument({ statements: [
           new iam.PolicyStatement({
-            sid: 'BedrockAgent',
+            sid: 'InvokeAgentRuntime',
             actions: ['bedrock:InvokeAgentRuntime'],
             resources: ['*'],
           }),
+        ]}),
+        CognitoAdmin: new iam.PolicyDocument({ statements: [
           new iam.PolicyStatement({
-            sid: 'CognitoAdmin',
+            sid: 'CognitoUserManagement',
             actions: [
               'cognito-idp:ListUsers',
               'cognito-idp:AdminCreateUser',
               'cognito-idp:AdminDeleteUser',
               'cognito-idp:AdminSetUserPassword',
+            ],
+            resources: [userPool.userPoolArn],
+          }),
+          new iam.PolicyStatement({
+            sid: 'CognitoGroupManagement',
+            actions: [
+              'cognito-idp:CreateGroup',
+              'cognito-idp:DeleteGroup',
+              'cognito-idp:ListGroups',
+              'cognito-idp:AdminAddUserToGroup',
+              'cognito-idp:AdminRemoveUserFromGroup',
+              'cognito-idp:AdminListGroupsForUser',
             ],
             resources: [userPool.userPoolArn],
           }),
@@ -746,5 +850,6 @@ def handler(event, context):
     new cdk.CfnOutput(this, 'OutAmplifyAppId',      { value: amplifyApp.attrAppId,           exportName: 'P2T-AmplifyAppId',      description: 'Connect GitHub OAuth in Amplify console' })
     new cdk.CfnOutput(this, 'OutEcsClusterName',    { value: ecsCluster.clusterName,         exportName: 'P2T-EcsClusterName' })
     new cdk.CfnOutput(this, 'OutLambdaPipeline',    { value: 'prompt2test-lambda',            exportName: 'P2T-LambdaPipeline',    description: 'Trigger after pushing Prompt2TestLambda repo' })
+    new cdk.CfnOutput(this, 'OutConfigTableArn',    { value: configTable.tableArn,            exportName: 'P2T-ConfigTableArn',    description: 'DynamoDB config table ARN' })
   }
 }
