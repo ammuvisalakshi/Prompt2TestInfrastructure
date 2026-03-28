@@ -35,7 +35,7 @@
 
   /* ── Metric bar ── */
   .metric-bar {
-    display: grid; grid-template-columns: repeat(8, 1fr);
+    display: grid; grid-template-columns: repeat(9, 1fr);
     background: #fff; border-radius: 12px; border: 1px solid #e2e8f0;
     overflow: hidden; margin-bottom: 32px;
   }
@@ -210,6 +210,7 @@
     <div class="metric-item"><div class="val" style="color:#ec4899;">2</div><div class="lbl">ECR Repos</div></div>
     <div class="metric-item"><div class="val" style="color:#eab308;">3</div><div class="lbl">Lambda Fns</div></div>
     <div class="metric-item"><div class="val" style="color:#0ea5e9;">1</div><div class="lbl">AgentCore</div></div>
+    <div class="metric-item" style="background:#f0fdf4;"><div class="val" style="color:#15803d;">15</div><div class="lbl">Days to Build 🔥</div></div>
   </div>
 
   <!-- Table of Contents -->
@@ -700,14 +701,96 @@
           </tr>
         </table>
 
-        <!-- Grand total -->
-        <div style="background:#0f172a; border-radius:10px; padding:18px 24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
-          <div style="color:#e2e8f0; font-size:15px; font-weight:700;">🏁 Grand Total</div>
-          <div style="display:flex; gap:24px; flex-wrap:wrap;">
-            <div style="text-align:center;"><div style="font-size:22px;font-weight:900;color:#7dd3fc;">~45 days</div><div style="font-size:11px;color:#94a3b8;">Total effort</div></div>
-            <div style="text-align:center;"><div style="font-size:22px;font-weight:900;color:#86efac;">~9 weeks</div><div style="font-size:11px;color:#94a3b8;">Calendar time</div></div>
-            <div style="text-align:center;"><div style="font-size:22px;font-weight:900;color:#c084fc;">1 engineer</div><div style="font-size:11px;color:#94a3b8;">Solo build</div></div>
-            <div style="text-align:center;"><div style="font-size:22px;font-weight:900;color:#fbbf24;">Production</div><div style="font-size:11px;color:#94a3b8;">Ready state</div></div>
+        <!-- AI vs Traditional comparison -->
+        <div style="margin-top:4px;">
+          <div class="effort-phase" style="border-radius:8px 8px 0 0;">⚡ &nbsp;AI Acceleration — How Long Would This Have Taken?</div>
+          <div style="background:#fff; border:1px solid #e2e8f0; border-top:none; border-radius:0 0 12px 12px; overflow:hidden;">
+
+            <!-- Column headers -->
+            <div style="display:grid; grid-template-columns:2fr 1fr 1fr 1fr; background:#f8fafc; border-bottom:2px solid #e2e8f0;">
+              <div style="padding:12px 16px; font-size:12px; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:0.5px;">Phase / Area</div>
+              <div style="padding:12px 16px; text-align:center; border-left:1px solid #e2e8f0;">
+                <div style="font-size:13px; font-weight:800; color:#ef4444;">❌ No AI</div>
+                <div style="font-size:11px; color:#94a3b8; margin-top:2px;">Traditional team</div>
+              </div>
+              <div style="padding:12px 16px; text-align:center; border-left:1px solid #e2e8f0;">
+                <div style="font-size:13px; font-weight:800; color:#f97316;">⚡ Moderate AI</div>
+                <div style="font-size:11px; color:#94a3b8; margin-top:2px;">AI for boilerplate only</div>
+              </div>
+              <div style="padding:12px 16px; text-align:center; border-left:1px solid #e2e8f0; background:#f0fdf4;">
+                <div style="font-size:13px; font-weight:800; color:#15803d;">🚀 Aggressive AI</div>
+                <div style="font-size:11px; color:#94a3b8; margin-top:2px;">Claude Code, after hours</div>
+              </div>
+            </div>
+
+            <!-- Rows -->
+            <div style="display:grid; grid-template-columns:2fr 1fr 1fr 1fr; border-bottom:1px solid #f1f5f9;">
+              <div style="padding:12px 16px;"><strong>Infrastructure + AWS CDK</strong><br><span style="font-size:11px;color:#94a3b8;">VPC, Cognito, Aurora, DynamoDB, ECS, IaC</span></div>
+              <div style="padding:12px 16px; text-align:center; border-left:1px solid #f1f5f9;"><span class="days-badge" style="background:#fee2e2;color:#b91c1c;">4–5 weeks</span><br><span style="font-size:11px;color:#94a3b8;">2 engineers</span></div>
+              <div style="padding:12px 16px; text-align:center; border-left:1px solid #f1f5f9;"><span class="days-badge" style="background:#ffedd5;color:#c2410c;">2–3 weeks</span><br><span style="font-size:11px;color:#94a3b8;">1–2 engineers</span></div>
+              <div style="padding:12px 16px; text-align:center; border-left:1px solid #f1f5f9; background:#f0fdf4;"><span class="days-badge" style="background:#dcfce7;color:#15803d;">3 days</span><br><span style="font-size:11px;color:#94a3b8;">1 engineer</span></div>
+            </div>
+            <div style="display:grid; grid-template-columns:2fr 1fr 1fr 1fr; border-bottom:1px solid #f1f5f9;">
+              <div style="padding:12px 16px;"><strong>Backend — Lambda + Playwright MCP</strong><br><span style="font-size:11px;color:#94a3b8;">Python Lambda, Docker container, pgvector</span></div>
+              <div style="padding:12px 16px; text-align:center; border-left:1px solid #f1f5f9;"><span class="days-badge" style="background:#fee2e2;color:#b91c1c;">3–4 weeks</span><br><span style="font-size:11px;color:#94a3b8;">2 engineers</span></div>
+              <div style="padding:12px 16px; text-align:center; border-left:1px solid #f1f5f9;"><span class="days-badge" style="background:#ffedd5;color:#c2410c;">1–2 weeks</span><br><span style="font-size:11px;color:#94a3b8;">1 engineer</span></div>
+              <div style="padding:12px 16px; text-align:center; border-left:1px solid #f1f5f9; background:#f0fdf4;"><span class="days-badge" style="background:#dcfce7;color:#15803d;">2 days</span><br><span style="font-size:11px;color:#94a3b8;">1 engineer</span></div>
+            </div>
+            <div style="display:grid; grid-template-columns:2fr 1fr 1fr 1fr; border-bottom:1px solid #f1f5f9;">
+              <div style="padding:12px 16px;"><strong>AI Agent — AgentCore + Strands SDK</strong><br><span style="font-size:11px;color:#94a3b8;">plan / automate / replay modes, MCP integration</span></div>
+              <div style="padding:12px 16px; text-align:center; border-left:1px solid #f1f5f9;"><span class="days-badge" style="background:#fee2e2;color:#b91c1c;">6–8 weeks</span><br><span style="font-size:11px;color:#94a3b8;">2–3 engineers</span></div>
+              <div style="padding:12px 16px; text-align:center; border-left:1px solid #f1f5f9;"><span class="days-badge" style="background:#ffedd5;color:#c2410c;">3–4 weeks</span><br><span style="font-size:11px;color:#94a3b8;">1–2 engineers</span></div>
+              <div style="padding:12px 16px; text-align:center; border-left:1px solid #f1f5f9; background:#f0fdf4;"><span class="days-badge" style="background:#dcfce7;color:#15803d;">4 days</span><br><span style="font-size:11px;color:#94a3b8;">1 engineer</span></div>
+            </div>
+            <div style="display:grid; grid-template-columns:2fr 1fr 1fr 1fr; border-bottom:1px solid #f1f5f9;">
+              <div style="padding:12px 16px;"><strong>React Frontend — 4 Screens</strong><br><span style="font-size:11px;color:#94a3b8;">Agent, Inventory, Config, Admin + Auth</span></div>
+              <div style="padding:12px 16px; text-align:center; border-left:1px solid #f1f5f9;"><span class="days-badge" style="background:#fee2e2;color:#b91c1c;">5–6 weeks</span><br><span style="font-size:11px;color:#94a3b8;">2 engineers</span></div>
+              <div style="padding:12px 16px; text-align:center; border-left:1px solid #f1f5f9;"><span class="days-badge" style="background:#ffedd5;color:#c2410c;">2–3 weeks</span><br><span style="font-size:11px;color:#94a3b8;">1–2 engineers</span></div>
+              <div style="padding:12px 16px; text-align:center; border-left:1px solid #f1f5f9; background:#f0fdf4;"><span class="days-badge" style="background:#dcfce7;color:#15803d;">5 days</span><br><span style="font-size:11px;color:#94a3b8;">1 engineer</span></div>
+            </div>
+            <div style="display:grid; grid-template-columns:2fr 1fr 1fr 1fr; border-bottom:1px solid #f1f5f9;">
+              <div style="padding:12px 16px;"><strong>CI/CD Pipelines + Documentation</strong><br><span style="font-size:11px;color:#94a3b8;">4 pipelines, IaC deploy guide, architecture docs</span></div>
+              <div style="padding:12px 16px; text-align:center; border-left:1px solid #f1f5f9;"><span class="days-badge" style="background:#fee2e2;color:#b91c1c;">2–3 weeks</span><br><span style="font-size:11px;color:#94a3b8;">1 engineer</span></div>
+              <div style="padding:12px 16px; text-align:center; border-left:1px solid #f1f5f9;"><span class="days-badge" style="background:#ffedd5;color:#c2410c;">1 week</span><br><span style="font-size:11px;color:#94a3b8;">1 engineer</span></div>
+              <div style="padding:12px 16px; text-align:center; border-left:1px solid #f1f5f9; background:#f0fdf4;"><span class="days-badge" style="background:#dcfce7;color:#15803d;">1 day</span><br><span style="font-size:11px;color:#94a3b8;">1 engineer</span></div>
+            </div>
+
+            <!-- Total row -->
+            <div style="display:grid; grid-template-columns:2fr 1fr 1fr 1fr; background:#0f172a; border-radius:0 0 12px 12px;">
+              <div style="padding:16px 16px; color:#e2e8f0; font-weight:700; font-size:14px;">🏁 Total Time to Production</div>
+              <div style="padding:16px 16px; text-align:center; border-left:1px solid rgba(255,255,255,0.1);">
+                <div style="font-size:20px; font-weight:900; color:#ef4444;">~6 months</div>
+                <div style="font-size:11px; color:#94a3b8; margin-top:2px;">4–5 person team</div>
+              </div>
+              <div style="padding:16px 16px; text-align:center; border-left:1px solid rgba(255,255,255,0.1);">
+                <div style="font-size:20px; font-weight:900; color:#f97316;">~2 months</div>
+                <div style="font-size:11px; color:#94a3b8; margin-top:2px;">2 person team</div>
+              </div>
+              <div style="padding:16px 16px; text-align:center; border-left:1px solid rgba(255,255,255,0.1); background:rgba(34,197,94,0.1); border-radius:0 0 12px 0;">
+                <div style="font-size:20px; font-weight:900; color:#86efac;">15 days 🔥</div>
+                <div style="font-size:11px; color:#94a3b8; margin-top:2px;">1 engineer · Mar 13–28</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Speedup callout -->
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:16px;">
+          <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:18px; text-align:center;">
+            <div style="font-size:32px; font-weight:900; color:#ef4444; margin-bottom:4px;">12×</div>
+            <div style="font-size:13px; font-weight:700; color:#0f172a; margin-bottom:4px;">Faster vs Traditional</div>
+            <div style="font-size:12px; color:#64748b;">6 months → 15 days. Same production-ready output, fraction of the calendar time.</div>
+          </div>
+          <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:18px; text-align:center;">
+            <div style="font-size:32px; font-weight:900; color:#f97316; margin-bottom:4px;">4×</div>
+            <div style="font-size:13px; font-weight:700; color:#0f172a; margin-bottom:4px;">Faster vs Moderate AI</div>
+            <div style="font-size:12px; color:#64748b;">2 months → 15 days. Aggressive prompting, late nights, and deep AI collaboration made the difference.</div>
+          </div>
+          <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:18px; text-align:center;">
+            <div style="font-size:32px; font-weight:900; color:#15803d; margin-bottom:4px;">15</div>
+            <div style="font-size:13px; font-weight:700; color:#0f172a; margin-bottom:4px;">Calendar Days · Mar 13–28</div>
+            <div style="font-size:12px; color:#64748b;">2 weekends fully + evenings 8 PM–3 AM. 1 engineer + Claude Code as co-pilot.</div>
           </div>
         </div>
 
