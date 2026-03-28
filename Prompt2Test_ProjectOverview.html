@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prompt2Test — Project Overview</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f1f5f9; color: #1e293b; font-size: 14px; }
+  .page { max-width: 1300px; margin: 0 auto; padding: 40px 32px; }
+
+  /* ── Hero ── */
+  .hero {
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+    border-radius: 16px; padding: 48px 40px; margin-bottom: 32px;
+    position: relative; overflow: hidden;
+  }
+  .hero::before {
+    content: ''; position: absolute; top: -60px; right: -60px;
+    width: 300px; height: 300px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%);
+  }
+  .hero::after {
+    content: ''; position: absolute; bottom: -40px; left: 200px;
+    width: 200px; height: 200px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(20,184,166,0.1) 0%, transparent 70%);
+  }
+  .hero h1 { font-size: 32px; font-weight: 900; color: #fff; margin-bottom: 10px; letter-spacing: -0.5px; }
+  .hero .tagline { font-size: 16px; color: #94a3b8; margin-bottom: 24px; max-width: 700px; line-height: 1.6; }
+  .hero .tags { display: flex; gap: 10px; flex-wrap: wrap; }
+  .hero-tag {
+    font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.15); color: #e2e8f0; background: rgba(255,255,255,0.07);
+  }
+
+  /* ── Metric bar ── */
+  .metric-bar {
+    display: grid; grid-template-columns: repeat(8, 1fr);
+    background: #fff; border-radius: 12px; border: 1px solid #e2e8f0;
+    overflow: hidden; margin-bottom: 32px;
+  }
+  .metric-item { padding: 20px 12px; text-align: center; border-right: 1px solid #f1f5f9; }
+  .metric-item:last-child { border-right: none; }
+  .metric-item .val { font-size: 28px; font-weight: 900; margin-bottom: 4px; }
+  .metric-item .lbl { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* ── Section labels ── */
+  .section-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; color: #64748b; margin-bottom: 14px;
+  }
+  .section { margin-bottom: 36px; }
+
+  /* ── Cards ── */
+  .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 22px 24px; }
+  .card-title { font-size: 15px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .row { display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+  .row .card { flex: 1; min-width: 220px; }
+
+  /* ── Color themes ── */
+  .theme-blue   { background: #eff6ff; border-color: #bfdbfe; }
+  .theme-purple { background: #faf5ff; border-color: #ddd6fe; }
+  .theme-green  { background: #f0fdf4; border-color: #bbf7d0; }
+  .theme-orange { background: #fff7ed; border-color: #fed7aa; }
+  .theme-teal   { background: #f0fdfa; border-color: #99f6e4; }
+  .theme-rose   { background: #fff1f2; border-color: #fecdd3; }
+  .theme-indigo { background: #eef2ff; border-color: #c7d2fe; }
+  .theme-yellow { background: #fefce8; border-color: #fef08a; }
+  .theme-dark   { background: #f8fafc; border-color: #e2e8f0; }
+
+  /* ── Feature coverage ── */
+  .feature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .feature-item {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
+    padding: 16px 18px; display: flex; gap: 12px; align-items: flex-start;
+  }
+  .feature-icon { font-size: 22px; flex-shrink: 0; margin-top: 2px; }
+  .feature-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; color: #0f172a; }
+  .feature-desc { font-size: 12px; color: #64748b; line-height: 1.5; }
+  .feature-status {
+    display: inline-block; font-size: 10px; font-weight: 700;
+    padding: 2px 7px; border-radius: 10px; margin-top: 5px;
+  }
+  .status-done    { background: #dcfce7; color: #15803d; }
+  .status-partial { background: #fef9c3; color: #a16207; }
+  .status-planned { background: #f1f5f9; color: #64748b; }
+
+  /* ── Progress bars ── */
+  .progress-list { display: flex; flex-direction: column; gap: 12px; }
+  .progress-item label { display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; margin-bottom: 5px; }
+  .progress-item label span { font-weight: 400; color: #64748b; }
+  .progress-track { height: 8px; background: #f1f5f9; border-radius: 4px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+
+  /* ── Screen cards ── */
+  .screen-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .screen-card {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
+    padding: 18px; text-align: center;
+  }
+  .screen-icon { font-size: 30px; margin-bottom: 10px; }
+  .screen-name { font-size: 13px; font-weight: 700; margin-bottom: 6px; color: #0f172a; }
+  .screen-desc { font-size: 11px; color: #64748b; line-height: 1.5; }
+  .screen-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px; margin-top: 8px; display: inline-block; }
+
+  /* ── AWS services grid ── */
+  .aws-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
+  .aws-item {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 8px;
+    padding: 12px 10px; text-align: center;
+  }
+  .aws-item .aws-icon { font-size: 20px; margin-bottom: 5px; }
+  .aws-item .aws-name { font-size: 11px; font-weight: 700; color: #0f172a; margin-bottom: 2px; }
+  .aws-item .aws-detail { font-size: 10px; color: #94a3b8; }
+
+  /* ── Flow diagram ── */
+  .flow { display: flex; align-items: center; gap: 0; flex-wrap: wrap; justify-content: center; padding: 16px 0; }
+  .flow-box {
+    background: #fff; border: 1px solid #cbd5e1; border-radius: 8px;
+    padding: 10px 16px; font-size: 12px; font-weight: 600; color: #334155;
+    text-align: center; min-width: 100px;
+  }
+  .flow-box small { display: block; font-size: 10px; font-weight: 400; color: #94a3b8; margin-top: 2px; }
+  .flow-arrow { font-size: 20px; color: #94a3b8; padding: 0 4px; }
+
+  /* ── Pipeline row ── */
+  .pipeline-row { display: flex; gap: 16px; align-items: stretch; }
+  .pipeline-card { flex: 1; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 16px; }
+  .pipeline-name { font-size: 12px; font-weight: 700; margin-bottom: 8px; color: #0f172a; }
+  .pipe-flow { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+  .pipe-step { font-size: 11px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 5px; padding: 4px 8px; color: #475569; }
+  .pipe-arr { font-size: 12px; color: #cbd5e1; }
+
+  /* ── Table ── */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: #f8fafc; font-weight: 700; color: #475569; text-align: left; padding: 10px 14px; border-bottom: 2px solid #e2e8f0; }
+  td { padding: 10px 14px; border-bottom: 1px solid #f1f5f9; line-height: 1.6; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #f8fafc; }
+
+  /* ── Badges ── */
+  .badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 5px; margin: 2px 2px 2px 0; }
+  .badge-blue   { background: #dbeafe; color: #1d4ed8; }
+  .badge-green  { background: #dcfce7; color: #15803d; }
+  .badge-orange { background: #ffedd5; color: #c2410c; }
+  .badge-purple { background: #ede9fe; color: #6d28d9; }
+  .badge-teal   { background: #ccfbf1; color: #0f766e; }
+  .badge-gray   { background: #f1f5f9; color: #475569; }
+  .badge-yellow { background: #fef9c3; color: #a16207; }
+  .badge-rose   { background: #ffe4e6; color: #be123c; }
+
+  code { font-family: 'Cascadia Code','Consolas',monospace; font-size: 12px; background: #f1f5f9; color: #4338ca; padding: 2px 5px; border-radius: 3px; }
+
+  .divider { height: 1px; background: #e2e8f0; margin: 8px 0 20px; }
+
+  .footer { text-align: center; font-size: 13px; color: #94a3b8; margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Hero -->
+  <div class="hero">
+    <h1>🧪 Prompt2Test — Project Overview</h1>
+    <p class="tagline">An AI-powered test case generation and browser automation platform. QA engineers describe what they want to test in plain English — the AI agent authors a test plan, spins up a live browser, and executes it end-to-end.</p>
+    <div class="tags">
+      <span class="hero-tag">AWS Bedrock AgentCore</span>
+      <span class="hero-tag">Claude Sonnet 4.5</span>
+      <span class="hero-tag">Playwright + noVNC</span>
+      <span class="hero-tag">React + TypeScript</span>
+      <span class="hero-tag">ECS Fargate</span>
+      <span class="hero-tag">Aurora Serverless v2</span>
+      <span class="hero-tag">DynamoDB</span>
+      <span class="hero-tag">Multi-team · Multi-env</span>
+    </div>
+  </div>
+
+  <!-- Metric bar -->
+  <div class="metric-bar">
+    <div class="metric-item"><div class="val" style="color:#6366f1;">18</div><div class="lbl">AWS Services</div></div>
+    <div class="metric-item"><div class="val" style="color:#22c55e;">5</div><div class="lbl">GitHub Repos</div></div>
+    <div class="metric-item"><div class="val" style="color:#f97316;">4</div><div class="lbl">UI Screens</div></div>
+    <div class="metric-item"><div class="val" style="color:#14b8a6;">3</div><div class="lbl">CodePipelines</div></div>
+    <div class="metric-item"><div class="val" style="color:#a855f7;">4</div><div class="lbl">Environments</div></div>
+    <div class="metric-item"><div class="val" style="color:#ec4899;">2</div><div class="lbl">ECR Repos</div></div>
+    <div class="metric-item"><div class="val" style="color:#eab308;">3</div><div class="lbl">Lambda Fns</div></div>
+    <div class="metric-item"><div class="val" style="color:#0ea5e9;">1</div><div class="lbl">AgentCore</div></div>
+  </div>
+
+  <!-- What it does -->
+  <div class="section">
+    <div class="section-label">What It Does — End to End Flow</div>
+    <div class="card">
+      <div class="flow">
+        <div class="flow-box">QA Engineer<small>types a prompt</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">React UI<small>Amplify hosted</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">Bedrock AgentCore<small>Claude Sonnet 4.5</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">AI generates plan<small>structured steps</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">ECS Fargate task<small>spins up on demand</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">Playwright MCP<small>executes in browser</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">Live view (noVNC)<small>streamed to UI</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">PASS / FAIL<small>saved to Aurora</small></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- UI Screens -->
+  <div class="section">
+    <div class="section-label">UI Screens — Built & Deployed</div>
+    <div class="screen-grid">
+      <div class="screen-card">
+        <div class="screen-icon">🤖</div>
+        <div class="screen-name">Agent</div>
+        <div class="screen-desc">Pick a service, describe the test scenario in plain English. AI generates a structured test plan. Review steps, then execute with a live browser.</div>
+        <span class="screen-badge" style="background:#dcfce7;color:#15803d;">✅ Built</span>
+      </div>
+      <div class="screen-card">
+        <div class="screen-icon">📋</div>
+        <div class="screen-name">Inventory</div>
+        <div class="screen-desc">Browse all saved test cases by environment and service. Search semantically via pgvector. View last run result, re-run, edit, or delete.</div>
+        <span class="screen-badge" style="background:#dcfce7;color:#15803d;">✅ Built</span>
+      </div>
+      <div class="screen-card">
+        <div class="screen-icon">⚙️</div>
+        <div class="screen-name">Config</div>
+        <div class="screen-desc">Manage services (name + URL per env), test accounts (credentials per env), and team members. All stored in DynamoDB.</div>
+        <span class="screen-badge" style="background:#dcfce7;color:#15803d;">✅ Built</span>
+      </div>
+      <div class="screen-card">
+        <div class="screen-icon">👑</div>
+        <div class="screen-name">Admin</div>
+        <div class="screen-desc">Create/delete users, manage Cognito groups (teams), assign users to teams. Visible only to users in the <code>admin</code> group.</div>
+        <span class="screen-badge" style="background:#dcfce7;color:#15803d;">✅ Built</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Feature Coverage -->
+  <div class="section">
+    <div class="section-label">Feature Coverage</div>
+    <div class="feature-grid">
+
+      <div class="feature-item">
+        <div class="feature-icon">💬</div>
+        <div>
+          <div class="feature-title">AI Test Plan Generation</div>
+          <div class="feature-desc">QA types a natural language prompt. Claude Sonnet 4.5 generates a structured plan with actions and expected outcomes.</div>
+          <span class="feature-status status-done">✅ Complete</span>
+        </div>
+      </div>
+
+      <div class="feature-item">
+        <div class="feature-icon">🎭</div>
+        <div>
+          <div class="feature-title">Live Browser Automation</div>
+          <div class="feature-desc">Playwright MCP executes test steps in a real Chromium browser. ECS Fargate task spins up on demand, stopped when done.</div>
+          <span class="feature-status status-done">✅ Complete</span>
+        </div>
+      </div>
+
+      <div class="feature-item">
+        <div class="feature-icon">🖥️</div>
+        <div>
+          <div class="feature-title">Live Browser View (noVNC)</div>
+          <div class="feature-desc">Watch the browser execute in real-time via embedded noVNC iframe. Pop-out button opens a full window.</div>
+          <span class="feature-status status-done">✅ Complete</span>
+        </div>
+      </div>
+
+      <div class="feature-item">
+        <div class="feature-icon">🔁</div>
+        <div>
+          <div class="feature-title">Test Replay</div>
+          <div class="feature-desc">Re-execute a saved test case from the Inventory without re-generating the plan. Uses the stored replay script.</div>
+          <span class="feature-status status-done">✅ Complete</span>
+        </div>
+      </div>
+
+      <div class="feature-item">
+        <div class="feature-icon">📦</div>
+        <div>
+          <div class="feature-title">Test Case Inventory</div>
+          <div class="feature-desc">Save, edit, delete test cases. Filter by environment and service. View last run result per test case.</div>
+          <span class="feature-status status-done">✅ Complete</span>
+        </div>
+      </div>
+
+      <div class="feature-item">
+        <div class="feature-icon">🔍</div>
+        <div>
+          <div class="feature-title">Semantic Search</div>
+          <div class="feature-desc">pgvector + Titan Embed Text v2 enables similarity search across test cases — find duplicates or related tests.</div>
+          <span class="feature-status status-done">✅ Complete</span>
+        </div>
+      </div>
+
+      <div class="feature-item">
+        <div class="feature-icon">⚙️</div>
+        <div>
+          <div class="feature-title">Service Config Management</div>
+          <div class="feature-desc">Add services and URLs per environment (dev/qa/uat/prod) via the UI. Stored in DynamoDB, read by AI agent during test generation.</div>
+          <span class="feature-status status-done">✅ Complete</span>
+        </div>
+      </div>
+
+      <div class="feature-item">
+        <div class="feature-icon">🔑</div>
+        <div>
+          <div class="feature-title">Test Account Management</div>
+          <div class="feature-desc">Store test account credentials per environment per team in DynamoDB. Agent uses them to authenticate during browser tests.</div>
+          <span class="feature-status status-done">✅ Complete</span>
+        </div>
+      </div>
+
+      <div class="feature-item">
+        <div class="feature-icon">👥</div>
+        <div>
+          <div class="feature-title">Multi-Team Support</div>
+          <div class="feature-desc">Teams are Cognito groups. Each team has isolated services, accounts, and test cases. Team resolved from JWT at login.</div>
+          <span class="feature-status status-done">✅ Complete</span>
+        </div>
+      </div>
+
+      <div class="feature-item">
+        <div class="feature-icon">🌍</div>
+        <div>
+          <div class="feature-title">Multi-Environment</div>
+          <div class="feature-desc">dev / qa / uat / prod. Config, accounts, and test cases are all scoped per environment. Env switcher in sidebar.</div>
+          <span class="feature-status status-done">✅ Complete</span>
+        </div>
+      </div>
+
+      <div class="feature-item">
+        <div class="feature-icon">👑</div>
+        <div>
+          <div class="feature-title">Admin Panel</div>
+          <div class="feature-desc">Create/delete Cognito users, manage team groups, assign users to teams. Shown only to the admin group.</div>
+          <span class="feature-status status-done">✅ Complete</span>
+        </div>
+      </div>
+
+      <div class="feature-item">
+        <div class="feature-icon">🔒</div>
+        <div>
+          <div class="feature-title">Auth &amp; Access Control</div>
+          <div class="feature-desc">Cognito User Pool login. Identity Pool grants scoped IAM permissions. Admin vs team member UI differentiated by JWT group.</div>
+          <span class="feature-status status-done">✅ Complete</span>
+        </div>
+      </div>
+
+      <div class="feature-item">
+        <div class="feature-icon">🚀</div>
+        <div>
+          <div class="feature-title">CI/CD — 4 Pipelines</div>
+          <div class="feature-desc">Amplify auto-deploys UI on push. 3 CodePipelines handle Lambda code, Agent Docker image, and Playwright Docker image.</div>
+          <span class="feature-status status-done">✅ Complete</span>
+        </div>
+      </div>
+
+      <div class="feature-item">
+        <div class="feature-icon">🗺️</div>
+        <div>
+          <div class="feature-title">Exploratory Mode</div>
+          <div class="feature-desc">No service selected — agent runs in exploratory mode, navigating freely without predefined config context.</div>
+          <span class="feature-status status-done">✅ Complete</span>
+        </div>
+      </div>
+
+      <div class="feature-item">
+        <div class="feature-icon">📊</div>
+        <div>
+          <div class="feature-title">Run Records</div>
+          <div class="feature-desc">Every test execution is stored as a run record in Aurora with result (PASS/FAIL), summary, timestamp, and who ran it.</div>
+          <span class="feature-status status-done">✅ Complete</span>
+        </div>
+      </div>
+
+      <div class="feature-item">
+        <div class="feature-icon">📈</div>
+        <div>
+          <div class="feature-title">Test Metrics Dashboard</div>
+          <div class="feature-desc">Aggregate pass/fail rates, trends over time, most-run services — for team-level QA visibility.</div>
+          <span class="feature-status status-planned">🔲 Planned</span>
+        </div>
+      </div>
+
+      <div class="feature-item">
+        <div class="feature-icon">🔔</div>
+        <div>
+          <div class="feature-title">Slack / Email Notifications</div>
+          <div class="feature-desc">Notify team on test failure or completion. Integrate with Slack webhook or SES for email alerts.</div>
+          <span class="feature-status status-planned">🔲 Planned</span>
+        </div>
+      </div>
+
+      <div class="feature-item">
+        <div class="feature-icon">⏰</div>
+        <div>
+          <div class="feature-title">Scheduled Test Runs</div>
+          <div class="feature-desc">Schedule smoke tests to run automatically on a cron (e.g. every deploy, nightly).</div>
+          <span class="feature-status status-planned">🔲 Planned</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Build Progress -->
+  <div class="section">
+    <div class="section-label">Build Progress by Area</div>
+    <div class="row">
+      <div class="card" style="flex:1;">
+        <div class="card-title">📐 Infrastructure &amp; DevOps</div>
+        <div class="progress-list">
+          <div class="progress-item">
+            <label>VPC, Networking, Security Groups <span>100%</span></label>
+            <div class="progress-track"><div class="progress-fill" style="width:100%;background:#22c55e;"></div></div>
+          </div>
+          <div class="progress-item">
+            <label>Cognito Auth + Identity Pool <span>100%</span></label>
+            <div class="progress-track"><div class="progress-fill" style="width:100%;background:#22c55e;"></div></div>
+          </div>
+          <div class="progress-item">
+            <label>Aurora Serverless v2 + pgvector <span>100%</span></label>
+            <div class="progress-track"><div class="progress-fill" style="width:100%;background:#22c55e;"></div></div>
+          </div>
+          <div class="progress-item">
+            <label>DynamoDB Config Table <span>100%</span></label>
+            <div class="progress-track"><div class="progress-fill" style="width:100%;background:#22c55e;"></div></div>
+          </div>
+          <div class="progress-item">
+            <label>ECS Fargate + Task Definition <span>100%</span></label>
+            <div class="progress-track"><div class="progress-fill" style="width:100%;background:#22c55e;"></div></div>
+          </div>
+          <div class="progress-item">
+            <label>CI/CD Pipelines (×4) <span>100%</span></label>
+            <div class="progress-track"><div class="progress-fill" style="width:100%;background:#22c55e;"></div></div>
+          </div>
+          <div class="progress-item">
+            <label>CDK as Code (full IaC) <span>100%</span></label>
+            <div class="progress-track"><div class="progress-fill" style="width:100%;background:#22c55e;"></div></div>
+          </div>
+          <div class="progress-item">
+            <label>Monitoring &amp; Alerting <span>30%</span></label>
+            <div class="progress-track"><div class="progress-fill" style="width:30%;background:#eab308;"></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="flex:1;">
+        <div class="card-title">🖥️ Frontend (React UI)</div>
+        <div class="progress-list">
+          <div class="progress-item">
+            <label>Login + Cognito Auth <span>100%</span></label>
+            <div class="progress-track"><div class="progress-fill" style="width:100%;background:#22c55e;"></div></div>
+          </div>
+          <div class="progress-item">
+            <label>Agent Page (plan + automate) <span>100%</span></label>
+            <div class="progress-track"><div class="progress-fill" style="width:100%;background:#22c55e;"></div></div>
+          </div>
+          <div class="progress-item">
+            <label>Live Browser (noVNC + pop-out) <span>100%</span></label>
+            <div class="progress-track"><div class="progress-fill" style="width:100%;background:#22c55e;"></div></div>
+          </div>
+          <div class="progress-item">
+            <label>Inventory Page <span>100%</span></label>
+            <div class="progress-track"><div class="progress-fill" style="width:100%;background:#22c55e;"></div></div>
+          </div>
+          <div class="progress-item">
+            <label>Config Page (services + accounts) <span>100%</span></label>
+            <div class="progress-track"><div class="progress-fill" style="width:100%;background:#22c55e;"></div></div>
+          </div>
+          <div class="progress-item">
+            <label>Admin Page (users + teams) <span>100%</span></label>
+            <div class="progress-track"><div class="progress-fill" style="width:100%;background:#22c55e;"></div></div>
+          </div>
+          <div class="progress-item">
+            <label>Multi-team + Multi-env support <span>100%</span></label>
+            <div class="progress-track"><div class="progress-fill" style="width:100%;background:#22c55e;"></div></div>
+          </div>
+          <div class="progress-item">
+            <label>Metrics Dashboard <span>0%</span></label>
+            <div class="progress-track"><div class="progress-fill" style="width:0%;background:#f1f5f9;"></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="flex:1;">
+        <div class="card-title">🤖 AI Agent Backend</div>
+        <div class="progress-list">
+          <div class="progress-item">
+            <label>AgentCore Runtime (ACTIVE) <span>100%</span></label>
+            <div class="progress-track"><div class="progress-fill" style="width:100%;background:#22c55e;"></div></div>
+          </div>
+          <div class="progress-item">
+            <label>Plan mode (test plan generation) <span>100%</span></label>
+            <div class="progress-track"><div class="progress-fill" style="width:100%;background:#22c55e;"></div></div>
+          </div>
+          <div class="progress-item">
+            <label>Plan Scenario (structured steps) <span>100%</span></label>
+            <div class="progress-track"><div class="progress-fill" style="width:100%;background:#22c55e;"></div></div>
+          </div>
+          <div class="progress-item">
+            <label>Automate mode (execute via MCP) <span>100%</span></label>
+            <div class="progress-track"><div class="progress-fill" style="width:100%;background:#22c55e;"></div></div>
+          </div>
+          <div class="progress-item">
+            <label>Replay mode <span>100%</span></label>
+            <div class="progress-track"><div class="progress-fill" style="width:100%;background:#22c55e;"></div></div>
+          </div>
+          <div class="progress-item">
+            <label>get_service_config tool (DynamoDB) <span>100%</span></label>
+            <div class="progress-track"><div class="progress-fill" style="width:100%;background:#22c55e;"></div></div>
+          </div>
+          <div class="progress-item">
+            <label>ECS session management <span>100%</span></label>
+            <div class="progress-track"><div class="progress-fill" style="width:100%;background:#22c55e;"></div></div>
+          </div>
+          <div class="progress-item">
+            <label>Multi-agent / parallel runs <span>0%</span></label>
+            <div class="progress-track"><div class="progress-fill" style="width:0%;background:#f1f5f9;"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tech Stack -->
+  <div class="section">
+    <div class="section-label">Tech Stack</div>
+    <div class="row">
+      <div class="card theme-blue">
+        <div class="card-title"><span>🖥️</span> Frontend</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          <span class="badge badge-blue">React 18</span>
+          <span class="badge badge-blue">TypeScript</span>
+          <span class="badge badge-blue">Vite</span>
+          <span class="badge badge-blue">React Router v6</span>
+          <span class="badge badge-blue">AWS Amplify SDK</span>
+          <span class="badge badge-blue">@aws-sdk/client-dynamodb</span>
+          <span class="badge badge-blue">@aws-sdk/lib-dynamodb</span>
+          <span class="badge badge-blue">Cognito Hosted UI</span>
+        </div>
+      </div>
+      <div class="card theme-orange">
+        <div class="card-title"><span>🤖</span> AI Agent</div>
+        <div style="display:flex;flex-wrap:gap:6px;flex-wrap:wrap;">
+          <span class="badge badge-orange">Python 3.12</span>
+          <span class="badge badge-orange">Strands SDK</span>
+          <span class="badge badge-orange">FastAPI</span>
+          <span class="badge badge-orange">Claude Sonnet 4.5</span>
+          <span class="badge badge-orange">Titan Embed Text v2</span>
+          <span class="badge badge-orange">Bedrock AgentCore</span>
+          <span class="badge badge-orange">Playwright MCP</span>
+        </div>
+      </div>
+      <div class="card theme-green">
+        <div class="card-title"><span>⚡</span> Backend / Data</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          <span class="badge badge-green">Python 3.12</span>
+          <span class="badge badge-green">Aurora Serverless v2</span>
+          <span class="badge badge-green">PostgreSQL 16 + pgvector</span>
+          <span class="badge badge-green">DynamoDB</span>
+          <span class="badge badge-green">RDS Data API</span>
+          <span class="badge badge-green">Secrets Manager</span>
+        </div>
+      </div>
+      <div class="card theme-purple">
+        <div class="card-title"><span>🔧</span> Infrastructure</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          <span class="badge badge-purple">AWS CDK v2 (TypeScript)</span>
+          <span class="badge badge-purple">ECS Fargate ARM64</span>
+          <span class="badge badge-purple">CodePipeline</span>
+          <span class="badge badge-purple">Amplify Hosting</span>
+          <span class="badge badge-purple">CloudFront CDN</span>
+          <span class="badge badge-purple">Docker</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AWS Services -->
+  <div class="section">
+    <div class="section-label">AWS Services in Use (18)</div>
+    <div class="aws-grid">
+      <div class="aws-item"><div class="aws-icon">🔐</div><div class="aws-name">Cognito</div><div class="aws-detail">User Pool + Identity Pool + Groups</div></div>
+      <div class="aws-item"><div class="aws-icon">🤖</div><div class="aws-name">Bedrock</div><div class="aws-detail">Claude Sonnet 4.5 + Titan Embed + AgentCore</div></div>
+      <div class="aws-item"><div class="aws-icon">🗄️</div><div class="aws-name">Aurora</div><div class="aws-detail">Serverless v2 · PostgreSQL 16 + pgvector</div></div>
+      <div class="aws-item"><div class="aws-icon">📦</div><div class="aws-name">DynamoDB</div><div class="aws-detail">prompt2test-config · PAY_PER_REQUEST</div></div>
+      <div class="aws-item"><div class="aws-icon">⚡</div><div class="aws-name">Lambda</div><div class="aws-detail">p2t-testcase-writer · reader · schema-init</div></div>
+      <div class="aws-item"><div class="aws-icon">🎭</div><div class="aws-name">ECS Fargate</div><div class="aws-detail">playwright-cluster · ARM64 2vCPU/4GB</div></div>
+      <div class="aws-item"><div class="aws-icon">🐳</div><div class="aws-name">ECR</div><div class="aws-detail">prompt2test-agent · playwright-mcp</div></div>
+      <div class="aws-item"><div class="aws-icon">🌍</div><div class="aws-name">Amplify</div><div class="aws-detail">Prompt2TestUI · CloudFront CDN</div></div>
+      <div class="aws-item"><div class="aws-icon">🔄</div><div class="aws-name">CodePipeline</div><div class="aws-detail">3 pipelines · Lambda + Agent + Playwright</div></div>
+      <div class="aws-item"><div class="aws-icon">🔨</div><div class="aws-name">CodeBuild</div><div class="aws-detail">Docker builds + Lambda zip</div></div>
+      <div class="aws-item"><div class="aws-icon">🌐</div><div class="aws-name">VPC / EC2</div><div class="aws-detail">2 public subnets · Security Groups</div></div>
+      <div class="aws-item"><div class="aws-icon">🔑</div><div class="aws-name">Secrets Manager</div><div class="aws-detail">prompt2test/aurora/credentials</div></div>
+      <div class="aws-item"><div class="aws-icon">⚙️</div><div class="aws-name">SSM</div><div class="aws-detail">ECS + Aurora infra params only</div></div>
+      <div class="aws-item"><div class="aws-icon">📊</div><div class="aws-name">CloudWatch</div><div class="aws-detail">Logs · /prompt2test/playwright-mcp · agentcore</div></div>
+      <div class="aws-item"><div class="aws-icon">📐</div><div class="aws-name">CloudFormation</div><div class="aws-detail">4 stacks via CDK</div></div>
+      <div class="aws-item"><div class="aws-icon">🛡️</div><div class="aws-name">IAM</div><div class="aws-detail">~12 scoped roles</div></div>
+      <div class="aws-item"><div class="aws-icon">🪣</div><div class="aws-name">S3</div><div class="aws-detail">3 pipeline artifact buckets + CDK assets</div></div>
+      <div class="aws-item"><div class="aws-icon">🔐</div><div class="aws-name">KMS</div><div class="aws-detail">2 keys · pipeline artifact encryption</div></div>
+    </div>
+  </div>
+
+  <!-- CI/CD -->
+  <div class="section">
+    <div class="section-label">CI/CD Pipelines</div>
+    <div class="pipeline-row">
+      <div class="pipeline-card">
+        <div class="pipeline-name">🌍 Prompt2TestUI (React)</div>
+        <div class="pipe-flow">
+          <div class="pipe-step">Push to master</div><div class="pipe-arr">→</div>
+          <div class="pipe-step">Amplify detect</div><div class="pipe-arr">→</div>
+          <div class="pipe-step">npm build</div><div class="pipe-arr">→</div>
+          <div class="pipe-step">Live in ~2 min</div>
+        </div>
+      </div>
+      <div class="pipeline-card">
+        <div class="pipeline-name">🤖 Agent Container</div>
+        <div class="pipe-flow">
+          <div class="pipe-step">Push to Prompt2TestAgent</div><div class="pipe-arr">→</div>
+          <div class="pipe-step">CodeBuild</div><div class="pipe-arr">→</div>
+          <div class="pipe-step">Docker build</div><div class="pipe-arr">→</div>
+          <div class="pipe-step">ECR push</div>
+        </div>
+      </div>
+      <div class="pipeline-card">
+        <div class="pipeline-name">🎭 Playwright Container</div>
+        <div class="pipe-flow">
+          <div class="pipe-step">Push to Prompt2TestPlaywrightMCP</div><div class="pipe-arr">→</div>
+          <div class="pipe-step">CodeBuild</div><div class="pipe-arr">→</div>
+          <div class="pipe-step">Docker build</div><div class="pipe-arr">→</div>
+          <div class="pipe-step">ECR push</div>
+        </div>
+      </div>
+      <div class="pipeline-card">
+        <div class="pipeline-name">⚡ Lambda Code</div>
+        <div class="pipe-flow">
+          <div class="pipe-step">Push to Prompt2TestLambda</div><div class="pipe-arr">→</div>
+          <div class="pipe-step">CodeBuild</div><div class="pipe-arr">→</div>
+          <div class="pipe-step">Zip</div><div class="pipe-arr">→</div>
+          <div class="pipe-step">Lambda update ×2</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Data Model -->
+  <div class="section">
+    <div class="section-label">Data Model</div>
+    <div class="row">
+      <div class="card theme-rose">
+        <div class="card-title">🗄️ Aurora (PostgreSQL + pgvector)</div>
+        <table>
+          <tr><th>Table</th><th>Key Columns</th><th>Purpose</th></tr>
+          <tr><td><code>test_cases</code></td><td>id, env, service, description, steps (JSONB), tags, embedding (vector 1024)</td><td>All test cases with vector embeddings for semantic search</td></tr>
+          <tr><td><code>run_records</code></td><td>id, test_case_id, env, result, summary, run_by, run_at</td><td>Every execution result — PASS / FAIL with summary</td></tr>
+        </table>
+      </div>
+      <div class="card theme-orange">
+        <div class="card-title">📦 DynamoDB — prompt2test-config</div>
+        <table>
+          <tr><th>pk</th><th>sk</th><th>val</th><th>Purpose</th></tr>
+          <tr><td><code>SERVICE#{team}#{env}</code></td><td><code>{svc}#{key}</code></td><td>URL etc.</td><td>Service configs per team per env</td></tr>
+          <tr><td><code>ACCOUNT#{env}</code></td><td><code>{id}#{NAME|CODE}</code></td><td>value</td><td>Test accounts per env</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Key Decisions -->
+  <div class="section">
+    <div class="section-label">Key Architecture Decisions</div>
+    <div class="card">
+      <table>
+        <tr><th>Decision</th><th>Choice</th><th>Why</th></tr>
+        <tr><td><strong>Config storage</strong></td><td><span class="badge badge-orange">DynamoDB</span></td><td>Browser SDK calls DynamoDB directly via Cognito IAM — no server proxy needed. SSM cannot be called from the browser.</td></tr>
+        <tr><td><strong>Team membership</strong></td><td><span class="badge badge-purple">Cognito Groups</span></td><td>Team resolved from JWT <code>cognito:groups</code> claim at login — zero extra lookups.</td></tr>
+        <tr><td><strong>Browser sessions</strong></td><td><span class="badge badge-green">ECS Fargate on-demand</span></td><td>One task per test run, auto-stopped on completion. Zero idle cost — pay only when tests run.</td></tr>
+        <tr><td><strong>AI agent runtime</strong></td><td><span class="badge badge-orange">Bedrock AgentCore</span></td><td>Managed container runtime — no EC2/ECS service to maintain. Scales automatically.</td></tr>
+        <tr><td><strong>Test case storage</strong></td><td><span class="badge badge-rose">Aurora + pgvector</span></td><td>Vector embeddings enable semantic duplicate detection and similarity search.</td></tr>
+        <tr><td><strong>Infrastructure</strong></td><td><span class="badge badge-purple">AWS CDK (TypeScript)</span></td><td>Full IaC — entire platform deployable to a new AWS account with one command.</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- Repos -->
+  <div class="section">
+    <div class="section-label">GitHub Repositories</div>
+    <div class="card">
+      <table>
+        <tr><th>Repo</th><th>Language</th><th>What's in it</th><th>Deploy method</th></tr>
+        <tr><td><strong>Prompt2TestUI</strong></td><td><span class="badge badge-blue">React / TS</span></td><td>All 4 UI screens, Cognito auth, DynamoDB SDK calls, AgentCore streaming</td><td>Push → Amplify auto-builds</td></tr>
+        <tr><td><strong>Prompt2TestInfrastructure</strong></td><td><span class="badge badge-purple">CDK / TS</span></td><td>Full AWS CDK stack, deploy.sh, all documentation</td><td>Manual <code>./deploy.sh</code></td></tr>
+        <tr><td><strong>Prompt2TestAgent</strong></td><td><span class="badge badge-orange">Python</span></td><td>AgentCore container — plan, automate, replay modes, Strands SDK tools</td><td>Push → CodePipeline → ECR</td></tr>
+        <tr><td><strong>Prompt2TestPlaywrightMCP</strong></td><td><span class="badge badge-green">Python / Docker</span></td><td>Playwright MCP server + noVNC + Chromium browser</td><td>Push → CodePipeline → ECR</td></tr>
+        <tr><td><strong>Prompt2TestLambda</strong></td><td><span class="badge badge-orange">Python</span></td><td>testcase-writer + testcase-reader Lambdas (Aurora CRUD + pgvector search)</td><td>Push → CodePipeline → Lambda update</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="footer">
+    Prompt2Test · AWS us-east-1 · Updated 2026-03-28 · 18 AWS Services · 5 Repos · Production Ready
+  </div>
+
+</div>
+</body>
+</html>
