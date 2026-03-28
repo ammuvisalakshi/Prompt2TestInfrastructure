@@ -277,22 +277,18 @@ MSG
 pause
 
 # ════════════════════════════════════════════════════════════════════════════
-#  PHASE 7 — SERVICES & ADMIN USER
+#  PHASE 7 — ADMIN USER SETUP
 # ════════════════════════════════════════════════════════════════════════════
-phase "PHASE 7 — Add Services & Create Admin User"
+phase "PHASE 7 — Create Admin User"
 
-step 15 "Add services to SSM Parameter Store"
-echo "  You can add as many services as you like. Press Enter to skip."
-while true; do
-  ask "Service name to add (or Enter to skip):" SVC_NAME
-  [[ -z "$SVC_NAME" ]] && break
-  ask "URL for $SVC_NAME in dev environment:" SVC_URL
-  aws ssm put-parameter \
-    --name "/prompt2test/config/dev/services/${SVC_NAME}/URL" \
-    --value "$SVC_URL" \
-    --type String > /dev/null
-  ok "Added: /prompt2test/config/dev/services/$SVC_NAME/URL"
-done
+step 15 "Create admin Cognito group"
+aws cognito-idp create-group \
+  --user-pool-id "$USER_POOL_ID" \
+  --group-name "admin" \
+  --description "Platform administrators" > /dev/null
+ok "Created 'admin' group in Cognito"
+info "Tip: Add team groups (e.g. 'teama') via the Config tab in the UI after login."
+info "Services and accounts are managed through the UI Config tab — no CLI steps needed."
 
 step 16 "Create admin user in Cognito"
 ask "Admin email address (used to log in):" ADMIN_EMAIL
@@ -350,7 +346,7 @@ echo "    2. Log in with: $ADMIN_EMAIL  /  TempPass123!"
 echo "    3. You will be prompted to set a permanent password"
 echo ""
 echo "  Verify the platform:"
-echo "    • Config tab    → your services appear as chips"
+echo "    • Config tab    → add a service + URL, it appears as a chip in Agent tab"
 echo "    • Agent tab     → type a test prompt → agent responds"
 echo "    • Inventory tab → save a test and verify it is stored"
 echo "    • Run a test    → live browser window opens → PASS/FAIL recorded"
