@@ -153,6 +153,31 @@
 
   .divider { height: 1px; background: #e2e8f0; margin: 8px 0 20px; }
 
+  /* ── TOC ── */
+  .toc-item {
+    background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
+    padding: 10px 14px; font-size: 13px; font-weight: 600; color: #334155;
+    transition: all 0.15s;
+  }
+  .toc-item:hover { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+
+  /* ── Effort table ── */
+  .effort-phase {
+    background: #0f172a; color: #e2e8f0; border-radius: 8px 8px 0 0;
+    padding: 10px 16px; font-size: 12px; font-weight: 700; letter-spacing: 1px;
+    text-transform: uppercase; display: flex; align-items: center; gap: 8px;
+  }
+  .effort-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 16px; }
+  .effort-table th { background: #f8fafc; font-weight: 700; color: #475569; text-align: left; padding: 9px 14px; border-bottom: 2px solid #e2e8f0; }
+  .effort-table td { padding: 9px 14px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+  .effort-table tr:last-child td { border-bottom: none; }
+  .effort-table tr:hover td { background: #f8fafc; }
+  .effort-bar-track { height: 6px; background: #f1f5f9; border-radius: 3px; width: 120px; display: inline-block; vertical-align: middle; margin-left: 8px; }
+  .effort-bar-fill  { height: 100%; border-radius: 3px; display: block; }
+  .days-badge { display: inline-block; font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 12px; white-space: nowrap; }
+  .total-row td { background: #0f172a !important; color: #e2e8f0; font-weight: 700; border-radius: 0 0 8px 8px; }
+  .total-row td code { background: rgba(255,255,255,0.1); color: #7dd3fc; }
+
   .footer { text-align: center; font-size: 13px; color: #94a3b8; margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; }
 </style>
 </head>
@@ -187,8 +212,28 @@
     <div class="metric-item"><div class="val" style="color:#0ea5e9;">1</div><div class="lbl">AgentCore</div></div>
   </div>
 
-  <!-- What it does -->
+  <!-- Table of Contents -->
   <div class="section">
+    <div class="section-label">Table of Contents</div>
+    <div class="card" style="padding:18px 24px;">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+        <a href="#flow"       style="text-decoration:none;"><div class="toc-item">① End-to-End Flow</div></a>
+        <a href="#screens"    style="text-decoration:none;"><div class="toc-item">② UI Screens</div></a>
+        <a href="#features"   style="text-decoration:none;"><div class="toc-item">③ Feature Coverage</div></a>
+        <a href="#effort"     style="text-decoration:none;"><div class="toc-item">④ Implementation Effort</div></a>
+        <a href="#progress"   style="text-decoration:none;"><div class="toc-item">⑤ Build Progress</div></a>
+        <a href="#stack"      style="text-decoration:none;"><div class="toc-item">⑥ Tech Stack</div></a>
+        <a href="#aws"        style="text-decoration:none;"><div class="toc-item">⑦ AWS Services</div></a>
+        <a href="#cicd"       style="text-decoration:none;"><div class="toc-item">⑧ CI/CD Pipelines</div></a>
+        <a href="#data"       style="text-decoration:none;"><div class="toc-item">⑨ Data Model</div></a>
+        <a href="#decisions"  style="text-decoration:none;"><div class="toc-item">⑩ Architecture Decisions</div></a>
+        <a href="#repos"      style="text-decoration:none;"><div class="toc-item">⑪ Repositories</div></a>
+      </div>
+    </div>
+  </div>
+
+  <!-- What it does -->
+  <div class="section" id="flow">
     <div class="section-label">What It Does — End to End Flow</div>
     <div class="card">
       <div class="flow">
@@ -212,7 +257,7 @@
   </div>
 
   <!-- UI Screens -->
-  <div class="section">
+  <div class="section" id="screens">
     <div class="section-label">UI Screens — Built & Deployed</div>
     <div class="screen-grid">
       <div class="screen-card">
@@ -243,7 +288,7 @@
   </div>
 
   <!-- Feature Coverage -->
-  <div class="section">
+  <div class="section" id="features">
     <div class="section-label">Feature Coverage</div>
     <div class="feature-grid">
 
@@ -412,8 +457,266 @@
     </div>
   </div>
 
+  <!-- Implementation Effort -->
+  <div class="section" id="effort">
+    <div class="section-label">Implementation Effort — Time to Build</div>
+    <div class="card" style="padding:0; overflow:hidden;">
+
+      <!-- Total summary bar -->
+      <div style="background:#0f172a; padding:20px 24px; display:flex; gap:40px; align-items:center; flex-wrap:wrap;">
+        <div style="text-align:center;">
+          <div style="font-size:36px; font-weight:900; color:#7dd3fc;">~45</div>
+          <div style="font-size:12px; color:#94a3b8; text-transform:uppercase; letter-spacing:1px;">Total Days</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:36px; font-weight:900; color:#86efac;">~9</div>
+          <div style="font-size:12px; color:#94a3b8; text-transform:uppercase; letter-spacing:1px;">Weeks</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:36px; font-weight:900; color:#c084fc;">15</div>
+          <div style="font-size:12px; color:#94a3b8; text-transform:uppercase; letter-spacing:1px;">Deliverables</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:36px; font-weight:900; color:#fbbf24;">1</div>
+          <div style="font-size:12px; color:#94a3b8; text-transform:uppercase; letter-spacing:1px;">Engineer</div>
+        </div>
+        <div style="flex:1; min-width:300px;">
+          <div style="font-size:12px; color:#94a3b8; margin-bottom:10px;">Effort distribution</div>
+          <div style="display:flex; height:14px; border-radius:7px; overflow:hidden; gap:2px;">
+            <div style="background:#6366f1; width:22%;" title="Infrastructure 22%"></div>
+            <div style="background:#22c55e; width:28%;" title="Frontend 28%"></div>
+            <div style="background:#f97316; width:27%;" title="AI Agent 27%"></div>
+            <div style="background:#14b8a6; width:12%;" title="CI/CD 12%"></div>
+            <div style="background:#eab308; width:11%;" title="Docs 11%"></div>
+          </div>
+          <div style="display:flex; gap:16px; margin-top:8px; flex-wrap:wrap;">
+            <span style="font-size:11px; color:#94a3b8;"><span style="color:#6366f1;">■</span> Infrastructure</span>
+            <span style="font-size:11px; color:#94a3b8;"><span style="color:#22c55e;">■</span> Frontend</span>
+            <span style="font-size:11px; color:#94a3b8;"><span style="color:#f97316;">■</span> AI Agent</span>
+            <span style="font-size:11px; color:#94a3b8;"><span style="color:#14b8a6;">■</span> CI/CD</span>
+            <span style="font-size:11px; color:#94a3b8;"><span style="color:#eab308;">■</span> Docs</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="padding:20px 24px;">
+
+        <!-- Phase 1: Infrastructure -->
+        <div class="effort-phase" style="margin-bottom:0; border-radius:8px 8px 0 0;">🏗️ &nbsp;Phase 1 — Infrastructure &amp; AWS Setup</div>
+        <table class="effort-table" style="border-radius:0 0 8px 8px; overflow:hidden; margin-bottom:20px;">
+          <tr><th style="width:35%;">Feature / Deliverable</th><th>What was built</th><th style="width:90px; text-align:center;">Effort</th><th style="width:140px;">Complexity</th></tr>
+          <tr>
+            <td><strong>VPC + Networking</strong></td>
+            <td>VPC, 2 public subnets, security groups for ECS + Aurora</td>
+            <td style="text-align:center;"><span class="days-badge" style="background:#dbeafe;color:#1d4ed8;">1 day</span></td>
+            <td><span style="color:#22c55e;">●●</span><span style="color:#e2e8f0;">●●●</span> Low</td>
+          </tr>
+          <tr>
+            <td><strong>Cognito Auth + Identity Pool</strong></td>
+            <td>User Pool, Identity Pool, Cognito Groups for teams, IAM auth role, browser SDK integration</td>
+            <td style="text-align:center;"><span class="days-badge" style="background:#dbeafe;color:#1d4ed8;">3 days</span></td>
+            <td><span style="color:#f97316;">●●●</span><span style="color:#e2e8f0;">●●</span> Medium</td>
+          </tr>
+          <tr>
+            <td><strong>Aurora Serverless v2 + pgvector</strong></td>
+            <td>Aurora PostgreSQL 16, RDS Data API, Secrets Manager, pgvector extension, schema init Lambda</td>
+            <td style="text-align:center;"><span class="days-badge" style="background:#dbeafe;color:#1d4ed8;">3 days</span></td>
+            <td><span style="color:#f97316;">●●●</span><span style="color:#e2e8f0;">●●</span> Medium</td>
+          </tr>
+          <tr>
+            <td><strong>DynamoDB Config Table</strong></td>
+            <td>prompt2test-config table, pk/sk schema design, migrated from SSM, CDK definition</td>
+            <td style="text-align:center;"><span class="days-badge" style="background:#dbeafe;color:#1d4ed8;">2 days</span></td>
+            <td><span style="color:#22c55e;">●●</span><span style="color:#e2e8f0;">●●●</span> Low</td>
+          </tr>
+          <tr>
+            <td><strong>ECS Fargate Cluster + Task</strong></td>
+            <td>ECS cluster, ARM64 task definition (2vCPU/4GB), ECR repos, SSM infra params</td>
+            <td style="text-align:center;"><span class="days-badge" style="background:#dbeafe;color:#1d4ed8;">2 days</span></td>
+            <td><span style="color:#f97316;">●●●</span><span style="color:#e2e8f0;">●●</span> Medium</td>
+          </tr>
+          <tr>
+            <td><strong>CDK — Full IaC</strong></td>
+            <td>All 18 AWS services as CDK TypeScript, one-command deploy, IAM roles, outputs</td>
+            <td style="text-align:center;"><span class="days-badge" style="background:#dbeafe;color:#1d4ed8;">3 days</span></td>
+            <td><span style="color:#ef4444;">●●●●</span><span style="color:#e2e8f0;">●</span> High</td>
+          </tr>
+          <tr class="total-row">
+            <td colspan="2"><strong>Phase 1 Subtotal</strong></td>
+            <td style="text-align:center;"><span class="days-badge" style="background:rgba(255,255,255,0.15);color:#7dd3fc;">14 days</span></td>
+            <td></td>
+          </tr>
+        </table>
+
+        <!-- Phase 2: Backend -->
+        <div class="effort-phase" style="margin-bottom:0; border-radius:8px 8px 0 0;">⚡ &nbsp;Phase 2 — Backend: Lambda + Playwright MCP</div>
+        <table class="effort-table" style="border-radius:0 0 8px 8px; overflow:hidden; margin-bottom:20px;">
+          <tr><th style="width:35%;">Feature / Deliverable</th><th>What was built</th><th style="width:90px; text-align:center;">Effort</th><th style="width:140px;">Complexity</th></tr>
+          <tr>
+            <td><strong>Lambda — testcase-writer</strong></td>
+            <td>Python Lambda for save/update/delete test cases and run records in Aurora</td>
+            <td style="text-align:center;"><span class="days-badge" style="background:#dcfce7;color:#15803d;">2 days</span></td>
+            <td><span style="color:#f97316;">●●●</span><span style="color:#e2e8f0;">●●</span> Medium</td>
+          </tr>
+          <tr>
+            <td><strong>Lambda — testcase-reader</strong></td>
+            <td>Python Lambda for list, fetch, semantic search via pgvector + Titan Embed v2</td>
+            <td style="text-align:center;"><span class="days-badge" style="background:#dcfce7;color:#15803d;">2 days</span></td>
+            <td><span style="color:#f97316;">●●●</span><span style="color:#e2e8f0;">●●</span> Medium</td>
+          </tr>
+          <tr>
+            <td><strong>Playwright MCP Container</strong></td>
+            <td>Playwright + noVNC + Chromium in Docker on ECS Fargate ARM64, MCP server on port 3000</td>
+            <td style="text-align:center;"><span class="days-badge" style="background:#dcfce7;color:#15803d;">3 days</span></td>
+            <td><span style="color:#ef4444;">●●●●</span><span style="color:#e2e8f0;">●</span> High</td>
+          </tr>
+          <tr class="total-row">
+            <td colspan="2"><strong>Phase 2 Subtotal</strong></td>
+            <td style="text-align:center;"><span class="days-badge" style="background:rgba(255,255,255,0.15);color:#7dd3fc;">7 days</span></td>
+            <td></td>
+          </tr>
+        </table>
+
+        <!-- Phase 3: AI Agent -->
+        <div class="effort-phase" style="margin-bottom:0; border-radius:8px 8px 0 0;">🤖 &nbsp;Phase 3 — AI Agent (Bedrock AgentCore)</div>
+        <table class="effort-table" style="border-radius:0 0 8px 8px; overflow:hidden; margin-bottom:20px;">
+          <tr><th style="width:35%;">Feature / Deliverable</th><th>What was built</th><th style="width:90px; text-align:center;">Effort</th><th style="width:140px;">Complexity</th></tr>
+          <tr>
+            <td><strong>AgentCore Container + FastAPI</strong></td>
+            <td>Python FastAPI app on port 8080, /invocations + /ping endpoints, Docker on ECR</td>
+            <td style="text-align:center;"><span class="days-badge" style="background:#ffedd5;color:#c2410c;">2 days</span></td>
+            <td><span style="color:#f97316;">●●●</span><span style="color:#e2e8f0;">●●</span> Medium</td>
+          </tr>
+          <tr>
+            <td><strong>Plan mode</strong></td>
+            <td>Strands SDK agent generates conversational test plan from plain English prompt</td>
+            <td style="text-align:center;"><span class="days-badge" style="background:#ffedd5;color:#c2410c;">2 days</span></td>
+            <td><span style="color:#f97316;">●●●</span><span style="color:#e2e8f0;">●●</span> Medium</td>
+          </tr>
+          <tr>
+            <td><strong>Plan Scenario mode</strong></td>
+            <td>Structured JSON output (action + expected steps), MTM-style table in UI, service context injection</td>
+            <td style="text-align:center;"><span class="days-badge" style="background:#ffedd5;color:#c2410c;">3 days</span></td>
+            <td><span style="color:#ef4444;">●●●●</span><span style="color:#e2e8f0;">●</span> High</td>
+          </tr>
+          <tr>
+            <td><strong>Automate mode + ECS session</strong></td>
+            <td>Spin up ECS task, connect to Playwright MCP, stream execution events, start/stop session</td>
+            <td style="text-align:center;"><span class="days-badge" style="background:#ffedd5;color:#c2410c;">3 days</span></td>
+            <td><span style="color:#ef4444;">●●●●●</span> Very High</td>
+          </tr>
+          <tr>
+            <td><strong>Replay mode</strong></td>
+            <td>Re-run saved test without re-generating plan, streaming replay events back to UI</td>
+            <td style="text-align:center;"><span class="days-badge" style="background:#ffedd5;color:#c2410c;">1 day</span></td>
+            <td><span style="color:#22c55e;">●●</span><span style="color:#e2e8f0;">●●●</span> Low</td>
+          </tr>
+          <tr>
+            <td><strong>get_service_config tool (DynamoDB)</strong></td>
+            <td>Strands @tool that reads service config from DynamoDB during test generation, team-scoped</td>
+            <td style="text-align:center;"><span class="days-badge" style="background:#ffedd5;color:#c2410c;">1 day</span></td>
+            <td><span style="color:#22c55e;">●●</span><span style="color:#e2e8f0;">●●●</span> Low</td>
+          </tr>
+          <tr class="total-row">
+            <td colspan="2"><strong>Phase 3 Subtotal</strong></td>
+            <td style="text-align:center;"><span class="days-badge" style="background:rgba(255,255,255,0.15);color:#7dd3fc;">12 days</span></td>
+            <td></td>
+          </tr>
+        </table>
+
+        <!-- Phase 4: Frontend -->
+        <div class="effort-phase" style="margin-bottom:0; border-radius:8px 8px 0 0;">🖥️ &nbsp;Phase 4 — React Frontend (4 Screens)</div>
+        <table class="effort-table" style="border-radius:0 0 8px 8px; overflow:hidden; margin-bottom:20px;">
+          <tr><th style="width:35%;">Feature / Deliverable</th><th>What was built</th><th style="width:90px; text-align:center;">Effort</th><th style="width:140px;">Complexity</th></tr>
+          <tr>
+            <td><strong>Auth + Layout + Routing</strong></td>
+            <td>Cognito login, JWT group parsing, PlatformLayout sidebar, env switcher, team-aware routing</td>
+            <td style="text-align:center;"><span class="days-badge" style="background:#ede9fe;color:#6d28d9;">2 days</span></td>
+            <td><span style="color:#f97316;">●●●</span><span style="color:#e2e8f0;">●●</span> Medium</td>
+          </tr>
+          <tr>
+            <td><strong>Agent Page</strong></td>
+            <td>Service picker chips, chat panel, MTM step table, live browser panel (noVNC iframe), pop-out button, streaming agent events</td>
+            <td style="text-align:center;"><span class="days-badge" style="background:#ede9fe;color:#6d28d9;">5 days</span></td>
+            <td><span style="color:#ef4444;">●●●●●</span> Very High</td>
+          </tr>
+          <tr>
+            <td><strong>Inventory Page</strong></td>
+            <td>Test case list/filter by env+service, DynamoDB service loader, run/replay/delete actions</td>
+            <td style="text-align:center;"><span class="days-badge" style="background:#ede9fe;color:#6d28d9;">2 days</span></td>
+            <td><span style="color:#f97316;">●●●</span><span style="color:#e2e8f0;">●●</span> Medium</td>
+          </tr>
+          <tr>
+            <td><strong>Config Page (DynamoDB)</strong></td>
+            <td>Services + accounts CRUD per team per env, DynamoDB read/write from browser, multi-env tabs</td>
+            <td style="text-align:center;"><span class="days-badge" style="background:#ede9fe;color:#6d28d9;">3 days</span></td>
+            <td><span style="color:#ef4444;">●●●●</span><span style="color:#e2e8f0;">●</span> High</td>
+          </tr>
+          <tr>
+            <td><strong>Admin Page</strong></td>
+            <td>User create/delete, Cognito group management, assign users to teams — admin-only visibility</td>
+            <td style="text-align:center;"><span class="days-badge" style="background:#ede9fe;color:#6d28d9;">2 days</span></td>
+            <td><span style="color:#f97316;">●●●</span><span style="color:#e2e8f0;">●●</span> Medium</td>
+          </tr>
+          <tr class="total-row">
+            <td colspan="2"><strong>Phase 4 Subtotal</strong></td>
+            <td style="text-align:center;"><span class="days-badge" style="background:rgba(255,255,255,0.15);color:#7dd3fc;">14 days</span></td>
+            <td></td>
+          </tr>
+        </table>
+
+        <!-- Phase 5: CI/CD + Docs -->
+        <div class="effort-phase" style="margin-bottom:0; border-radius:8px 8px 0 0;">🔄 &nbsp;Phase 5 — CI/CD Pipelines &amp; Documentation</div>
+        <table class="effort-table" style="border-radius:0 0 8px 8px; overflow:hidden; margin-bottom:20px;">
+          <tr><th style="width:35%;">Feature / Deliverable</th><th>What was built</th><th style="width:90px; text-align:center;">Effort</th><th style="width:140px;">Complexity</th></tr>
+          <tr>
+            <td><strong>3 CodePipelines</strong></td>
+            <td>Lambda, Agent, Playwright MCP pipelines — GitHub → CodeBuild → ECR/Lambda update</td>
+            <td style="text-align:center;"><span class="days-badge" style="background:#ccfbf1;color:#0f766e;">2 days</span></td>
+            <td><span style="color:#f97316;">●●●</span><span style="color:#e2e8f0;">●●</span> Medium</td>
+          </tr>
+          <tr>
+            <td><strong>Amplify CI/CD</strong></td>
+            <td>Amplify hosting, auto-deploy on push to master, environment variables, CloudFront CDN</td>
+            <td style="text-align:center;"><span class="days-badge" style="background:#ccfbf1;color:#0f766e;">1 day</span></td>
+            <td><span style="color:#22c55e;">●●</span><span style="color:#e2e8f0;">●●●</span> Low</td>
+          </tr>
+          <tr>
+            <td><strong>Architecture Docs (3 HTML files)</strong></td>
+            <td>Architecture diagram, ADRs (14 decisions), Deployment Guide — all as styled HTML</td>
+            <td style="text-align:center;"><span class="days-badge" style="background:#ccfbf1;color:#0f766e;">2 days</span></td>
+            <td><span style="color:#22c55e;">●●</span><span style="color:#e2e8f0;">●●●</span> Low</td>
+          </tr>
+          <tr>
+            <td><strong>Handover &amp; Project Overview</strong></td>
+            <td>CI/CD Handover Guide, Project Overview page (this doc) — for team onboarding</td>
+            <td style="text-align:center;"><span class="days-badge" style="background:#ccfbf1;color:#0f766e;">1 day</span></td>
+            <td><span style="color:#22c55e;">●●</span><span style="color:#e2e8f0;">●●●</span> Low</td>
+          </tr>
+          <tr class="total-row">
+            <td colspan="2"><strong>Phase 5 Subtotal</strong></td>
+            <td style="text-align:center;"><span class="days-badge" style="background:rgba(255,255,255,0.15);color:#7dd3fc;">6 days</span></td>
+            <td></td>
+          </tr>
+        </table>
+
+        <!-- Grand total -->
+        <div style="background:#0f172a; border-radius:10px; padding:18px 24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+          <div style="color:#e2e8f0; font-size:15px; font-weight:700;">🏁 Grand Total</div>
+          <div style="display:flex; gap:24px; flex-wrap:wrap;">
+            <div style="text-align:center;"><div style="font-size:22px;font-weight:900;color:#7dd3fc;">~45 days</div><div style="font-size:11px;color:#94a3b8;">Total effort</div></div>
+            <div style="text-align:center;"><div style="font-size:22px;font-weight:900;color:#86efac;">~9 weeks</div><div style="font-size:11px;color:#94a3b8;">Calendar time</div></div>
+            <div style="text-align:center;"><div style="font-size:22px;font-weight:900;color:#c084fc;">1 engineer</div><div style="font-size:11px;color:#94a3b8;">Solo build</div></div>
+            <div style="text-align:center;"><div style="font-size:22px;font-weight:900;color:#fbbf24;">Production</div><div style="font-size:11px;color:#94a3b8;">Ready state</div></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
   <!-- Build Progress -->
-  <div class="section">
+  <div class="section" id="progress">
     <div class="section-label">Build Progress by Area</div>
     <div class="row">
       <div class="card" style="flex:1;">
@@ -531,7 +834,7 @@
   </div>
 
   <!-- Tech Stack -->
-  <div class="section">
+  <div class="section" id="stack">
     <div class="section-label">Tech Stack</div>
     <div class="row">
       <div class="card theme-blue">
@@ -585,7 +888,7 @@
   </div>
 
   <!-- AWS Services -->
-  <div class="section">
+  <div class="section" id="aws">
     <div class="section-label">AWS Services in Use (18)</div>
     <div class="aws-grid">
       <div class="aws-item"><div class="aws-icon">🔐</div><div class="aws-name">Cognito</div><div class="aws-detail">User Pool + Identity Pool + Groups</div></div>
@@ -610,7 +913,7 @@
   </div>
 
   <!-- CI/CD -->
-  <div class="section">
+  <div class="section" id="cicd">
     <div class="section-label">CI/CD Pipelines</div>
     <div class="pipeline-row">
       <div class="pipeline-card">
@@ -653,7 +956,7 @@
   </div>
 
   <!-- Data Model -->
-  <div class="section">
+  <div class="section" id="data">
     <div class="section-label">Data Model</div>
     <div class="row">
       <div class="card theme-rose">
@@ -676,7 +979,7 @@
   </div>
 
   <!-- Key Decisions -->
-  <div class="section">
+  <div class="section" id="decisions">
     <div class="section-label">Key Architecture Decisions</div>
     <div class="card">
       <table>
@@ -692,7 +995,7 @@
   </div>
 
   <!-- Repos -->
-  <div class="section">
+  <div class="section" id="repos">
     <div class="section-label">GitHub Repositories</div>
     <div class="card">
       <table>
