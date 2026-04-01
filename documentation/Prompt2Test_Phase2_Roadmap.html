@@ -103,6 +103,7 @@
           <tr><td><strong>4</strong></td><td><strong>Report Generation</strong> &mdash; PDF/HTML reports per run, per suite, with trends</td><td><span class="badge badge-orange">P1</span></td><td><span class="badge badge-orange">4&ndash;5 days</span></td><td>Stakeholder visibility, audit trail</td></tr>
           <tr><td><strong>5</strong></td><td><strong>Tagging &amp; Test Suites</strong> &mdash; tag tests as regression, smoke, deployment; run by tag</td><td><span class="badge badge-red">P0</span></td><td><span class="badge badge-green">3&ndash;4 days</span></td><td>Organize tests at scale, CI/CD integration</td></tr>
           <tr><td><strong>6</strong></td><td><strong>Headless Suite Execution + Smart Retry</strong> &mdash; headless for speed, LLM retry on failure, email alerts</td><td><span class="badge badge-red">P0</span></td><td><span class="badge badge-red">7&ndash;10 days</span></td><td>Transforms platform into CI/CD-grade automation</td></tr>
+          <tr><td><strong>7</strong></td><td><strong>noVNC via ALB</strong> &mdash; route live browser view through ALB on HTTPS/443 for VPN compatibility</td><td><span class="badge badge-orange">P1</span></td><td><span class="badge badge-blue">2.5 days</span></td><td>Corporate VPN users can see live browser</td></tr>
         </tbody>
       </table>
     </div>
@@ -582,6 +583,96 @@
         <tr><td><strong>S3</strong></td><td>Store screenshots, DOM snapshots, reports</td><td>~$0.023/GB/month</td></tr>
         <tr><td><strong>Step Functions</strong> (optional)</td><td>Orchestrate suite: fan-out &rarr; wait &rarr; aggregate &rarr; notify</td><td>~$0.025/1000 transitions</td></tr>
       </table>
+    </div>
+  </div>
+
+
+  <!-- ================================================================ -->
+  <!-- FEATURE 7: noVNC via ALB -->
+  <!-- ================================================================ -->
+  <div class="section">
+    <div class="feature-header" style="background: linear-gradient(135deg, #1d4ed8, #1e40af);">
+      <div class="feature-num">7</div>
+      <div>
+        <div style="font-size:18px; font-weight:800;">noVNC via ALB (VPN-Friendly Live Browser View)</div>
+        <div style="font-size:12px; opacity:0.8; margin-top:2px;">Route noVNC through ALB on port 443 so corporate VPNs don't block it</div>
+      </div>
+      <div style="margin-left:auto;"><span class="badge" style="background:rgba(255,255,255,0.2); color:#fff;">P1 &middot; 2.5 days</span></div>
+    </div>
+    <div class="feature-body">
+
+      <div class="sub-section">The Problem</div>
+      <p style="font-size:13px; color:#475569; line-height:1.7; margin-bottom:16px;">
+        noVNC currently connects directly to the ECS Fargate task's <strong>public IP on port 6080</strong> via unencrypted WebSocket (<code>ws://</code>). Corporate VPNs block this because: (a) non-standard port, (b) raw IP not a domain, (c) unencrypted WebSocket, (d) unknown destination.
+      </p>
+
+      <div class="sub-section">Solution: ALB + HTTPS + Domain</div>
+      <div class="card theme-blue" style="margin-bottom:16px;">
+        <div class="flow">
+          <div class="flow-box" style="border-color:#1d4ed8;">Browser<small>wss:// port 443</small></div>
+          <div class="flow-arrow">&rarr;</div>
+          <div class="flow-box">Route 53<small>novnc.prompt2test.com</small></div>
+          <div class="flow-arrow">&rarr;</div>
+          <div class="flow-box" style="border-color:#1d4ed8;">ALB<small>HTTPS + ACM cert</small></div>
+          <div class="flow-arrow">&rarr;</div>
+          <div class="flow-box" style="border-color:#16a34a;">ECS Task<small>private IP :6080</small></div>
+          <div class="flow-arrow">&rarr;</div>
+          <div class="flow-box">noVNC Server<small>live browser stream</small></div>
+        </div>
+      </div>
+
+      <div class="sub-section">Why VPN Allows This</div>
+      <table>
+        <thead><tr><th style="width:30%;">VPN Check</th><th style="width:35%;">Current (Blocked)</th><th style="width:35%;">After ALB (Allowed)</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Port</strong></td><td style="color:#dc2626;">6080 (non-standard)</td><td style="color:#16a34a;">443 (standard HTTPS)</td></tr>
+          <tr><td><strong>Destination</strong></td><td style="color:#dc2626;">Raw IP (54.23.45.67)</td><td style="color:#16a34a;">Domain (novnc.prompt2test.com)</td></tr>
+          <tr><td><strong>Encryption</strong></td><td style="color:#dc2626;">ws:// (unencrypted)</td><td style="color:#16a34a;">wss:// (TLS encrypted)</td></tr>
+          <tr><td><strong>Protocol</strong></td><td style="color:#dc2626;">Unknown WebSocket</td><td style="color:#16a34a;">HTTPS WebSocket upgrade</td></tr>
+        </tbody>
+      </table>
+
+      <div class="sub-section">Implementation Steps</div>
+      <div class="impl-card">
+        <h5>1. CDK: ALB + ACM Certificate + Route 53</h5>
+        <p>Create an Application Load Balancer in public subnets with HTTPS listener on port 443. ACM certificate for <code>novnc.prompt2test.com</code> with DNS validation. Route 53 A record pointing to the ALB. IP-type target group on port 6080.</p>
+      </div>
+      <div class="impl-card">
+        <h5>2. Agent: Register/Deregister ECS Task as ALB Target</h5>
+        <p>When <code>start_session</code> creates an ECS task, register the task's private IP as an ALB target (<code>elbv2.register_targets()</code>). When the test ends or is stopped, deregister the target. Agent returns <code>wss://novnc.prompt2test.com</code> instead of raw IP.</p>
+      </div>
+      <div class="impl-card">
+        <h5>3. Security Groups</h5>
+        <p>ECS tasks: allow port 6080 inbound <strong>only from ALB security group</strong> (not from anywhere). ALB: allow port 443 inbound from anywhere. No more public IP exposure on ECS tasks.</p>
+      </div>
+      <div class="impl-card">
+        <h5>4. Frontend: Update noVNC URL</h5>
+        <p>Frontend currently opens <code>ws://IP:6080</code>. Change to <code>wss://novnc.prompt2test.com</code>. The noVNC client library supports WSS natively.</p>
+      </div>
+
+      <div class="sub-section">Cost</div>
+      <table>
+        <thead><tr><th>Resource</th><th>Cost</th></tr></thead>
+        <tbody>
+          <tr><td>Application Load Balancer</td><td>~$18/mo (fixed) + $0.008/LCU-hour</td></tr>
+          <tr><td>ACM Certificate</td><td>Free</td></tr>
+          <tr><td>Route 53 A Record</td><td>$0.50/mo</td></tr>
+          <tr><td><strong>Total</strong></td><td><strong>~$20/mo</strong></td></tr>
+        </tbody>
+      </table>
+
+      <div class="sub-section">Effort</div>
+      <table>
+        <thead><tr><th>Task</th><th>Effort</th></tr></thead>
+        <tbody>
+          <tr><td>CDK: ALB + cert + DNS + target group</td><td>1 day</td></tr>
+          <tr><td>Agent: register/deregister targets</td><td>0.5 day</td></tr>
+          <tr><td>Frontend: update noVNC URL</td><td>0.5 day</td></tr>
+          <tr><td>Testing</td><td>0.5 day</td></tr>
+          <tr><td><strong>Total</strong></td><td><strong>~2.5 days</strong></td></tr>
+        </tbody>
+      </table>
+
     </div>
   </div>
 
