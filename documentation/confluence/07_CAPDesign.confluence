@@ -1,0 +1,143 @@
+h1. {color:#6366f1}Prompt2Test{color} — CAP Design Improvements
+
+{tip:title=High Availability, Consistency & Partition Tolerance}
+Architectural enhancements across 4 tiers to make the platform production-ready. From quick wins to full multi-region active-active.
+{tip}
+
+----
+
+{toc:minLevel=2|maxLevel=3}
+
+----
+
+h2. CAP Theorem Primer
+
+{section}
+{column:width=33%}
+{panel:title=C — Consistency|borderColor=#2563eb|bgColor=#eff6ff}
+Every read returns the most recent write. All nodes see the same data at the same time.
+
+*Used by:* Aurora (single writer), DynamoDB strong reads
+{panel}
+{column}
+{column:width=33%}
+{panel:title=A — Availability|borderColor=#16a34a|bgColor=#f0fdf4}
+Every request receives a response. System never refuses a request.
+
+*Used by:* DynamoDB, CloudFront, Lambda
+{panel}
+{column}
+{column:width=33%}
+{panel:title=P — Partition Tolerance|borderColor=#ea580c|bgColor=#fff7ed}
+System operates despite network partitions between nodes or regions.
+
+*Used by:* DynamoDB Global Tables, Aurora Global DB
+{panel}
+{column}
+{section}
+
+----
+
+h2. Current State Assessment
+
+|| Component || Setup || Consistency || Availability || Partition Tolerant || Gap ||
+| *Aurora Serverless v2* | Single region, auto-pause | {status:colour=Green|title=Strong} | {status:colour=Yellow|title=Partial} | {status:colour=Red|title=No} | 30s cold start on resume |
+| *DynamoDB* | Single region, eventual reads | {status:colour=Yellow|title=Eventual} | {status:colour=Green|title=High} | {status:colour=Red|title=No} | May serve stale config |
+| *ECS Fargate* | On-demand, single AZ | N/A | {status:colour=Yellow|title=Partial} | {status:colour=Red|title=No} | Tasks may land in 1 AZ |
+| *Cognito* | Single region | {status:colour=Green|title=Strong} | {status:colour=Green|title=High} | {status:colour=Red|title=No} | Region failure = no login |
+| *Bedrock AgentCore* | us-east-1 only | N/A | {status:colour=Green|title=High} | {status:colour=Red|title=No} | No cross-region fallback |
+| *Lambda* | Single region | N/A | {status:colour=Green|title=High} | {status:colour=Red|title=No} | Cold starts under burst |
+| *CloudFront + Amplify* | Global CDN | {status:colour=Yellow|title=Eventual} | {status:colour=Green|title=High} | {status:colour=Green|title=Yes} | Only PT component |
+
+{warning:title=Critical Finding}
+The platform is *single-region (us-east-1)*. If that region has an outage, everything is down. CloudFront is the only partition-tolerant component.
+{warning}
+
+----
+
+h2. Recommended CAP Strategy
+
+|| Data / Operation || Strategy || Rationale ||
+| Service config reads (DynamoDB) | {status:colour=Blue|title=CP — Strong} | Agent MUST see latest URLs. Stale config = wrong environment. |
+| Test case writes (Aurora) | {status:colour=Blue|title=CP — Strong} | Cannot lose results. PASS/FAIL must be durable. |
+| Test case reads / listing | {status:colour=Green|title=AP — Eventual OK} | Inventory can lag 1-2s. User won't notice. |
+| Browser sessions (ECS) | {status:colour=Green|title=AP — Availability} | Better to start degraded than refuse. |
+| Authentication (Cognito) | {status:colour=Blue|title=CP — Strong} | Tokens must be valid. No stale credentials. |
+| AI Agent responses (Bedrock) | {status:colour=Green|title=AP — Availability} | Fall back to simpler model if unavailable. |
+| Run records (Aurora) | {status:colour=Blue|title=CP — Strong} | Source of truth. Must not be lost. |
+
+----
+
+h2. Tier 1 — Quick Wins (1-2 days)
+
+|| # || Enhancement || Impact || Cost ||
+| 1.1 | *DynamoDB: Strong Consistent Reads* — add {{ConsistentRead: true}} to all config queries | Eliminates stale config | +$0.50/mo |
+| 1.2 | *Aurora: Verify Multi-AZ* — ensure writer + reader in different AZs | Survives AZ failure | +$30/mo |
+| 1.3 | *ECS: Multi-AZ Task Placement* — spread tasks across 2+ AZs | Browser sessions survive AZ loss | $0 |
+| 1.4 | *Lambda: Reserved Concurrency* — set minimum for reader/writer | Avoid cold starts under load | $0-15/mo |
+| 1.5 | *CloudWatch Alarms + SNS* — Aurora errors, Lambda errors, ECS failures | Know before users complain | +$1/mo |
+
+----
+
+h2. Tier 2 — Production Hardening (1-2 weeks)
+
+|| # || Enhancement || Impact || Cost ||
+| 2.1 | *API Gateway in front of Lambda* — rate limiting, throttling, validation | Prevents overload | +$3/mo |
+| 2.2 | *Dead Letter Queues* — SQS DLQ for Lambda failures | Never lose test results | +$0.40/mo |
+| 2.3 | *WAF on CloudFront* — rate limiting, bot protection | DDoS protection | +$5/mo |
+| 2.4 | *Secrets Manager Auto-Rotation* — rotate Aurora credentials every 30 days | Security compliance | +$0.40/mo |
+| 2.5 | *Aurora Auto-Pause Retry* — exponential backoff + CloudWatch canary during business hours | Eliminates #1 user error | +$3/mo |
+| 2.6 | *S3 Cross-Region Replication* — replicate build artifacts to us-west-2 | CI/CD survives region failure | ~$0.02/GB |
+
+----
+
+h2. Tier 3 — Multi-Region (2-4 weeks)
+
+|| # || Enhancement || Impact || Cost ||
+| 3.1 | *DynamoDB Global Tables* — replicate config to us-west-2 | Config survives region failure | 1.5x writes |
+| 3.2 | *Aurora Global Database* — read replica in us-west-2, ~1s replication | Data survives region failure | +$50/mo |
+| 3.3 | *ECS Cluster in us-west-2* — Fargate tasks in both regions | Browser tests run anywhere | On-demand |
+| 3.4 | *Route 53 DNS Failover* — auto-route to healthy region | Automatic region failover | +$1/mo |
+| 3.5 | *Cognito Backup* — long-lived JWT tokens + backup User Pool | Auth survives region failure | 1 day effort |
+| 3.6 | *Bedrock Cross-Region Fallback* — retry against us-west-2 on 429/5xx | AI survives region issues | $0 |
+
+----
+
+h2. Tier 4 — Active-Active (1-2 months)
+
+|| # || Enhancement || Impact || Cost ||
+| 4.1 | *AWS Global Accelerator* — anycast IPs, failover <30s | Instant failover | +$18/mo |
+| 4.2 | *Multi-Region CI/CD* — parallel deploy to both regions | Consistent versions | Pipeline cost |
+| 4.3 | *Multi-Account Strategy* — separate AWS accounts per env | Blast radius isolation | Org setup |
+| 4.4 | *Chaos Engineering* — AWS Fault Injection Simulator monthly | Validates all improvements | ~$5/mo |
+
+----
+
+h2. Target State (After All Tiers)
+
+|| Component || Setup || C || A || P || Model ||
+| Aurora | Global Database | {status:colour=Green|title=Strong} | {status:colour=Green|title=High} | {status:colour=Green|title=Yes} | CP writes, AP reads |
+| DynamoDB | Global Tables | {status:colour=Green|title=Strong local} | {status:colour=Green|title=High} | {status:colour=Green|title=Yes} | AP + strong local |
+| ECS Fargate | Multi-AZ, multi-region | N/A | {status:colour=Green|title=High} | {status:colour=Green|title=Yes} | AP |
+| Cognito | Long-lived tokens + backup | {status:colour=Green|title=Strong} | {status:colour=Green|title=High} | {status:colour=Yellow|title=Partial} | CP + graceful degradation |
+| Bedrock | Cross-region fallback | N/A | {status:colour=Green|title=High} | {status:colour=Green|title=Yes} | AP |
+| Lambda + API GW | Multi-region, DLQ | N/A | {status:colour=Green|title=High} | {status:colour=Green|title=Yes} | AP |
+| CloudFront | Global CDN + WAF | {status:colour=Yellow|title=Eventual} | {status:colour=Green|title=High} | {status:colour=Green|title=Yes} | AP |
+
+----
+
+h2. Priority Matrix
+
+|| Priority || Item || Effort || Cost Delta ||
+| {status:colour=Red|title=P0} | 1.1 DynamoDB strong reads | 2 hours | +$0.50/mo |
+| {status:colour=Red|title=P0} | 1.5 CloudWatch alarms | 4 hours | +$1/mo |
+| {status:colour=Red|title=P0} | 2.5 Aurora retry pattern | 4 hours | +$3/mo |
+| {status:colour=Yellow|title=P1} | 1.2 Aurora Multi-AZ | 2 hours | +$30/mo |
+| {status:colour=Yellow|title=P1} | 1.3 ECS multi-AZ | 1 hour | $0 |
+| {status:colour=Yellow|title=P1} | 2.2 Dead Letter Queues | 4 hours | +$0.40/mo |
+| {status:colour=Yellow|title=P1} | 2.3 WAF on CloudFront | 2 hours | +$5/mo |
+| {status:colour=Blue|title=P2} | 2.1 API Gateway | 2 days | +$3/mo |
+| {status:colour=Blue|title=P3} | 3.1 DynamoDB Global Tables | 1 day | 1.5x writes |
+| {status:colour=Blue|title=P3} | 3.2 Aurora Global Database | 2 days | +$50/mo |
+| {status:colour=Blue|title=P3} | 3.4 Route 53 failover | 1 day | +$1/mo |
+| {status:colour=Purple|title=P4} | 4.1 Global Accelerator | 1 day | +$18/mo |

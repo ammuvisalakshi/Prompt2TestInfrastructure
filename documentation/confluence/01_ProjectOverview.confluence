@@ -1,0 +1,220 @@
+h1. {color:#6366f1}Prompt2Test{color} — Project Overview
+
+{tip:title=What is Prompt2Test?}
+An AI-powered test case generation and browser automation platform. QA engineers describe what they want to test in plain English — the AI agent authors a test plan, spins up a live browser, and executes it end-to-end.
+{tip}
+
+----
+
+h2. Key Metrics
+
+|| 18 || 5 || 4 || 3 || 4 || 2 || 3 || 1 || {color:#16a34a}15{color} ||
+| AWS Services | GitHub Repos | UI Screens | CodePipelines | Environments | ECR Repos | Lambda Fns | AgentCore | Days to Build |
+
+----
+
+{toc:minLevel=2|maxLevel=3}
+
+----
+
+h2. 1. End-to-End Flow
+
+{panel:borderColor=#e2e8f0|bgColor=#f8fafc}
+|| QA Engineer || -> || React UI || -> || Bedrock AgentCore || -> || AI generates plan || -> || ECS Fargate || -> || Playwright MCP || -> || Live view (noVNC) || -> || PASS / FAIL ||
+| types a prompt | | Amplify hosted | | Claude Sonnet 4.5 | | structured steps | | spins up on demand | | executes in browser | | streamed to UI | | saved to Aurora |
+{panel}
+
+----
+
+h2. 2. UI Screens — Built & Deployed
+
+{section}
+{column:width=25%}
+{panel:title=Agent|borderColor=#7c3aed|bgColor=#faf5ff}
+Pick a service, describe the test scenario in plain English. AI generates a structured test plan. Review steps, then execute with a live browser.
+
+{status:colour=Green|title=Built}
+{panel}
+{column}
+{column:width=25%}
+{panel:title=Inventory|borderColor=#2563eb|bgColor=#eff6ff}
+Browse all saved test cases by environment and service. Search semantically via pgvector. View last run result, re-run, edit, or delete.
+
+{status:colour=Green|title=Built}
+{panel}
+{column}
+{column:width=25%}
+{panel:title=Config|borderColor=#0d9488|bgColor=#f0fdfa}
+Manage services (name + URL per env), test accounts (credentials per env), and team members. All stored in DynamoDB.
+
+{status:colour=Green|title=Built}
+{panel}
+{column}
+{column:width=25%}
+{panel:title=Admin|borderColor=#ea580c|bgColor=#fff7ed}
+Create/delete users, manage Cognito groups (teams), assign users to teams. Visible only to users in the {{admin}} group.
+
+{status:colour=Green|title=Built}
+{panel}
+{column}
+{section}
+
+----
+
+h2. 3. Feature Coverage
+
+|| Feature || Description || Status ||
+| AI Test Plan Generation | QA types a natural language prompt. Claude Sonnet 4.5 generates a structured plan with actions and expected outcomes. | {status:colour=Green|title=Complete} |
+| Live Browser Automation | Playwright MCP executes test steps in a real Chromium browser. ECS Fargate task spins up on demand. | {status:colour=Green|title=Complete} |
+| Live Browser View (noVNC) | Watch the browser execute in real-time via embedded noVNC iframe. Pop-out button opens a full window. | {status:colour=Green|title=Complete} |
+| Test Replay | Re-execute a saved test case from Inventory without re-generating the plan. Uses stored replay script. | {status:colour=Green|title=Complete} |
+| Test Case Inventory | Save, edit, delete test cases. Filter by environment and service. View last run result per test case. | {status:colour=Green|title=Complete} |
+| Semantic Search | pgvector + Titan Embed Text v2 enables similarity search across test cases. | {status:colour=Green|title=Complete} |
+| Service Config Management | Add services and URLs per environment via the UI. Stored in DynamoDB, read by AI agent. | {status:colour=Green|title=Complete} |
+| Test Account Management | Store test account credentials per environment per team in DynamoDB. | {status:colour=Green|title=Complete} |
+| Multi-Team Support | Teams are Cognito groups. Each team has isolated services, accounts, and test cases. | {status:colour=Green|title=Complete} |
+| Multi-Environment | dev / qa / uat / prod. Config, accounts, and test cases scoped per environment. | {status:colour=Green|title=Complete} |
+| Admin Panel | Create/delete Cognito users, manage team groups, assign users to teams. | {status:colour=Green|title=Complete} |
+| Auth & Access Control | Cognito User Pool login. Identity Pool grants scoped IAM permissions. | {status:colour=Green|title=Complete} |
+| CI/CD — 4 Pipelines | Amplify auto-deploys UI. 3 CodePipelines for Lambda, Agent, Playwright MCP. | {status:colour=Green|title=Complete} |
+| Exploratory Mode | No service selected — agent runs in exploratory mode, navigating freely. | {status:colour=Green|title=Complete} |
+| Run Records | Every execution stored as a run record with result, summary, timestamp. | {status:colour=Green|title=Complete} |
+| Environment Promotion | Promote test cases DEV -> QA -> UAT -> PROD with \{service.KEY\} templates. | {status:colour=Green|title=Complete} |
+| Config Template References | Plan steps use \{service.KEY\} instead of hardcoded URLs. Portable across envs. | {status:colour=Green|title=Complete} |
+| Test Metrics Dashboard | Aggregate pass/fail rates, trends over time, most-run services. | {status:colour=Yellow|title=Planned} |
+| Slack / Email Notifications | Notify team on test failure or completion. | {status:colour=Yellow|title=Planned} |
+| Scheduled Test Runs | Schedule smoke tests on a cron (e.g. every deploy, nightly). | {status:colour=Yellow|title=Planned} |
+
+----
+
+h2. 4. Implementation Effort
+
+{info:title=Built in 15 days by 1 engineer using AI-assisted development (Claude Code)}
+12x faster than traditional approach (6 months with 4-5 engineers).
+{info}
+
+h3. Phase 1 — Infrastructure & AWS Setup
+
+|| Feature || What was built || Effort || Complexity ||
+| VPC + Networking | VPC, 2 public subnets, security groups for ECS + Aurora | 1 day | Low |
+| Cognito Auth + Identity Pool | User Pool, Identity Pool, Cognito Groups, IAM auth role | 3 days | Medium |
+| Aurora Serverless v2 + pgvector | Aurora PostgreSQL 16, RDS Data API, Secrets Manager, pgvector | 3 days | Medium |
+| DynamoDB Config Table | prompt2test-config table, pk/sk schema, migrated from SSM | 2 days | Low |
+| ECS Fargate Cluster + Task | ECS cluster, ARM64 task def (2vCPU/4GB), ECR repos | 2 days | Medium |
+| CDK — Full IaC | All 18 AWS services as CDK TypeScript, one-command deploy | 3 days | High |
+| *Phase 1 Subtotal* | | *14 days* | |
+
+h3. Phase 2 — Backend: Lambda + Playwright MCP
+
+|| Feature || What was built || Effort || Complexity ||
+| Lambda — testcase-writer | Python Lambda for save/update/delete test cases and run records | 2 days | Medium |
+| Lambda — testcase-reader | Python Lambda for list, fetch, semantic search via pgvector | 2 days | Medium |
+| Playwright MCP Container | Playwright + noVNC + Chromium in Docker on ECS Fargate ARM64 | 3 days | High |
+| *Phase 2 Subtotal* | | *7 days* | |
+
+h3. Phase 3 — AI Agent (Bedrock AgentCore)
+
+|| Feature || What was built || Effort || Complexity ||
+| AgentCore Container + FastAPI | Python FastAPI on port 8080, /invocations + /ping endpoints | 2 days | Medium |
+| Plan mode | Strands SDK agent generates conversational test plan | 2 days | Medium |
+| Plan Scenario mode | Structured JSON output, service context injection | 3 days | High |
+| Automate mode + ECS session | Spin up ECS task, connect to Playwright MCP, stream events | 3 days | Very High |
+| Replay mode | Re-run saved test without re-generating plan | 1 day | Low |
+| get_service_config tool | Strands @tool that reads service config from DynamoDB | 1 day | Low |
+| *Phase 3 Subtotal* | | *12 days* | |
+
+h3. Phase 4 — React Frontend (4 Screens)
+
+|| Feature || What was built || Effort || Complexity ||
+| Auth + Layout + Routing | Cognito login, JWT group parsing, env switcher, team-aware routing | 2 days | Medium |
+| Agent Page | Service picker, chat panel, step table, live browser panel, streaming | 5 days | Very High |
+| Inventory Page | Test case list/filter, DynamoDB service loader, run/replay/delete | 2 days | Medium |
+| Config Page (DynamoDB) | Services + accounts CRUD per team per env | 3 days | High |
+| Admin Page | User create/delete, Cognito group management | 2 days | Medium |
+| *Phase 4 Subtotal* | | *14 days* | |
+
+h3. Phase 5 — CI/CD + Documentation
+
+|| Feature || What was built || Effort || Complexity ||
+| 3 CodePipelines | Lambda, Agent, Playwright MCP — GitHub -> CodeBuild -> ECR | 2 days | Medium |
+| Amplify CI/CD | Amplify hosting, auto-deploy on push, CloudFront CDN | 1 day | Low |
+| Architecture Docs | Architecture diagram, ADRs, Deployment Guide | 2 days | Low |
+| Handover & Overview | CI/CD Handover Guide, Project Overview page | 1 day | Low |
+| *Phase 5 Subtotal* | | *6 days* | |
+
+----
+
+h2. 5. AI Acceleration Comparison
+
+|| Phase || No AI (~6 months, 4-5 team) || Moderate AI (~2 months, 2 team) || {color:#16a34a}Aggressive AI (15 days, 1 engineer){color} ||
+| Infrastructure + AWS CDK | 4-5 weeks | 2-3 weeks | *3 days* |
+| Backend — Lambda + Playwright | 3-4 weeks | 1-2 weeks | *2 days* |
+| AI Agent — AgentCore + Strands | 6-8 weeks | 3-4 weeks | *4 days* |
+| React Frontend — 4 Screens | 5-6 weeks | 2-3 weeks | *5 days* |
+| CI/CD + Documentation | 2-3 weeks | 1 week | *1 day* |
+| *Total* | *~6 months* | *~2 months* | {color:#16a34a}*15 days*{color} |
+
+{note:title=12x Faster}
+6 months -> 15 days. Same production-ready output, fraction of the calendar time.
+{note}
+
+----
+
+h2. 6. AWS Services (18)
+
+{section}
+{column:width=33%}
+h3. Networking & Auth
+* VPC + 2 Public Subnets
+* Cognito User Pool
+* Cognito Identity Pool
+* IAM Roles
+* Secrets Manager
+* CloudWatch
+{column}
+{column:width=33%}
+h3. Compute & AI
+* Bedrock AgentCore
+* Claude Sonnet 4.5
+* ECS Fargate
+* ECR (2 repos)
+* Lambda (3 functions)
+* Amplify + CloudFront
+{column}
+{column:width=33%}
+h3. Data & CI/CD
+* Aurora Serverless v2
+* DynamoDB
+* RDS Data API
+* CodePipeline (3)
+* CodeBuild
+* S3 + KMS
+{column}
+{section}
+
+----
+
+h2. 7. GitHub Repositories
+
+|| Repo || Language || Deploy ||
+| Prompt2TestUI | React + TypeScript | Amplify auto-deploy on push |
+| Prompt2TestAgent | Python + FastAPI | CodePipeline -> ECR -> AgentCore |
+| Prompt2TestLambda | Python | CodePipeline -> Lambda update |
+| Prompt2TestPlaywright | Docker + Node.js | CodePipeline -> ECR -> ECS |
+| Prompt2TestInfrastructure | CDK TypeScript | {{cdk deploy}} |
+
+----
+
+h2. 8. Data Model
+
+h3. Aurora PostgreSQL
+
+|| Table || Columns ||
+| *test_cases* | id, env, service, title, description, scenario, steps (JSON), plan_steps (JSON), tags, created_by, created_at, team, last_result, last_run_at, embedding vector(1024), promoted_to (TEXT[]), promoted_from_id, promoted_from_env, promoted_by, promoted_at |
+| *run_records* | id, test_case_id, env, result (PASS/FAIL), summary, run_by, run_at, team |
+
+h3. DynamoDB
+
+|| Pattern || pk || sk || Example ||
+| Service config | SERVICE#\{team\}#\{env\} | \{service\}#\{key\} | pk=SERVICE#teama#dev, sk=bestbuy#BESTBUY_USA_URL |
+| Test accounts | ACCOUNT#\{env\} | \{account_id\} | pk=ACCOUNT#dev, sk=qa-user-1 |

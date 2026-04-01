@@ -1,0 +1,241 @@
+h1. {color:#6366f1}Prompt2Test{color} — Phase 2 Roadmap
+
+{tip:title=Feature Enhancements}
+7 features to evolve Prompt2Test from a dev tool into a production-grade QA automation platform. Covers environment promotion, smart retries, suite execution, reporting, and VPN-friendly live browser.
+{tip}
+
+----
+
+{toc:minLevel=2|maxLevel=3}
+
+----
+
+h2. Summary
+
+|| # || Feature || Priority || Effort || Impact ||
+| 1 | *Environment Promotion* — DEV -> QA -> UAT -> PROD | {status:colour=Green|title=SHIPPED} | {status:colour=Green|title=Done} | Trust model for higher environments |
+| 2 | *Database Evaluation* — Aurora vs DynamoDB vs Hybrid | {status:colour=Yellow|title=P2} | 2-3 days | Cost, scale, and consistency optimization |
+| 3 | *Failure Analysis & Logs* — screenshots, LLM root cause | {status:colour=Red|title=P0} | 5-7 days | Reduces debug time from 30 min to 2 min |
+| 4 | *Report Generation* — PDF/HTML reports, trends | {status:colour=Yellow|title=P1} | 4-5 days | Stakeholder visibility, audit trail |
+| 5 | *Tagging & Test Suites* — regression, smoke, deployment | {status:colour=Red|title=P0} | 3-4 days | Organize tests at scale, CI/CD integration |
+| 6 | *Headless Suite + Smart Retry* — LLM retry, email alerts | {status:colour=Red|title=P0} | 7-10 days | CI/CD-grade automation platform |
+| 7 | *noVNC via ALB* — HTTPS/443 for VPN compatibility | {status:colour=Yellow|title=P1} | 2.5 days | Corporate VPN users can see live browser |
+
+----
+
+h2. Feature 1: Environment Promotion {status:colour=Green|title=SHIPPED}
+
+{info:title=Status: Implemented}
+This feature has been built and deployed. Test cases can be promoted from DEV -> QA -> UAT -> PROD with config template references.
+{info}
+
+h3. Promotion Flow
+
+{panel:borderColor=#7c3aed|bgColor=#faf5ff}
+|| DEV || -> || QA || -> || UAT || -> || PROD ||
+| AI authors + tests | | deterministic replay | | deterministic replay | | deterministic replay |
+{panel}
+
+h3. What Was Built
+
+|| # || Item || Status ||
+| 1 | *\{service.KEY\} Config References* — Agent generates plan steps with template references instead of hardcoded URLs. Post-processed automatically. | {status:colour=Green|title=Done} |
+| 2 | *promote_test_case Lambda Action* — Copies test case to target env, strips resolved values, promotes config keys with empty values. | {status:colour=Green|title=Done} |
+| 3 | *Sequential Promotion* — DEV -> QA only, QA -> UAT only, UAT -> PROD only. No skipping. | {status:colour=Green|title=Done} |
+| 4 | *Pipeline Badge on Inventory* — Inline D -> Q -> U -> P badge on each test case. Clickable orange circle to promote. | {status:colour=Green|title=Done} |
+| 5 | *Config Key Promotion* — Service config keys copied to target env DynamoDB with empty values for admin to fill. | {status:colour=Green|title=Done} |
+| 6 | *Replay Script Templatization* — Frontend replaces config values with \{service.KEY\} before saving replay script. | {status:colour=Yellow|title=In Progress} |
+| 7 | *Full Service Config Loading* — Agent page loads all configs from DynamoDB at startup, passes to agent. | {status:colour=Green|title=Done} |
+
+h3. Data Model Changes
+
+|| Field || Type || Description || Status ||
+| promoted_to | TEXT[] | Array of envs promoted to | {status:colour=Green|title=Added} |
+| promoted_from_env | TEXT | Source environment | {status:colour=Green|title=Added} |
+| promoted_from_id | TEXT | Source test case ID | {status:colour=Green|title=Added} |
+| promoted_by | TEXT | User who approved | {status:colour=Green|title=Added} |
+| promoted_at | TIMESTAMPTZ | When promotion happened | {status:colour=Green|title=Added} |
+
+----
+
+h2. Feature 2: Database Evaluation
+
+|| Criteria || Aurora Serverless v2 || DynamoDB || Hybrid (Current) ||
+| Cold start | {status:colour=Red|title=25-30s} | {status:colour=Green|title=0ms} | Depends on store |
+| Cost (idle) | $0.50/mo | $0/mo | ~$0.25/mo |
+| Semantic search | {status:colour=Green|title=Native pgvector} | {status:colour=Red|title=Not supported} | Aurora for search |
+| Complex queries | {status:colour=Green|title=Full SQL} | {status:colour=Yellow|title=Limited} | SQL for reports |
+| Multi-region | Global DB (~$50/mo) | {status:colour=Green|title=Global Tables} | Mix of both |
+
+{note:title=Recommendation}
+*Keep Hybrid — Optimize Aurora.* Fix cold start with CloudWatch canary during business hours.
+{note}
+
+----
+
+h2. Feature 3: Failure Analysis & Logs
+
+h3. Capture on Failure
+
+{section}
+{column:width=33%}
+{panel:title=Screenshot|borderColor=#dc2626|bgColor=#fff1f2}
+Full-page screenshot at failure moment. Stored in S3. Displayed inline.
+{panel}
+{column}
+{column:width=33%}
+{panel:title=DOM Snapshot|borderColor=#dc2626|bgColor=#fff1f2}
+Page HTML at failure time. Inspect elements without re-running.
+{panel}
+{column}
+{column:width=33%}
+{panel:title=Console & Network|borderColor=#dc2626|bgColor=#fff1f2}
+Browser console + failed HTTP requests. Shows 404s, 500s, JS errors.
+{panel}
+{column}
+{section}
+
+h3. LLM Root Cause Analysis
+
+{warning:title=On Failure — Automatic}
+Send to Claude: failed step + error + screenshot (multimodal) + console errors + previous steps.
+Claude returns: (a) probable root cause, (b) test issue vs app bug, (c) suggested fix.
+{warning}
+
+h3. New Fields
+
+|| Field || Table || Description ||
+| screenshot_s3_key | run_records | S3 key to failure screenshot |
+| dom_snapshot_s3_key | run_records | S3 key to HTML DOM |
+| console_logs | run_records | JSON array of console messages |
+| network_errors | run_records | JSON array of failed requests |
+| failure_analysis | run_records | LLM root cause text |
+| failed_step_index | run_records | Which step failed |
+
+----
+
+h2. Feature 4: Report Generation
+
+{section}
+{column:width=33%}
+{panel:title=Single Run Report|borderColor=#2563eb|bgColor=#eff6ff}
+After each execution: test details, step results, screenshots, execution time, LLM analysis.
+{panel}
+{column}
+{column:width=33%}
+{panel:title=Suite Run Report|borderColor=#2563eb|bgColor=#eff6ff}
+After suite runs: all results, pass/fail counts, failed summaries, comparison with previous.
+{panel}
+{column}
+{column:width=33%}
+{panel:title=Trend Report|borderColor=#2563eb|bgColor=#eff6ff}
+Weekly/monthly: pass rate trends, flaky tests, most-failed services, execution time trends.
+{panel}
+{column}
+{section}
+
+*Implementation:* New {{report-generator}} Lambda, Aurora SQL aggregation, PDF via Puppeteer, S3 storage, new Reports tab in UI.
+
+----
+
+h2. Feature 5: Tagging & Test Suites
+
+h3. Tag Types
+
+|| Type || Examples || Purpose ||
+| Suite | regression, smoke, deployment, sanity, e2e | Batch execution |
+| Priority | P1-critical, P2-high, P3-medium, P4-low | Execution order |
+| Feature | login, checkout, payments, profile | Map to product |
+| Custom | Free-form team-defined | Flexible org |
+
+h3. Implementation
+
+* {{tags TEXT[]}} column with GIN index: {{WHERE tags @> ARRAY['regression']}}
+* Tag chips on each test case in Inventory
+* *"Run Suite"* button — select a tag, queues all matching tests
+* New {{suite_runs}} table: suite_id, tag, env, team, total, passed, failed, timestamps
+
+----
+
+h2. Feature 6: Headless Suite Execution + Smart Retry
+
+h3. Execution Flow
+
+{panel:borderColor=#16a34a|bgColor=#f0fdf4}
+|| Trigger Suite || -> || Queue Tests || -> || Headless Replay || -> || Results || -> || Failures || -> || LLM Analyze || -> || Smart Retry || -> || Email ||
+| tag: regression | | 12 tests | | no noVNC, no Xvfb | | 10 PASS | | 2 FAIL | | root cause | | adjusted approach | | if still fails |
+{panel}
+
+h3. Why Headless?
+
+* *2-3x faster* — no Xvfb, no noVNC overhead
+* *50% less memory* — 1 vCPU / 2GB (from 2 vCPU / 4GB)
+* Enables *parallel execution* across multiple ECS tasks
+
+h3. Smart Retry
+
+|| Step || Action ||
+| 1. Capture | Screenshot + DOM + console logs + network errors |
+| 2. Analyze | Claude: flaky test or real bug? |
+| 3. Retry | If flaky: retry with added waits / alternate selectors |
+| 4. Escalate | If retry fails: email via SES with screenshot + analysis + link |
+
+{note:title=Key Constraint}
+Smart retry modifies *how* to interact (waits, selectors), never *what* to test. Steps stay the same.
+{note}
+
+h3. Parallel Architecture
+
+{panel}
+|| UI: Run Suite || -> || Lambda Orchestrator || -> || SQS Queue || -> || N x ECS Workers || -> || Aurora || -> || LLM || -> || SES ||
+| tag + env | | query by tag | | 1 msg/test | | headless replay | | results | | retry failures | | email on fail |
+{panel}
+
+h3. New AWS Services
+
+|| Service || Purpose || Cost ||
+| SQS | Test distribution queue | ~$0.40/million msgs |
+| SES | Email notifications | ~$0.10/1000 emails |
+| S3 | Screenshots, reports | ~$0.023/GB/mo |
+| Step Functions | Orchestration (optional) | ~$0.025/1000 transitions |
+
+----
+
+h2. Feature 7: noVNC via ALB (VPN-Friendly)
+
+h3. The Problem
+
+|| Check || Current {color:#dc2626}(Blocked){color} || After ALB {color:#16a34a}(Allowed){color} ||
+| Port | 6080 (non-standard) | 443 (standard HTTPS) |
+| Destination | Raw IP (54.23.45.67) | Domain (novnc.prompt2test.com) |
+| Encryption | ws:// unencrypted | wss:// TLS encrypted |
+| Protocol | Unknown WebSocket | HTTPS WebSocket upgrade |
+
+h3. Solution
+
+{panel:borderColor=#1d4ed8|bgColor=#eff6ff}
+|| Browser || -> || Route 53 || -> || ALB || -> || ECS Task || -> || noVNC ||
+| wss:// port 443 | | novnc.prompt2test.com | | HTTPS + ACM cert | | private IP :6080 | | live stream |
+{panel}
+
+h3. Implementation & Cost
+
+|| Task || Effort ||
+| CDK: ALB + cert + DNS + target group | 1 day |
+| Agent: register/deregister targets | 0.5 day |
+| Frontend: update noVNC URL | 0.5 day |
+| Testing | 0.5 day |
+| *Total* | *~2.5 days, ~$20/mo* |
+
+----
+
+h2. Implementation Timeline
+
+|| Order || Feature || Effort || Depends On ||
+| {status:colour=Green|title=Done} | Environment Promotion | Done | — |
+| Week 1 | Tagging & Suites | 3-4 days | None |
+| Week 2 | Failure Analysis | 5-7 days | None |
+| Week 3-4 | Headless + Smart Retry | 7-10 days | Tagging + Failure |
+| Week 4-5 | Reports | 4-5 days | Tagging + Failure |
+| Week 5 | noVNC via ALB | 2.5 days | None |
+| Parallel | Database Evaluation | 2-3 days | None |

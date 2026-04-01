@@ -1,0 +1,89 @@
+h1. {color:#6366f1}Prompt2Test{color} — Documentation Hub
+
+{tip:title=AI-Powered Test Automation Platform}
+QA engineers describe what they want to test in plain English — the AI agent authors a test plan, spins up a live browser, and executes it end-to-end. Built on AWS in *15 days* by *1 engineer*.
+{tip}
+
+----
+
+h2. Key Metrics
+
+|| 18 || 5 || 4 || 3 || 8 || 15 ||
+| AWS Services | GitHub Repos | UI Screens | CodePipelines | Doc Pages | Days to Build |
+
+----
+
+h2. Recommended Reading Order
+
+||  || Page || What You'll Learn || Best For ||
+| {status:colour=Blue|title=1} | [Project Overview|01_ProjectOverview] | What it does, features, build timeline, tech stack | Stakeholders, new team members |
+| {status:colour=Green|title=2} | [Architecture Diagram|02_ArchitectureDiagram] | Visual SVG system map with layers and data flows | Visual learners, presentations |
+| {status:colour=Purple|title=3} | [Architecture Details|03_ArchitectureDetails] | Deep specs — services, config, IAM, cost, timing | Engineers, debugging |
+| {status:colour=Yellow|title=4} | [Architecture Decisions|04_ArchitectureDecisions] | ADRs — why DynamoDB, Cognito Groups, Fargate, etc. | Architects, tech leads |
+| {status:colour=Green|title=5} | [Deployment Guide|05_DeploymentGuide] | Step-by-step deploy to new AWS account | DevOps, initial setup |
+| {status:colour=Red|title=6} | [CI/CD & Handover|06_CICDHandover] | Pipelines, day-to-day ops, troubleshooting | DevOps, on-call |
+| {status:colour=Red|title=7} | [CAP Design Improvements|07_CAPDesign] | HA, consistency, partition tolerance — 4-tier plan | Architects, SRE |
+| {status:colour=Green|title=8} | [Phase 2 Roadmap|08_Phase2Roadmap] | 7 features — promotion, retry, reports, ALB | Product owners, sprint planning |
+
+----
+
+h2. Tech Stack
+
+{section}
+{column:width=25%}
+h3. {color:#6366f1}Frontend{color}
+* React 18
+* TypeScript
+* Vite
+* AWS Amplify
+* Tailwind-style inline
+{column}
+{column:width=25%}
+h3. {color:#f97316}AI Agent{color}
+* Python
+* Strands SDK
+* FastAPI
+* Claude Sonnet 4.5
+* Bedrock AgentCore
+{column}
+{column:width=25%}
+h3. {color:#14b8a6}Backend / Data{color}
+* Aurora Serverless v2
+* PostgreSQL + pgvector
+* DynamoDB
+* RDS Data API
+* Lambda (Python)
+{column}
+{column:width=25%}
+h3. {color:#22c55e}Infrastructure{color}
+* CDK (TypeScript)
+* ECS Fargate
+* CodePipeline
+* Docker
+* CloudFront
+{column}
+{section}
+
+----
+
+h2. Content Map
+
+||Topic||Overview||Diagram||Architecture||Decisions||Deploy||CAP||Phase 2||
+|What the platform does| (/) | | | | | | |
+|UI screens & features| (/) | | | | | | |
+|Build timeline & effort| (/) | | | | | | |
+|Visual architecture map| | (/) | | | | | |
+|AWS services (detailed)| | | (/) | | | (/) Gaps| |
+|Cognito / Auth flow| | | (/) | | | | |
+|AgentCore & LLM config| | | (/) | | | | |
+|Cost & scaling model| | | (/) | | | (/) Deltas| |
+|Architecture decisions| | | | (/) | | | |
+|Deployment steps| | | | | (/) | | |
+|CI/CD pipelines| | | | | (/) | | |
+|CAP assessment & gaps| | | | | | (/) | |
+|HA / multi-region| | | | | | (/) | |
+|Environment promotion| | | | | | | (/) |
+|Failure analysis & logs| | | | | | | (/) |
+|Tagging & suites| | | | | | | (/) |
+|Headless + smart retry| | | | | | | (/) |
+|noVNC via ALB| | | | | | | (/) |
