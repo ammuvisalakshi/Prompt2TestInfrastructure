@@ -1,0 +1,135 @@
+h1. {color:#6366f1}Prompt2Test{color} — Architecture Decision Records
+
+{tip:title=Why We Chose What We Chose}
+Every major technical decision with context, alternatives considered, and rationale. These ADRs document the thinking behind the architecture.
+{tip}
+
+----
+
+{toc:minLevel=2|maxLevel=3}
+
+----
+
+h2. ADR-001: DynamoDB for Service Config (Not SSM)
+
+|| || Details ||
+| *Context* | Need to store service URLs, API keys, and config per team per environment. SSM Parameter Store was used initially. |
+| *Decision* | Migrate to DynamoDB with pk/sk pattern: {{SERVICE#\{team\}#\{env\}}} / {{service#key}} |
+| *Alternatives* | SSM Parameter Store, S3 JSON files, Aurora table |
+| *Why* | Multi-team scoping with pk/sk is natural. Browser-direct access via Cognito Identity Pool — no Lambda proxy needed. Instant reads, no cold start. |
+| *Trade-off* | No built-in encryption-at-rest for values (use client-side encryption if sensitive). DynamoDB is eventually consistent by default (use ConsistentRead for agent). |
+
+----
+
+h2. ADR-002: Cognito Groups for Multi-Team
+
+|| || Details ||
+| *Context* | Need to isolate services, accounts, and test cases per team. |
+| *Decision* | Use Cognito Groups. Each team = one Cognito group. Team resolved from {{cognito:groups}} JWT claim at login. |
+| *Alternatives* | Custom RBAC table, separate User Pools per team, IAM policies per team |
+| *Why* | Zero code for team isolation. JWT carries group claim, all services scope data by team automatically. Admin group controls who sees the Admin page. |
+| *Trade-off* | User can only belong to one team (first group in JWT array is used). No hierarchical teams. |
+
+----
+
+h2. ADR-003: ECS Fargate On-Demand (Not Warm Pool)
+
+|| || Details ||
+| *Context* | Playwright + Chromium needs a container runtime. Each test session needs an isolated browser. |
+| *Decision* | ECS Fargate tasks launched on-demand per test session. Zero always-on tasks. |
+| *Alternatives* | 3-task warm pool (was $216/mo), EC2 instances, Lambda with Chromium layer |
+| *Why* | Zero idle cost ($0 vs $216/mo). ~60s cold start is acceptable for test automation. Task isolation — each user gets their own browser. |
+| *Trade-off* | 60s cold start on first test. No instant browser availability. |
+
+----
+
+h2. ADR-004: Bedrock AgentCore (Not Self-Hosted)
+
+|| || Details ||
+| *Context* | Need to run the AI agent (Python + Strands SDK) somewhere. |
+| *Decision* | Amazon Bedrock AgentCore — managed container runtime for AI agents. |
+| *Alternatives* | Self-hosted on ECS/EKS, Lambda + Bedrock direct, App Runner |
+| *Why* | Managed scaling, versioning, and monitoring. No ECS/EKS cluster management for the agent. Built-in /invocations + /ping protocol. Automatic container lifecycle. |
+| *Trade-off* | Less control over networking. Must conform to AgentCore protocol (POST /invocations). |
+
+----
+
+h2. ADR-005: Aurora + pgvector (Not OpenSearch)
+
+|| || Details ||
+| *Context* | Need both relational data (test cases, run records) AND vector search (semantic similarity). |
+| *Decision* | Aurora Serverless v2 with pgvector extension. Single database for both. |
+| *Alternatives* | OpenSearch, Pinecone, separate vector DB, DynamoDB + OpenSearch |
+| *Why* | Single database for relational + vector. No extra service to manage. SQL aggregation for reports. RDS Data API for serverless access (no VPC for Lambda). |
+| *Trade-off* | Auto-pause causes 25-30s cold start. pgvector performance is good but not as fast as dedicated vector DBs at very large scale. |
+
+----
+
+h2. ADR-006: CDK Infrastructure as Code
+
+|| || Details ||
+| *Context* | 18 AWS services need to be provisioned and configured. |
+| *Decision* | AWS CDK in TypeScript. All resources defined in code. One-command deploy. |
+| *Alternatives* | AWS Console (manual), CloudFormation YAML, Terraform, Pulumi |
+| *Why* | TypeScript gives type safety and IDE support. CDK generates CloudFormation under the hood. Reproducible across accounts. Single {{cdk deploy}} creates everything. |
+| *Trade-off* | CDK learning curve. Generated CloudFormation can be hard to debug. |
+
+----
+
+h2. ADR-007: Config Template References \{service.KEY\}
+
+|| || Details ||
+| *Context* | Test cases authored in DEV have hardcoded DEV URLs. Cannot be promoted to QA/UAT/PROD as-is. |
+| *Decision* | Plan steps use \{service.KEY\} template references instead of literal values. Post-processed after LLM generates steps. Resolved at execution time per environment. |
+| *Alternatives* | Re-automate in each environment, manual URL replacement, environment variables in test steps |
+| *Why* | Same test case works in any environment. Just like code — written once, config changes per env. No re-automation needed. |
+| *Trade-off* | LLM doesn't naturally generate templates — requires post-processing. Config keys must match exactly. |
+
+----
+
+h2. ADR-008: Sequential Environment Promotion
+
+|| || Details ||
+| *Context* | Test cases should flow from DEV -> QA -> UAT -> PROD. No skipping. |
+| *Decision* | Promote action only allows next sequential env. DEV->QA, QA->UAT, UAT->PROD. Pipeline badge visualizes progress. |
+| *Alternatives* | Promote to any env, promote all at once, manual copy |
+| *Why* | Enforces quality gates. Test must pass in QA before going to UAT. Creates audit trail (promoted_by, promoted_at). |
+| *Trade-off* | Cannot skip environments for hotfixes. Must promote through each step. |
+
+----
+
+h2. ADR-009: Replay Script as Deterministic Execution
+
+|| || Details ||
+| *Context* | In higher environments (QA/UAT/PROD), we need repeatable, predictable test execution — not AI re-interpretation. |
+| *Decision* | Record Playwright MCP calls during DEV automation. Replay exact calls in other environments. No LLM involved during replay. |
+| *Alternatives* | Re-run AI automate in each env, Selenium scripts, Cucumber/Gherkin |
+| *Why* | Deterministic — same steps every time. Fast — no LLM token cost during replay. Predictable — no AI "creativity" in production environments. |
+| *Trade-off* | If UI changes, replay may break (same as traditional test scripts). Requires re-automation from DEV to fix. |
+
+----
+
+h2. Concurrent User Capacity
+
+|| Component || Limit || Bottleneck ||
+| Cognito | 1000+ concurrent logins | Not a concern |
+| Amplify/CloudFront | Unlimited (CDN) | Not a concern |
+| Bedrock AgentCore | ~20 concurrent invocations | Default account limit |
+| ECS Fargate | 20+ concurrent tasks | Account task limit |
+| Aurora | 64 ACU max | More than enough |
+| Lambda | 1000 concurrent (default) | Not a concern |
+| *Practical limit* | *~20 concurrent test sessions* | ECS Fargate task limit |
+
+----
+
+h2. Monthly Cost Model
+
+|| Tier || Usage || Estimated Cost ||
+| *Idle* | No tests running | ~$0.50/mo (Aurora auto-paused) |
+| *Light* | 5-10 tests/day | ~$15-25/mo |
+| *Medium* | 20-30 tests/day | ~$30-50/mo |
+| *Heavy* | 50+ tests/day | ~$50-70/mo |
+
+{note:title=Cost Optimization}
+Aurora auto-pause is the biggest cost saver. Without it, Aurora alone would cost ~$30/mo. With warm pool ECS tasks, add $216/mo. Current architecture minimizes idle cost to ~$0.50/mo.
+{note}

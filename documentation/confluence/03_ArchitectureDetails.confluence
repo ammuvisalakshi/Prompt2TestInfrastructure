@@ -1,0 +1,259 @@
+h1. {color:#6366f1}Prompt2Test{color} — Architecture Details
+
+{tip:title=Deep Technical Specifications}
+The engineer's manual. Every AWS service with exact specs, config, IAM permissions, cost estimates, and timing metrics.
+{tip}
+
+----
+
+{toc:minLevel=2|maxLevel=3}
+
+----
+
+h2. AWS Services Inventory (18 Services)
+
+h3. Networking
+
+|| Service || Details ||
+| *VPC* | 2 public subnets, Internet Gateway |
+| *Security Group* | Controls ECS Fargate inbound/outbound |
+
+h3. Auth & Identity
+
+|| Service || Details ||
+| *Cognito User Pool* | {{prompt2test-users}} — login, passwords, sessions |
+| *Cognito Groups* | Each team = one group; resolved from {{cognito:groups}} JWT claim |
+| *Identity Pool* | Maps users to IAM roles for SDK calls |
+| *Cognito Auth Role (IAM)* | Permissions the React UI gets after login |
+
+h3. Data Layer
+
+|| Service || Details ||
+| *Aurora Serverless v2* | {{prompt2test-vectors}} — PostgreSQL 16 + pgvector, auto-pauses when idle |
+| *RDS Data API* | Lambda calls Aurora without a VPC connection |
+| *Secrets Manager* | {{prompt2test/aurora/credentials}} — Aurora password |
+
+h3. Backend Logic
+
+|| Service || Details ||
+| *p2t-testcase-writer* | Lambda — saves, updates, deletes test cases & run records, promote action |
+| *p2t-testcase-reader* | Lambda — lists, fetches, semantic search via pgvector |
+| *CDK Custom Resource Lambda* | One-time DB schema init on first deploy |
+
+h3. AI & Machine Learning
+
+|| Service || Details ||
+| *Claude Sonnet 4.5* | Powers the AI agent (test case generation) |
+| *Titan Embed Text v2* | Generates vector embeddings for semantic search |
+| *AgentCore* | {{Prompt2TestAgent}} — runs agent container on demand, status: READY |
+
+h3. Browser Automation
+
+|| Service || Details ||
+| *ECS Fargate Cluster* | {{prompt2test-playwright-cluster}} — on-demand per test run, ARM64 2vCPU/4GB |
+| *ECS Task Definition* | Pulls latest image from ECR on each run |
+| *ECR* (playwright) | {{prompt2test-playwright-mcp}} — Playwright + noVNC Docker image |
+| *ECR* (agent) | {{prompt2test-agent}} — AI agent Docker image |
+
+h3. UI Hosting
+
+|| Service || Details ||
+| *Amplify Hosting* | {{Prompt2TestUI}} — serves React app via CloudFront CDN |
+| *Auto-deploy* | Push to {{master}} -> Amplify rebuilds automatically |
+
+h3. CI/CD
+
+|| Service || Details ||
+| *CodePipeline* (x3) | Lambda, Agent, Playwright MCP pipelines |
+| *CodeBuild* | Builds Docker images and Lambda packages |
+| *S3 + KMS* | Pipeline artifact storage |
+
+h3. Config & Observability
+
+|| Service || Details ||
+| *SSM Parameter Store* | ECS infra config (cluster ARN, task def, subnets, SG) |
+| *DynamoDB* | {{prompt2test-config}} — service URLs, test accounts per team/env |
+| *CloudWatch* | Logs for Lambda, ECS, AgentCore |
+| *CloudFormation* | CDK-generated stacks |
+| *IAM* | Roles for Lambda, ECS, Cognito, AgentCore |
+
+----
+
+h2. Users & Frontend
+
+{panel:title=Audience|borderColor=#6366f1|bgColor=#eef2ff}
+* *5 teams* (~20 concurrent users)
+* Hosted on *Amplify* behind CloudFront CDN
+* Auth: *Cognito User Pool* login -> JWT -> Identity Pool -> scoped IAM role
+* Team resolved from {{cognito:groups}} claim at login
+* 4 environments: dev, qa, uat, prod (switcher in sidebar)
+{panel}
+
+----
+
+h2. Agent Backend (Bedrock AgentCore)
+
+|| Property || Value ||
+| Agent Runtime ID | {{Prompt2TestAgent-YTVbD4GrTi}} |
+| Container | {{prompt2test-agent:latest}} on ECR |
+| Runtime | Python + FastAPI on port 8080 |
+| LLM | Claude Sonnet 4.5 ({{us.anthropic.claude-sonnet-4-5-20250929-v1:0}}) |
+| Framework | AWS Strands SDK |
+| Network | PUBLIC mode |
+
+h3. Agent Modes
+
+|| Mode || Description || LLM? || Playwright? ||
+| *plan* | Conversational test plan generation | (/) Yes | (x) No |
+| *plan_scenario* | Structured steps with \{service.KEY\} templates + config enrichment | (/) Yes | (x) No |
+| *start_session* | Spin up ECS Fargate browser task, return noVNC URL | (x) No | (/) Task starts |
+| *automate* | Execute plan steps via Playwright MCP, record replay script | (/) Yes | (/) Yes |
+| *replay* | Deterministic re-execution of saved replay script | (x) No | (/) Yes |
+| *stop_session* | Stop ECS task, cleanup | (x) No | (/) Task stops |
+
+----
+
+h2. Data Layer
+
+h3. Lambda Functions
+
+|| Function || Purpose || Runtime || Calls ||
+| {{p2t-testcase-writer}} | Save/update/delete test cases, run records, promote test cases | Python 3.12 | RDS Data API, DynamoDB, Bedrock (embeddings) |
+| {{p2t-testcase-reader}} | List, fetch, semantic search, update replay scripts | Python 3.12 | RDS Data API, Bedrock (embeddings) |
+
+h3. Aurora Tables
+
+*test_cases:*
+|| Column || Type || Notes ||
+| id | TEXT PK | Custom ID (e.g., TC-A1GZGR) |
+| env | TEXT | dev, qa, uat, prod |
+| service | TEXT | Service name |
+| title | TEXT | One-line description |
+| description | TEXT | Full scenario text |
+| scenario | TEXT | Raw agent response |
+| steps | JSON | Automated steps with playwright_calls |
+| plan_steps | JSON | Structured plan with \{service.KEY\} templates |
+| tags | TEXT[] | Tagging (future) |
+| created_by | TEXT | User who created |
+| team | TEXT | Team name (Cognito group) |
+| embedding | vector(1024) | Titan Embed Text v2 for semantic search |
+| last_result | TEXT | PASS / FAIL |
+| last_run_at | TIMESTAMPTZ | Last execution time |
+| promoted_to | TEXT[] | Array of envs promoted to |
+| promoted_from_id | TEXT | Source test case ID |
+| promoted_from_env | TEXT | Source environment |
+| promoted_by | TEXT | Who promoted |
+| promoted_at | TIMESTAMPTZ | When promoted |
+
+*run_records:*
+|| Column || Type || Notes ||
+| id | TEXT PK | Auto-generated |
+| test_case_id | TEXT FK | Links to test_cases.id |
+| env | TEXT | Environment |
+| result | TEXT | PASS or FAIL |
+| summary | TEXT | Execution summary |
+| run_by | TEXT | User who ran |
+| run_at | TIMESTAMPTZ | Auto-set |
+| team | TEXT | Team name |
+
+----
+
+h2. Session Resolution & Infrastructure Configuration
+
+h3. SSM Parameter Store
+
+|| Parameter || Value || Purpose ||
+| /prompt2test/ecs/cluster-arn | ECS cluster ARN | Agent reads at session start |
+| /prompt2test/ecs/task-definition | Task definition ARN | RunTask call |
+| /prompt2test/ecs/subnets | Comma-separated subnet IDs | Task networking |
+| /prompt2test/ecs/security-group | Security group ID | Task networking |
+
+h3. DynamoDB Config Table
+
+|| Pattern || pk || sk || Example ||
+| Service config | SERVICE#\{team\}#\{env\} | \{service\}#\{key\} | SERVICE#teama#dev / bestbuy#BESTBUY_USA_URL |
+| Test accounts | ACCOUNT#\{env\} | \{account_id\} | ACCOUNT#dev / qa-user-1 |
+
+h3. On-Demand Session Flow (9 Steps)
+
+|| Step || What Happens ||
+| 1 | User clicks Run Test / Automate |
+| 2 | Frontend calls agent {{start_session}} |
+| 3 | Agent reads SSM params (cluster, task def, subnets, SG) |
+| 4 | Agent calls {{ecs.RunTask()}} — launches Fargate task |
+| 5 | Task starts: Chromium + Xvfb + noVNC + Playwright MCP server |
+| 6 | Agent waits for MCP endpoint to be healthy (~60s) |
+| 7 | Agent returns noVNC URL to frontend |
+| 8 | Frontend opens noVNC in new tab, calls {{automate}} or {{replay}} |
+| 9 | Agent executes steps via Playwright MCP, streams results |
+
+----
+
+h2. Playwright MCP on ECS Fargate
+
+h3. Task Lifecycle
+
+|| Phase || Duration || What Happens ||
+| Startup | ~60s | Pull image, start Xvfb, launch Chromium, start MCP server |
+| During test | 30s-5min | Playwright executes steps, noVNC streams to user |
+| Teardown | Immediate | Agent calls {{ecs.StopTask()}} — task terminates |
+
+h3. Task Isolation
+
+* 1 task per user session — no sharing
+* Each task has its own Xvfb display, Chromium instance, MCP server
+* Private IP, port 3000 (MCP) + port 6080 (noVNC)
+
+----
+
+h2. Scaling Model & Cost
+
+h3. Cost by Usage
+
+|| Scenario || Monthly Cost || Notes ||
+| *Idle* (no tests) | *~$0.50/mo* | Aurora auto-paused, zero ECS tasks |
+| Light (10 tests/day) | ~$15-25/mo | On-demand Fargate + Bedrock tokens |
+| Heavy (50+ tests/day) | ~$30-70/mo | Scales linearly with usage |
+
+h3. Key Design Choices
+
+* Zero always-on ECS tasks — spin up per test, stop after
+* Aurora auto-pause after 5 min idle — ~$0.50/mo vs $30/mo always-on
+* Bedrock pay-per-token — no reserved capacity
+* 20+ concurrent test sessions supported (Fargate scaling)
+
+----
+
+h2. End-to-End Request Flow — Timing
+
+h3. Author & Save Flow
+
+|| Step || Time ||
+| User pastes scenario | 0s |
+| Agent calls get_service_config | ~100ms |
+| Claude generates plan | 2-5s |
+| User reviews, clicks Generate Final | 2-5s |
+| Save to Aurora | 1-2s (warm) / 30-60s (cold, auto-pause resume) |
+
+h3. Execution Flow
+
+|| Step || Time ||
+| User clicks Run Test | 0s |
+| start_session: ECS RunTask | ~3s |
+| Container pull + Chromium startup | ~55s |
+| MCP server healthy | ~2s |
+| Total cold start | *~60s* |
+| Playwright executes 4-5 steps | 15-45s |
+| Results saved to Aurora | 1-2s |
+| Total execution | *~75-110s* |
+
+----
+
+h2. Repositories & CI/CD
+
+|| Repo || Contents || Deploy Method ||
+| Prompt2TestUI | React + TypeScript frontend | Amplify auto-deploy |
+| Prompt2TestAgent | Python FastAPI agent | CodePipeline -> ECR -> AgentCore |
+| Prompt2TestLambda | Python Lambda functions | CodePipeline -> Lambda update |
+| Prompt2TestPlaywright | Playwright + noVNC Docker | CodePipeline -> ECR -> ECS |
+| Prompt2TestInfrastructure | CDK TypeScript + documentation | {{cdk deploy}} |

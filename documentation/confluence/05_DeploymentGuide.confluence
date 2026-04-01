@@ -1,0 +1,190 @@
+h1. {color:#6366f1}Prompt2Test{color} — Deployment Guide
+
+{tip:title=New AWS Account Setup}
+Step-by-step guide to deploy the entire Prompt2Test platform into a new AWS account. From zero to fully running in ~2 hours.
+{tip}
+
+----
+
+{toc:minLevel=2|maxLevel=3}
+
+----
+
+h2. Prerequisites
+
+|| Requirement || Details ||
+| AWS Account | With admin access |
+| AWS CLI v2 | Configured with credentials |
+| Node.js 18+ | For CDK |
+| Python 3.12+ | For Lambda functions |
+| Docker | For building container images |
+| Git | Access to all 5 repos |
+| CDK CLI | {{npm install -g aws-cdk}} |
+
+----
+
+h2. Phase 1: Clone Repositories
+
+{code}
+mkdir ~/prompt2test && cd ~/prompt2test
+git clone https://github.com/ammuvisalakshi/Prompt2TestInfrastructure.git
+git clone https://github.com/ammuvisalakshi/Prompt2TestUI.git
+git clone https://github.com/ammuvisalakshi/Prompt2TestAgent.git
+git clone https://github.com/ammuvisalakshi/Prompt2TestLambda.git
+git clone https://github.com/ammuvisalakshi/Prompt2TestPlaywright.git
+{code}
+
+----
+
+h2. Phase 2: Deploy CDK Stack
+
+{code}
+cd Prompt2TestInfrastructure
+npm install
+cdk bootstrap
+cdk deploy --all
+{code}
+
+{info:title=What CDK Creates}
+VPC, Cognito (User Pool + Identity Pool), Aurora Serverless v2, DynamoDB table, ECS Fargate cluster, ECR repos, Lambda functions, SSM parameters, IAM roles, CodePipelines, Amplify app — all 18 services.
+{info}
+
+h3. CDK Outputs to Note
+
+|| Output || Use ||
+| UserPoolId | Frontend .env |
+| UserPoolClientId | Frontend .env |
+| IdentityPoolId | Frontend .env |
+| AgentRuntimeArn | Frontend .env |
+| AmplifyAppUrl | Access the UI |
+
+----
+
+h2. Phase 3: Build & Push Container Images
+
+h3. Agent Container
+
+{code}
+cd ../Prompt2TestAgent
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin <ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com
+docker build -t <ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/prompt2test-agent:latest .
+docker push <ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/prompt2test-agent:latest
+{code}
+
+h3. Playwright Container
+
+{code}
+cd ../Prompt2TestPlaywright
+docker build -t <ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/prompt2test-playwright-mcp:latest .
+docker push <ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/prompt2test-playwright-mcp:latest
+{code}
+
+----
+
+h2. Phase 4: Configure AgentCore
+
+{code}
+aws bedrock-agentcore-control update-agent-runtime \
+  --agent-runtime-id <AGENT_RUNTIME_ID> \
+  --agent-runtime-artifact '{"containerConfiguration":{"containerUri":"<ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/prompt2test-agent:latest"}}' \
+  --role-arn arn:aws:iam::<ACCOUNT_ID>:role/prompt2test-agentcore-role \
+  --network-configuration '{"networkMode":"PUBLIC"}' \
+  --region us-east-1
+{code}
+
+----
+
+h2. Phase 5: Configure Cognito
+
+h3. Create Admin User
+
+{code}
+aws cognito-idp admin-create-user \
+  --user-pool-id <USER_POOL_ID> \
+  --username admin@yourcompany.com \
+  --user-attributes Name=email,Value=admin@yourcompany.com Name=name,Value=Admin \
+  --temporary-password TempPass123! \
+  --region us-east-1
+{code}
+
+h3. Create Admin Group & Assign
+
+{code}
+aws cognito-idp create-group --group-name admin --user-pool-id <USER_POOL_ID> --region us-east-1
+aws cognito-idp admin-add-user-to-group --user-pool-id <USER_POOL_ID> --username admin@yourcompany.com --group-name admin --region us-east-1
+{code}
+
+h3. Create Team Groups
+
+{code}
+aws cognito-idp create-group --group-name platform-team --user-pool-id <USER_POOL_ID> --region us-east-1
+aws cognito-idp create-group --group-name mobile-team --user-pool-id <USER_POOL_ID> --region us-east-1
+{code}
+
+----
+
+h2. Phase 6: Configure Frontend
+
+{code}
+cd ../Prompt2TestUI/web
+cp .env.example .env
+{code}
+
+Edit {{.env}} with CDK outputs:
+
+{code}
+VITE_USER_POOL_ID=us-east-1_XXXXXXX
+VITE_USER_POOL_CLIENT_ID=XXXXXXXXXXXXXXXXX
+VITE_IDENTITY_POOL_ID=us-east-1:xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+VITE_AGENT_RUNTIME_ARN=arn:aws:bedrock-agentcore:us-east-1:<ACCOUNT_ID>:runtime/<RUNTIME_ID>
+VITE_AWS_REGION=us-east-1
+{code}
+
+Push to trigger Amplify deploy:
+
+{code}
+git add .env
+git commit -m "Configure environment"
+git push origin master
+{code}
+
+----
+
+h2. Phase 7: Add Service Config
+
+1. Log in as admin at the Amplify URL
+2. Go to *Config & Accounts* page
+3. Click *Register Service* — add your first service (e.g., "bestbuy" with URL "www.bestbuy.com")
+4. Add test accounts if needed
+
+----
+
+h2. Phase 8: Verify Everything
+
+|| Check || How || Expected ||
+| UI loads | Visit Amplify URL | Login page appears |
+| Login works | Use admin credentials | Redirects to Members page |
+| Config page | Switch to Config & Accounts | Can add services |
+| Agent page | Type a scenario, pick service | AI generates test plan |
+| Automate | Click Automate on test case | Browser launches, test executes |
+| Inventory | View saved test cases | Test case with PASS/FAIL result |
+
+----
+
+h2. Verification Checklist
+
+* (/) CDK deployed without errors
+* (/) Cognito user can log in
+* (/) Admin page visible for admin group
+* (/) Config page loads services from DynamoDB
+* (/) Agent generates test plan with \{service.KEY\} references
+* (/) ECS task starts and noVNC shows live browser
+* (/) Test passes and result saved to Aurora
+* (/) Replay works from Inventory page
+* (/) CodePipelines trigger on git push
+
+{warning:title=Common Issues}
+* *Aurora cold start (30s):* First query after idle triggers resume. Add retry logic or CloudWatch canary.
+* *AgentCore not updating:* After ECR push, run {{update-agent-runtime}} to pull new image.
+* *Pipeline fails:* Check GitHub connection status in CodeConnections console.
+{warning}

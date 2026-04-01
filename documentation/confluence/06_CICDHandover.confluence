@@ -1,0 +1,175 @@
+h1. {color:#6366f1}Prompt2Test{color} — CI/CD & Infrastructure Handover
+
+{tip:title=Day-to-Day Operations Guide}
+How the pipelines work, how to deploy changes, troubleshoot failures, and manage infrastructure.
+{tip}
+
+----
+
+{toc:minLevel=2|maxLevel=3}
+
+----
+
+h2. GitHub Repositories
+
+|| Repo || Language || What It Contains || Deploy Method ||
+| *Prompt2TestUI* | React + TypeScript | Frontend (4 pages) | Amplify auto-deploy on push |
+| *Prompt2TestAgent* | Python + FastAPI | AI agent (6 modes) | CodePipeline -> ECR -> AgentCore |
+| *Prompt2TestLambda* | Python | Lambda functions (writer + reader) | CodePipeline -> Lambda update |
+| *Prompt2TestPlaywright* | Docker + Node.js | Playwright + noVNC container | CodePipeline -> ECR -> ECS |
+| *Prompt2TestInfrastructure* | CDK TypeScript | IaC + documentation | {{cdk deploy}} (manual) |
+
+----
+
+h2. CI/CD Pipelines
+
+h3. Pipeline 1: UI (Amplify)
+
+{panel:borderColor=#6366f1|bgColor=#eef2ff}
+|| Push to master || -> || Amplify detects || -> || npm install + build || -> || Deploy to CloudFront || -> || Live in ~90s ||
+{panel}
+
+* *Trigger:* Automatic on push to {{master}}
+* *No CodePipeline* — Amplify handles everything
+* *Environment vars:* Set in Amplify Console > Environment Variables
+
+h3. Pipeline 2: Agent (CodePipeline)
+
+{panel:borderColor=#f97316|bgColor=#fff7ed}
+|| GitHub push || -> || CodeBuild || -> || Docker build || -> || Push to ECR || -> || Update AgentCore || -> || Live in ~4min ||
+{panel}
+
+* *Pipeline:* {{prompt2test-agent-pipeline}}
+* *Builds:* Docker image with Python + FastAPI
+* *Deploys:* Push to ECR + {{update-agent-runtime}} call
+* *Manual trigger:* {{aws codepipeline start-pipeline-execution --name prompt2test-agent-pipeline}}
+
+h3. Pipeline 3: Lambda (CodePipeline)
+
+{panel:borderColor=#22c55e|bgColor=#f0fdf4}
+|| GitHub push || -> || CodeBuild || -> || Package Python || -> || Update Lambda functions || -> || Live in ~2min ||
+{panel}
+
+* *Pipeline:* {{prompt2test-lambda}}
+* *Updates:* Both {{p2t-testcase-writer}} and {{p2t-testcase-reader}}
+* *Manual trigger:* {{aws codepipeline start-pipeline-execution --name prompt2test-lambda}}
+
+h3. Pipeline 4: Playwright MCP (CodePipeline)
+
+{panel:borderColor=#ec4899|bgColor=#fff1f2}
+|| GitHub push || -> || CodeBuild || -> || Docker build (ARM64) || -> || Push to ECR || -> || Next ECS task uses new image ||
+{panel}
+
+* *Pipeline:* {{prompt2test-playwright-mcp-pipeline}}
+* *Builds:* ARM64 Docker image with Chromium + Playwright + noVNC
+* *Deploys:* Push to ECR. Next {{RunTask}} call uses {{:latest}} tag automatically.
+
+----
+
+h2. Common Operations
+
+h3. Check Pipeline Status
+
+{code}
+aws codepipeline get-pipeline-state --name prompt2test-agent-pipeline --region us-east-1
+aws codepipeline get-pipeline-state --name prompt2test-lambda --region us-east-1
+aws codepipeline get-pipeline-state --name prompt2test-playwright-mcp-pipeline --region us-east-1
+{code}
+
+h3. Force Trigger a Pipeline
+
+{code}
+aws codepipeline start-pipeline-execution --name <pipeline-name> --region us-east-1
+{code}
+
+h3. Check AgentCore Status
+
+{code}
+aws bedrock-agentcore-control get-agent-runtime \
+  --agent-runtime-id Prompt2TestAgent-YTVbD4GrTi \
+  --region us-east-1
+{code}
+
+h3. Force Update AgentCore
+
+{code}
+aws bedrock-agentcore-control update-agent-runtime \
+  --agent-runtime-id Prompt2TestAgent-YTVbD4GrTi \
+  --agent-runtime-artifact '{"containerConfiguration":{"containerUri":"<ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/prompt2test-agent:latest"}}' \
+  --role-arn arn:aws:iam::<ACCOUNT_ID>:role/prompt2test-agentcore-role \
+  --network-configuration '{"networkMode":"PUBLIC"}' \
+  --region us-east-1
+{code}
+
+h3. Check Latest ECR Image
+
+{code}
+aws ecr describe-images --repository-name prompt2test-agent --region us-east-1 \
+  --query 'imageDetails | sort_by(@, &imagePushedAt) | [-1].imagePushedAt'
+{code}
+
+h3. Check Amplify Build
+
+{code}
+aws amplify list-jobs --app-id <APP_ID> --branch-name master --region us-east-1 \
+  --query 'jobSummaries[0].status'
+{code}
+
+----
+
+h2. Troubleshooting
+
+h3. Pipeline Source Stage Fails
+
+{warning:title=GitHub Connection}
+If Source stage fails, the GitHub connection may have expired. Go to *AWS Console > CodePipeline > Settings > Connections* and verify {{prompt2test-github}} shows "Available". If "Pending" or "Error", re-authorize.
+{warning}
+
+h3. AgentCore Not Picking Up New Code
+
+|| Symptom || Cause || Fix ||
+| Agent behavior unchanged after push | ECR image pushed but AgentCore didn't pull | Run {{update-agent-runtime}} (see above) |
+| Pipeline succeeds but ECR timestamp is old | Pipeline cached — didn't actually build | Force trigger pipeline |
+
+h3. Aurora Cold Start Errors
+
+|| Symptom || Cause || Fix ||
+| "Communications link failure" on first request | Aurora auto-paused, resuming takes 25-30s | Lambda has retry logic (8 retries, 8s delay). Wait and retry. |
+| Inventory shows no test cases after idle period | Same cold start issue | Click Refresh after 30s |
+
+h3. ECS Task Won't Start
+
+|| Symptom || Cause || Fix ||
+| "Unable to pull image" | ECR image doesn't exist or wrong tag | Verify {{docker push}} succeeded |
+| Task stuck in PENDING | No available capacity or subnet issues | Check subnet has internet access (IGW + route table) |
+| noVNC connection refused | Task still starting (~60s) | Wait for MCP endpoint to be healthy |
+
+h3. Lambda Errors
+
+{code}
+# Check Lambda logs
+aws logs tail /aws/lambda/p2t-testcase-writer --follow --region us-east-1
+aws logs tail /aws/lambda/p2t-testcase-reader --follow --region us-east-1
+{code}
+
+----
+
+h2. IAM Roles
+
+|| Role || Used By || Key Permissions ||
+| {{prompt2test-agentcore-role}} | Bedrock AgentCore | bedrock:InvokeModel, ecs:RunTask, ecs:StopTask, ssm:GetParameter, ecr:GetAuthorizationToken |
+| {{p2t-testcase-lambda-role}} | Lambda functions | rds-data:ExecuteStatement, secretsmanager:GetSecretValue, bedrock-runtime:InvokeModel, dynamodb:Query/PutItem |
+| {{prompt2test-cognito-auth-role}} | Authenticated users (browser) | lambda:InvokeFunction, bedrock-agentcore:InvokeAgentRuntime, dynamodb:Query/PutItem/DeleteItem |
+| {{prompt2test-ecs-task-role}} | ECS Fargate tasks | (minimal — container runs Playwright, no AWS calls needed) |
+
+----
+
+h2. Key Architecture Decisions
+
+|| Decision || Why ||
+| DynamoDB for config (not SSM) | Multi-team pk/sk, browser-direct access, no Lambda proxy |
+| Cognito Groups for teams | Zero-code isolation, JWT carries team, all services auto-scope |
+| ECS Fargate on-demand | Zero idle cost ($0 vs $216/mo warm pool) |
+| AgentCore for agent | Managed runtime, no ECS/EKS for agent container |
+| Aurora + pgvector | Single DB for relational + vector search |
+| CDK IaC | TypeScript, one-command deploy, reproducible |
