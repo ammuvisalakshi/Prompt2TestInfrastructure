@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prompt2Test — Phase 2 Roadmap</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f1f5f9; color: #1e293b; font-size: 14px; }
+  .page { max-width: 1300px; margin: 0 auto; padding: 40px 32px; }
+
+  .hero { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%); border-radius: 16px; padding: 48px 40px; margin-bottom: 32px; position: relative; overflow: hidden; }
+  .hero::before { content: ''; position: absolute; top: -60px; right: -60px; width: 300px; height: 300px; border-radius: 50%; background: radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%); }
+  .hero h1 { font-size: 32px; font-weight: 900; color: #fff; margin-bottom: 10px; }
+  .hero .tagline { font-size: 15px; color: #94a3b8; margin-bottom: 20px; max-width: 800px; line-height: 1.7; }
+  .hero .tags { display: flex; gap: 8px; flex-wrap: wrap; }
+  .hero-tag { font-size: 11px; font-weight: 600; padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.15); color: #e2e8f0; background: rgba(255,255,255,0.07); }
+
+  .section { margin-bottom: 40px; }
+  .section-label { font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #64748b; margin-bottom: 14px; }
+  .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 22px 24px; }
+
+  .theme-blue   { background: #eff6ff; border-color: #bfdbfe; }
+  .theme-purple { background: #faf5ff; border-color: #ddd6fe; }
+  .theme-green  { background: #f0fdf4; border-color: #bbf7d0; }
+  .theme-orange { background: #fff7ed; border-color: #fed7aa; }
+  .theme-teal   { background: #f0fdfa; border-color: #99f6e4; }
+  .theme-rose   { background: #fff1f2; border-color: #fecdd3; }
+  .theme-yellow { background: #fefce8; border-color: #fef08a; }
+
+  .row { display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+  .row > * { flex: 1; min-width: 280px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: #f8fafc; font-weight: 700; color: #475569; text-align: left; padding: 10px 14px; border-bottom: 2px solid #e2e8f0; }
+  td { padding: 10px 14px; border-bottom: 1px solid #f1f5f9; line-height: 1.6; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #f8fafc; }
+
+  .badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 5px; margin: 2px 2px 2px 0; }
+  .badge-red    { background: #fee2e2; color: #dc2626; }
+  .badge-orange { background: #ffedd5; color: #c2410c; }
+  .badge-yellow { background: #fef9c3; color: #a16207; }
+  .badge-green  { background: #dcfce7; color: #15803d; }
+  .badge-blue   { background: #dbeafe; color: #1d4ed8; }
+  .badge-purple { background: #ede9fe; color: #6d28d9; }
+  .badge-teal   { background: #ccfbf1; color: #0f766e; }
+  .badge-gray   { background: #f1f5f9; color: #475569; }
+
+  code { font-family: 'Cascadia Code','Consolas',monospace; font-size: 12px; background: #f1f5f9; color: #4338ca; padding: 2px 5px; border-radius: 3px; }
+  .divider { height: 1px; background: #e2e8f0; margin: 8px 0 20px; }
+
+  .feature-header { border-radius: 12px 12px 0 0; padding: 18px 24px; color: #fff; display: flex; align-items: center; gap: 14px; }
+  .feature-num { width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; flex-shrink: 0; }
+  .feature-body { border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px; padding: 24px; background: #fff; }
+
+  .sub-section { font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 1px; margin: 20px 0 10px; padding-bottom: 6px; border-bottom: 2px solid #f1f5f9; }
+  .sub-section:first-child { margin-top: 0; }
+
+  .impl-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 16px; margin-bottom: 10px; }
+  .impl-card h5 { font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+  .impl-card p { font-size: 12px; color: #64748b; line-height: 1.6; }
+  .impl-card code { font-size: 11px; }
+
+  .flow { display: flex; align-items: center; gap: 0; flex-wrap: wrap; justify-content: center; padding: 12px 0; }
+  .flow-box { background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 8px 14px; font-size: 11px; font-weight: 600; color: #334155; text-align: center; min-width: 90px; }
+  .flow-box small { display: block; font-size: 10px; font-weight: 400; color: #94a3b8; margin-top: 2px; }
+  .flow-arrow { font-size: 18px; color: #94a3b8; padding: 0 4px; }
+
+  .footer { text-align: center; font-size: 13px; color: #94a3b8; margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Hero -->
+  <div class="hero">
+    <h1>Prompt2Test &mdash; Phase 2 Roadmap</h1>
+    <p class="tagline">Feature enhancements to evolve Prompt2Test from a dev tool into a production-grade QA automation platform. Covers environment promotion, smart retries, suite execution, reporting, and more.</p>
+    <div class="tags">
+      <span class="hero-tag">Environment Promotion</span>
+      <span class="hero-tag">Deterministic Replay</span>
+      <span class="hero-tag">Headless Execution</span>
+      <span class="hero-tag">Smart Retry (LLM)</span>
+      <span class="hero-tag">Tagging &amp; Suites</span>
+      <span class="hero-tag">Reports</span>
+      <span class="hero-tag">Failure Analysis</span>
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="section">
+    <div class="section-label">Phase 2 At a Glance</div>
+    <div class="card" style="padding:0; overflow:hidden;">
+      <table>
+        <thead>
+          <tr><th>#</th><th>Feature</th><th>Priority</th><th>Effort</th><th>Impact</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>1</strong></td><td><strong>Environment Promotion</strong> &mdash; promote test cases from DEV to QA/UAT/PROD as deterministic replay only</td><td><span class="badge badge-red">P0</span></td><td><span class="badge badge-orange">5&ndash;7 days</span></td><td>Trust model for higher environments</td></tr>
+          <tr><td><strong>2</strong></td><td><strong>Database Evaluation</strong> &mdash; Aurora vs DynamoDB vs hybrid for test cases at scale</td><td><span class="badge badge-yellow">P2</span></td><td><span class="badge badge-green">2&ndash;3 days</span></td><td>Cost, scale, and consistency optimization</td></tr>
+          <tr><td><strong>3</strong></td><td><strong>Failure Analysis &amp; Logs</strong> &mdash; screenshots, DOM state, LLM root cause analysis on failure</td><td><span class="badge badge-red">P0</span></td><td><span class="badge badge-orange">5&ndash;7 days</span></td><td>Reduces debug time from 30 min to 2 min</td></tr>
+          <tr><td><strong>4</strong></td><td><strong>Report Generation</strong> &mdash; PDF/HTML reports per run, per suite, with trends</td><td><span class="badge badge-orange">P1</span></td><td><span class="badge badge-orange">4&ndash;5 days</span></td><td>Stakeholder visibility, audit trail</td></tr>
+          <tr><td><strong>5</strong></td><td><strong>Tagging &amp; Test Suites</strong> &mdash; tag tests as regression, smoke, deployment; run by tag</td><td><span class="badge badge-red">P0</span></td><td><span class="badge badge-green">3&ndash;4 days</span></td><td>Organize tests at scale, CI/CD integration</td></tr>
+          <tr><td><strong>6</strong></td><td><strong>Headless Suite Execution + Smart Retry</strong> &mdash; headless for speed, LLM retry on failure, email alerts</td><td><span class="badge badge-red">P0</span></td><td><span class="badge badge-red">7&ndash;10 days</span></td><td>Transforms platform into CI/CD-grade automation</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+
+  <!-- ================================================================ -->
+  <!-- FEATURE 1: Environment Promotion -->
+  <!-- ================================================================ -->
+  <div class="section">
+    <div class="feature-header" style="background: linear-gradient(135deg, #7c3aed, #4f46e5);">
+      <div class="feature-num">1</div>
+      <div>
+        <div style="font-size:18px; font-weight:800;">Environment Promotion</div>
+        <div style="font-size:12px; opacity:0.8; margin-top:2px;">Promote test cases from DEV to higher environments as deterministic replay only</div>
+      </div>
+      <div style="margin-left:auto;"><span class="badge" style="background:rgba(255,255,255,0.2); color:#fff;">P0 &middot; 5&ndash;7 days</span></div>
+    </div>
+    <div class="feature-body">
+
+      <div class="sub-section">The Problem</div>
+      <p style="font-size:13px; color:#475569; line-height:1.7; margin-bottom:16px;">
+        Today, all environments use the same AI-powered authoring flow. In higher environments (QA, UAT, PROD), we need <strong>deterministic, repeatable</strong> execution &mdash; not AI re-interpretation. A test that passed in DEV should execute the exact same steps in QA.
+      </p>
+
+      <div class="sub-section">Promotion Flow</div>
+      <div class="card theme-purple" style="margin-bottom:16px;">
+        <div class="flow">
+          <div class="flow-box" style="border-color:#7c3aed;">DEV<small>AI authors + tests</small></div>
+          <div class="flow-arrow">&rarr;</div>
+          <div class="flow-box">Review &amp; Approve<small>QA lead signs off</small></div>
+          <div class="flow-arrow">&rarr;</div>
+          <div class="flow-box" style="border-color:#2563eb;">QA<small>deterministic replay</small></div>
+          <div class="flow-arrow">&rarr;</div>
+          <div class="flow-box">Validate &amp; Approve<small>test lead signs off</small></div>
+          <div class="flow-arrow">&rarr;</div>
+          <div class="flow-box" style="border-color:#ea580c;">UAT<small>deterministic replay</small></div>
+          <div class="flow-arrow">&rarr;</div>
+          <div class="flow-box" style="border-color:#dc2626;">PROD<small>deterministic replay</small></div>
+        </div>
+      </div>
+
+      <div class="sub-section">Design Decisions</div>
+      <div class="row">
+        <div class="impl-card">
+          <h5 style="color:#7c3aed;">DEV = Full AI Mode</h5>
+          <p>AI can author, modify, and iterate on test plans. Test cases can be edited freely. This is the experimentation environment.</p>
+        </div>
+        <div class="impl-card">
+          <h5 style="color:#2563eb;">QA / UAT / PROD = Replay Only</h5>
+          <p>Promoted test cases are <strong>locked</strong>. No AI re-generation. Only deterministic replay using the exact saved steps. UI hides the "Author Agent" chat in these environments.</p>
+        </div>
+      </div>
+
+      <div class="sub-section">Implementation</div>
+      <div class="impl-card">
+        <h5>1. Add <code>status</code> field to test_cases table</h5>
+        <p>Values: <code>draft</code> (DEV only), <code>promoted</code> (QA+), <code>locked</code> (UAT/PROD). Only <code>draft</code> test cases can be edited or re-generated.</p>
+      </div>
+      <div class="impl-card">
+        <h5>2. Add <code>promoted_from</code> and <code>promoted_by</code> fields</h5>
+        <p>Track lineage: which DEV test case this was promoted from, who approved, and when. Creates an audit trail.</p>
+      </div>
+      <div class="impl-card">
+        <h5>3. Promote API endpoint</h5>
+        <p>New Lambda endpoint: <code>POST /promote</code> &mdash; copies test case from source env to target env with status = <code>promoted</code>. Replaces all DEV-specific config values (URLs, accounts) with target env values from DynamoDB.</p>
+      </div>
+      <div class="impl-card">
+        <h5>4. UI: Promote button in Inventory</h5>
+        <p>In DEV Inventory, add a "Promote to QA" button on each test case. Shows a confirmation dialog with target env, reviewer name. In QA/UAT/PROD, the Agent page shows only "Replay" &mdash; no chat, no AI authoring.</p>
+      </div>
+      <div class="impl-card">
+        <h5>5. Config value substitution</h5>
+        <p>When promoting, the system automatically swaps config values: DEV URLs &rarr; QA URLs, DEV accounts &rarr; QA accounts. Uses the DynamoDB config table to resolve per-env values.</p>
+      </div>
+
+      <div class="sub-section">Data Model Changes</div>
+      <table>
+        <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+        <tr><td><code>status</code></td><td>string</td><td><code>draft</code> | <code>promoted</code> | <code>locked</code></td></tr>
+        <tr><td><code>promoted_from_env</code></td><td>string</td><td>Source environment (e.g., "dev")</td></tr>
+        <tr><td><code>promoted_from_id</code></td><td>string</td><td>Source test case ID</td></tr>
+        <tr><td><code>promoted_by</code></td><td>string</td><td>User who approved promotion</td></tr>
+        <tr><td><code>promoted_at</code></td><td>timestamp</td><td>When promotion happened</td></tr>
+        <tr><td><code>version</code></td><td>integer</td><td>Increments on each re-promotion from DEV</td></tr>
+      </table>
+    </div>
+  </div>
+
+
+  <!-- ================================================================ -->
+  <!-- FEATURE 2: Database Evaluation -->
+  <!-- ================================================================ -->
+  <div class="section">
+    <div class="feature-header" style="background: linear-gradient(135deg, #0d9488, #0891b2);">
+      <div class="feature-num">2</div>
+      <div>
+        <div style="font-size:18px; font-weight:800;">Database Evaluation</div>
+        <div style="font-size:12px; opacity:0.8; margin-top:2px;">Aurora vs DynamoDB vs Hybrid &mdash; what's best for test cases at scale</div>
+      </div>
+      <div style="margin-left:auto;"><span class="badge" style="background:rgba(255,255,255,0.2); color:#fff;">P2 &middot; 2&ndash;3 days</span></div>
+    </div>
+    <div class="feature-body">
+
+      <div class="sub-section">Current State</div>
+      <p style="font-size:13px; color:#475569; line-height:1.7; margin-bottom:16px;">
+        Test cases and run records are in <strong>Aurora Serverless v2</strong> (PostgreSQL + pgvector). Config is in <strong>DynamoDB</strong>. Aurora has auto-pause which causes 25-30s cold starts.
+      </p>
+
+      <div class="sub-section">Comparison</div>
+      <table>
+        <thead>
+          <tr><th style="width:20%;">Criteria</th><th style="width:27%;">Aurora Serverless v2</th><th style="width:27%;">DynamoDB</th><th style="width:26%;">Hybrid (Current + Optimized)</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Cold start</strong></td>
+            <td><span class="badge badge-red">25-30s</span> on auto-pause resume</td>
+            <td><span class="badge badge-green">0ms</span> always on</td>
+            <td><span class="badge badge-yellow">0-30s</span> depends on which store</td>
+          </tr>
+          <tr>
+            <td><strong>Cost (idle)</strong></td>
+            <td>$0.50/mo (auto-paused)</td>
+            <td>$0/mo (on-demand mode)</td>
+            <td>~$0.25/mo</td>
+          </tr>
+          <tr>
+            <td><strong>Cost (active)</strong></td>
+            <td>$15-30/mo (0.5-2 ACU)</td>
+            <td>$5-15/mo (pay per request)</td>
+            <td>$10-20/mo</td>
+          </tr>
+          <tr>
+            <td><strong>Semantic search</strong></td>
+            <td><span class="badge badge-green">Native</span> pgvector</td>
+            <td><span class="badge badge-red">Not supported</span> Need OpenSearch</td>
+            <td><span class="badge badge-green">Aurora</span> for vector search</td>
+          </tr>
+          <tr>
+            <td><strong>Complex queries</strong></td>
+            <td><span class="badge badge-green">Full SQL</span> JOINs, aggregates</td>
+            <td><span class="badge badge-yellow">Limited</span> pk/sk only, no JOINs</td>
+            <td>SQL for reports, DynamoDB for CRUD</td>
+          </tr>
+          <tr>
+            <td><strong>Multi-region</strong></td>
+            <td>Global Database (~$50/mo)</td>
+            <td><span class="badge badge-green">Global Tables</span> (1.5x writes)</td>
+            <td>Mix of both</td>
+          </tr>
+          <tr>
+            <td><strong>Report generation</strong></td>
+            <td><span class="badge badge-green">Excellent</span> SQL aggregation</td>
+            <td><span class="badge badge-red">Poor</span> scan + filter in code</td>
+            <td>Aurora for reports</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="sub-section">Recommendation</div>
+      <div class="card theme-teal">
+        <h5 style="color:#0d9488; font-size:14px; margin-bottom:8px;">Keep Hybrid &mdash; Optimize Aurora</h5>
+        <p style="font-size:13px; color:#475569; line-height:1.7;">
+          <strong>Aurora</strong> is the right choice for test cases because of pgvector (semantic search), SQL aggregation (reports), and relational integrity (run records linked to test cases). Moving to DynamoDB would lose these capabilities.
+        </p>
+        <p style="font-size:13px; color:#475569; line-height:1.7; margin-top:8px;">
+          <strong>Optimization:</strong> Instead of removing Aurora, fix the cold start problem:
+        </p>
+        <ul style="font-size:13px; color:#475569; line-height:2; padding-left:20px; margin-top:6px;">
+          <li>Add CloudWatch synthetic canary to keep Aurora warm during business hours (8am-6pm)</li>
+          <li>Add retry-with-backoff in Lambda for the initial resume connection</li>
+          <li>Consider disabling auto-pause if usage justifies it (~$30/mo to keep warm 24/7)</li>
+        </ul>
+        <p style="font-size:13px; color:#475569; line-height:1.7; margin-top:8px;">
+          <strong>DynamoDB stays</strong> for config (services, accounts) &mdash; it's already working perfectly with browser-direct access.
+        </p>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ================================================================ -->
+  <!-- FEATURE 3: Failure Analysis -->
+  <!-- ================================================================ -->
+  <div class="section">
+    <div class="feature-header" style="background: linear-gradient(135deg, #dc2626, #b91c1c);">
+      <div class="feature-num">3</div>
+      <div>
+        <div style="font-size:18px; font-weight:800;">Failure Analysis &amp; Logs</div>
+        <div style="font-size:12px; opacity:0.8; margin-top:2px;">Screenshots, DOM state, error logs, and LLM-powered root cause analysis</div>
+      </div>
+      <div style="margin-left:auto;"><span class="badge" style="background:rgba(255,255,255,0.2); color:#fff;">P0 &middot; 5&ndash;7 days</span></div>
+    </div>
+    <div class="feature-body">
+
+      <div class="sub-section">The Problem</div>
+      <p style="font-size:13px; color:#475569; line-height:1.7; margin-bottom:16px;">
+        When a test fails today, the user sees "FAIL" and a brief summary. No screenshots, no DOM state, no error logs. Debugging requires re-running the test with the live browser view and watching it manually. This can take 30-60 minutes per failure.
+      </p>
+
+      <div class="sub-section">What to Capture on Failure</div>
+      <div class="row">
+        <div class="impl-card">
+          <h5 style="color:#dc2626;">Screenshot at Failure Point</h5>
+          <p>Playwright captures a full-page screenshot at the exact moment of failure. Stored in S3 with test run ID as key. Displayed inline in the Inventory page.</p>
+        </div>
+        <div class="impl-card">
+          <h5 style="color:#dc2626;">DOM Snapshot</h5>
+          <p>Capture the page's HTML at failure time. Allows inspection of element visibility, missing elements, unexpected content without re-running.</p>
+        </div>
+        <div class="impl-card">
+          <h5 style="color:#dc2626;">Console Logs &amp; Network Errors</h5>
+          <p>Playwright can capture browser console output and failed network requests. Store as JSON &mdash; shows 404s, 500s, JS errors that caused the failure.</p>
+        </div>
+      </div>
+
+      <div class="sub-section">LLM-Powered Root Cause Analysis</div>
+      <div class="card theme-rose" style="margin-bottom:16px;">
+        <p style="font-size:13px; color:#475569; line-height:1.7;">
+          When a test fails, automatically send the following to Claude Sonnet:
+        </p>
+        <ul style="font-size:13px; color:#475569; line-height:2; padding-left:20px; margin-top:6px;">
+          <li>The test step that failed (action + expected result)</li>
+          <li>The actual error message from Playwright</li>
+          <li>The screenshot (as base64 image &mdash; Claude is multimodal)</li>
+          <li>Console errors and failed network requests</li>
+          <li>The previous 2-3 steps that succeeded (for context)</li>
+        </ul>
+        <p style="font-size:13px; color:#475569; line-height:1.7; margin-top:8px;">
+          Claude analyzes and returns: <strong>(a)</strong> probable root cause, <strong>(b)</strong> whether it looks like a test issue vs app bug, <strong>(c)</strong> suggested fix for the test if applicable.
+        </p>
+      </div>
+
+      <div class="sub-section">Implementation</div>
+      <div class="impl-card">
+        <h5>1. Playwright MCP: capture artifacts on failure</h5>
+        <p>Modify the Playwright MCP server to capture screenshot (<code>page.screenshot()</code>), DOM (<code>page.content()</code>), and console logs (<code>page.on('console')</code>) when any step fails. Upload to S3 under <code>s3://prompt2test-artifacts/{run_id}/</code>.</p>
+      </div>
+      <div class="impl-card">
+        <h5>2. Agent: call Claude for root cause analysis</h5>
+        <p>After failure artifacts are captured, the agent sends them to Claude with a structured prompt: "Analyze this test failure. Here are the test steps, the error, and a screenshot of the browser at failure time." Store the analysis in the <code>run_records</code> table.</p>
+      </div>
+      <div class="impl-card">
+        <h5>3. UI: failure detail panel</h5>
+        <p>In Inventory, clicking a failed run shows: screenshot, error message, LLM analysis, console logs, and a "Re-automate" button that takes the user back to Agent page with the test case pre-loaded for AI-assisted fix.</p>
+      </div>
+
+      <div class="sub-section">Data Model Changes</div>
+      <table>
+        <tr><th>Field</th><th>Table</th><th>Description</th></tr>
+        <tr><td><code>screenshot_s3_key</code></td><td>run_records</td><td>S3 key to failure screenshot</td></tr>
+        <tr><td><code>dom_snapshot_s3_key</code></td><td>run_records</td><td>S3 key to HTML DOM at failure</td></tr>
+        <tr><td><code>console_logs</code></td><td>run_records</td><td>JSON array of browser console messages</td></tr>
+        <tr><td><code>network_errors</code></td><td>run_records</td><td>JSON array of failed HTTP requests</td></tr>
+        <tr><td><code>failure_analysis</code></td><td>run_records</td><td>LLM-generated root cause text</td></tr>
+        <tr><td><code>failed_step_index</code></td><td>run_records</td><td>Which step number failed</td></tr>
+      </table>
+    </div>
+  </div>
+
+
+  <!-- ================================================================ -->
+  <!-- FEATURE 4: Report Generation -->
+  <!-- ================================================================ -->
+  <div class="section">
+    <div class="feature-header" style="background: linear-gradient(135deg, #2563eb, #1d4ed8);">
+      <div class="feature-num">4</div>
+      <div>
+        <div style="font-size:18px; font-weight:800;">Report Generation</div>
+        <div style="font-size:12px; opacity:0.8; margin-top:2px;">PDF/HTML reports per run, per suite, with trends and metrics</div>
+      </div>
+      <div style="margin-left:auto;"><span class="badge" style="background:rgba(255,255,255,0.2); color:#fff;">P1 &middot; 4&ndash;5 days</span></div>
+    </div>
+    <div class="feature-body">
+
+      <div class="sub-section">Report Types</div>
+      <div class="row">
+        <div class="impl-card">
+          <h5 style="color:#2563eb;">Single Run Report</h5>
+          <p>Generated after each test execution. Contains: test case details, each step with PASS/FAIL, screenshots (if failed), execution time per step, overall result, and LLM analysis if applicable.</p>
+        </div>
+        <div class="impl-card">
+          <h5 style="color:#2563eb;">Suite Run Report</h5>
+          <p>Generated after a tagged suite runs (e.g., "regression"). Contains: all test results, pass/fail counts, failed test summaries, total execution time, and comparison with previous suite run.</p>
+        </div>
+        <div class="impl-card">
+          <h5 style="color:#2563eb;">Trend Report</h5>
+          <p>Weekly/monthly aggregate. Pass rate over time, flaky test identification (tests that flip between pass/fail), most-failed services, average execution time trends.</p>
+        </div>
+      </div>
+
+      <div class="sub-section">Implementation</div>
+      <div class="impl-card">
+        <h5>1. Report Lambda</h5>
+        <p>New Lambda function: <code>report-generator</code>. Takes a run ID or suite run ID, queries Aurora for all results, generates an HTML report, converts to PDF using Puppeteer/Playwright, uploads to S3.</p>
+      </div>
+      <div class="impl-card">
+        <h5>2. Aurora SQL aggregation</h5>
+        <p>This is why Aurora matters &mdash; trend queries like <code>SELECT service, COUNT(*) FILTER (WHERE result='PASS') / COUNT(*) AS pass_rate FROM run_records GROUP BY service ORDER BY pass_rate</code> are trivial in SQL but painful in DynamoDB.</p>
+      </div>
+      <div class="impl-card">
+        <h5>3. UI: Reports tab</h5>
+        <p>New tab in the sidebar. Lists past reports, filterable by date, suite, service. Download as PDF. View inline as HTML. Share via pre-signed S3 URL.</p>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ================================================================ -->
+  <!-- FEATURE 5: Tagging & Suites -->
+  <!-- ================================================================ -->
+  <div class="section">
+    <div class="feature-header" style="background: linear-gradient(135deg, #ea580c, #c2410c);">
+      <div class="feature-num">5</div>
+      <div>
+        <div style="font-size:18px; font-weight:800;">Tagging &amp; Test Suites</div>
+        <div style="font-size:12px; opacity:0.8; margin-top:2px;">Tag tests as regression, smoke, deployment &mdash; filter and run by tag</div>
+      </div>
+      <div style="margin-left:auto;"><span class="badge" style="background:rgba(255,255,255,0.2); color:#fff;">P0 &middot; 3&ndash;4 days</span></div>
+    </div>
+    <div class="feature-body">
+
+      <div class="sub-section">Tag Types</div>
+      <div class="row">
+        <div class="card theme-orange" style="text-align:center;">
+          <div style="font-size:20px; margin-bottom:6px;">&#x1F3F7;</div>
+          <div style="font-weight:700; font-size:13px; margin-bottom:4px;">Suite Tags</div>
+          <p style="font-size:12px; color:#64748b;">regression, smoke, deployment, sanity, e2e</p>
+        </div>
+        <div class="card theme-blue" style="text-align:center;">
+          <div style="font-size:20px; margin-bottom:6px;">&#x26A1;</div>
+          <div style="font-weight:700; font-size:13px; margin-bottom:4px;">Priority Tags</div>
+          <p style="font-size:12px; color:#64748b;">P1-critical, P2-high, P3-medium, P4-low</p>
+        </div>
+        <div class="card theme-green" style="text-align:center;">
+          <div style="font-size:20px; margin-bottom:6px;">&#x1F4E6;</div>
+          <div style="font-weight:700; font-size:13px; margin-bottom:4px;">Feature Tags</div>
+          <p style="font-size:12px; color:#64748b;">login, checkout, payments, profile, admin</p>
+        </div>
+        <div class="card theme-purple" style="text-align:center;">
+          <div style="font-size:20px; margin-bottom:6px;">&#x1F527;</div>
+          <div style="font-weight:700; font-size:13px; margin-bottom:4px;">Custom Tags</div>
+          <p style="font-size:12px; color:#64748b;">team-defined, free-form tagging</p>
+        </div>
+      </div>
+
+      <div class="sub-section">How It Works</div>
+      <div class="impl-card">
+        <h5>1. Add <code>tags</code> array to test_cases table</h5>
+        <p>PostgreSQL array column: <code>tags TEXT[]</code>. Supports multiple tags per test case. Indexed with GIN for fast filtering: <code>WHERE tags @> ARRAY['regression']</code>.</p>
+      </div>
+      <div class="impl-card">
+        <h5>2. UI: Tag chips on test cases</h5>
+        <p>In Inventory, each test case shows its tags as colored chips. Click to filter. Bulk-add/remove tags via multi-select. In Agent page, add tags when saving a new test case.</p>
+      </div>
+      <div class="impl-card">
+        <h5>3. "Run Suite" button</h5>
+        <p>New action in Inventory: "Run Suite" &mdash; select a tag (e.g., "regression"), it queues all matching test cases for execution. Creates a <code>suite_run</code> record that groups individual runs.</p>
+      </div>
+      <div class="impl-card">
+        <h5>4. Suite Run record</h5>
+        <p>New table: <code>suite_runs</code> with fields: <code>suite_id</code>, <code>tag</code>, <code>env</code>, <code>team</code>, <code>total_tests</code>, <code>passed</code>, <code>failed</code>, <code>started_at</code>, <code>completed_at</code>, <code>triggered_by</code>. Each individual run links back via <code>suite_run_id</code>.</p>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ================================================================ -->
+  <!-- FEATURE 6: Headless Suite + Smart Retry -->
+  <!-- ================================================================ -->
+  <div class="section">
+    <div class="feature-header" style="background: linear-gradient(135deg, #15803d, #166534);">
+      <div class="feature-num">6</div>
+      <div>
+        <div style="font-size:18px; font-weight:800;">Headless Suite Execution + Smart Retry</div>
+        <div style="font-size:12px; opacity:0.8; margin-top:2px;">Run suites headless for speed, LLM retry on failure, email on final failure</div>
+      </div>
+      <div style="margin-left:auto;"><span class="badge" style="background:rgba(255,255,255,0.2); color:#fff;">P0 &middot; 7&ndash;10 days</span></div>
+    </div>
+    <div class="feature-body">
+
+      <div class="sub-section">The Big Picture</div>
+      <p style="font-size:13px; color:#475569; line-height:1.7; margin-bottom:16px;">
+        This is what makes Prompt2Test a CI/CD-grade automation platform. When running a suite of deterministic replays, there's no need for a live browser &mdash; run headless for speed. When a test fails, don't just report it &mdash; let the LLM analyze and retry with an adjusted approach. Only escalate to humans when the smart retry also fails.
+      </p>
+
+      <div class="sub-section">Execution Flow</div>
+      <div class="card theme-green" style="margin-bottom:16px;">
+        <div class="flow">
+          <div class="flow-box" style="border-color:#15803d;">Trigger Suite<small>tag: "regression"</small></div>
+          <div class="flow-arrow">&rarr;</div>
+          <div class="flow-box">Queue Tests<small>12 test cases</small></div>
+          <div class="flow-arrow">&rarr;</div>
+          <div class="flow-box" style="border-color:#15803d;">Headless Replay<small>no noVNC, no Xvfb</small></div>
+          <div class="flow-arrow">&rarr;</div>
+          <div class="flow-box" style="border-color:#16a34a;">10 PASS</div>
+          <div class="flow-arrow">&rarr;</div>
+          <div class="flow-box" style="border-color:#dc2626;">2 FAIL</div>
+          <div class="flow-arrow">&rarr;</div>
+          <div class="flow-box" style="border-color:#ea580c;">LLM Analyzes<small>root cause</small></div>
+          <div class="flow-arrow">&rarr;</div>
+          <div class="flow-box" style="border-color:#7c3aed;">Smart Retry<small>adjusted approach</small></div>
+          <div class="flow-arrow">&rarr;</div>
+          <div class="flow-box" style="border-color:#dc2626;">Still fails?<small>send email</small></div>
+        </div>
+      </div>
+
+      <div class="sub-section">Headless Mode</div>
+      <div class="row">
+        <div class="impl-card">
+          <h5 style="color:#15803d;">Why Headless?</h5>
+          <p>Deterministic replays don't need human observation. Running headless (no Xvfb, no noVNC, no VNC port) is <strong>2-3x faster</strong> and uses <strong>50% less memory</strong>. Also enables parallel execution across multiple ECS tasks.</p>
+        </div>
+        <div class="impl-card">
+          <h5 style="color:#15803d;">Implementation</h5>
+          <p>Add <code>headless: true</code> parameter to Playwright MCP. When headless, skip Xvfb/noVNC startup, launch Chromium with <code>--headless=new</code>. ECS task definition: reduce to 1 vCPU / 2GB (from 2 vCPU / 4GB). ~50% cost reduction per task.</p>
+        </div>
+      </div>
+
+      <div class="sub-section">Smart Retry with LLM</div>
+      <div class="impl-card">
+        <h5>Step 1: Capture failure context</h5>
+        <p>Same as Feature 3 &mdash; screenshot, DOM, console logs, network errors, failed step details.</p>
+      </div>
+      <div class="impl-card">
+        <h5>Step 2: LLM analysis</h5>
+        <p>Send failure context to Claude: "This deterministic replay failed at step 4. Here's the error and screenshot. Is this a flaky test (timing, animation, slow load) or a real app bug? If flaky, suggest a modified approach for retry."</p>
+      </div>
+      <div class="impl-card">
+        <h5>Step 3: Smart retry</h5>
+        <p>If Claude identifies it as flaky (e.g., "element not visible yet &mdash; likely a timing issue"), it generates a modified replay with added waits or alternative selectors. The system retries once with this adjusted approach.</p>
+        <p style="margin-top:6px;"><strong>Key constraint:</strong> Smart retry only modifies <em>how</em> to interact (waits, selectors), never <em>what</em> to test. The test steps remain the same &mdash; only the execution strategy adapts.</p>
+      </div>
+      <div class="impl-card">
+        <h5>Step 4: Final failure &rarr; Email notification</h5>
+        <p>If the smart retry also fails, it's likely a real bug. Send email via SES to the team/user who owns the test case. Include: test name, step that failed, screenshot, LLM analysis, and a direct link to the run record in the UI.</p>
+      </div>
+
+      <div class="sub-section">Parallel Execution</div>
+      <div class="impl-card">
+        <h5>Run multiple tests simultaneously</h5>
+        <p>For a suite of 20 tests, spin up 5 ECS tasks in parallel (configurable concurrency). Each task runs 4 tests sequentially. Total time: ~4x faster than sequential. Use an SQS queue to distribute test cases to workers.</p>
+      </div>
+
+      <div class="sub-section">Architecture: Suite Execution Engine</div>
+      <div class="card" style="margin-bottom:16px;">
+        <div class="flow">
+          <div class="flow-box">UI: Run Suite<small>tag + env</small></div>
+          <div class="flow-arrow">&rarr;</div>
+          <div class="flow-box">Lambda: Orchestrator<small>query tests by tag</small></div>
+          <div class="flow-arrow">&rarr;</div>
+          <div class="flow-box">SQS Queue<small>1 message per test</small></div>
+          <div class="flow-arrow">&rarr;</div>
+          <div class="flow-box">N x ECS Tasks<small>headless workers</small></div>
+          <div class="flow-arrow">&rarr;</div>
+          <div class="flow-box">Results &rarr; Aurora<small>per test + suite</small></div>
+          <div class="flow-arrow">&rarr;</div>
+          <div class="flow-box">Failures &rarr; LLM<small>analyze + retry</small></div>
+          <div class="flow-arrow">&rarr;</div>
+          <div class="flow-box">SES Email<small>if still fails</small></div>
+        </div>
+      </div>
+
+      <div class="sub-section">New AWS Services Needed</div>
+      <table>
+        <tr><th>Service</th><th>Purpose</th><th>Cost</th></tr>
+        <tr><td><strong>SQS</strong></td><td>Test case distribution queue for parallel workers</td><td>~$0.40/million messages</td></tr>
+        <tr><td><strong>SES</strong></td><td>Email notifications on final failure</td><td>~$0.10/1000 emails</td></tr>
+        <tr><td><strong>S3</strong></td><td>Store screenshots, DOM snapshots, reports</td><td>~$0.023/GB/month</td></tr>
+        <tr><td><strong>Step Functions</strong> (optional)</td><td>Orchestrate suite: fan-out &rarr; wait &rarr; aggregate &rarr; notify</td><td>~$0.025/1000 transitions</td></tr>
+      </table>
+    </div>
+  </div>
+
+
+  <!-- ================================================================ -->
+  <!-- Implementation Timeline -->
+  <!-- ================================================================ -->
+  <div class="section">
+    <div class="section-label">Implementation Timeline</div>
+    <div class="card" style="padding:0; overflow:hidden;">
+      <div style="background:#0f172a; padding:16px 24px; display:flex; gap:30px; align-items:center;">
+        <div style="text-align:center;">
+          <div style="font-size:28px; font-weight:900; color:#86efac;">28&ndash;38</div>
+          <div style="font-size:11px; color:#94a3b8; text-transform:uppercase;">Total Days</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:28px; font-weight:900; color:#c4b5fd;">6</div>
+          <div style="font-size:11px; color:#94a3b8; text-transform:uppercase;">Features</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:28px; font-weight:900; color:#fbbf24;">1</div>
+          <div style="font-size:11px; color:#94a3b8; text-transform:uppercase;">Engineer</div>
+        </div>
+        <div style="flex:1; min-width:200px;">
+          <div style="font-size:11px; color:#94a3b8; margin-bottom:6px;">Recommended build order</div>
+          <div style="display:flex; height:12px; border-radius:6px; overflow:hidden; gap:2px;">
+            <div style="background:#7c3aed; width:20%;" title="Env Promotion"></div>
+            <div style="background:#ea580c; width:13%;" title="Tagging"></div>
+            <div style="background:#dc2626; width:20%;" title="Failure Analysis"></div>
+            <div style="background:#15803d; width:30%;" title="Headless + Retry"></div>
+            <div style="background:#2563eb; width:17%;" title="Reports"></div>
+          </div>
+          <div style="display:flex; gap:12px; margin-top:6px; flex-wrap:wrap;">
+            <span style="font-size:10px; color:#94a3b8;"><span style="color:#7c3aed;">&#9632;</span> Promotion</span>
+            <span style="font-size:10px; color:#94a3b8;"><span style="color:#ea580c;">&#9632;</span> Tagging</span>
+            <span style="font-size:10px; color:#94a3b8;"><span style="color:#dc2626;">&#9632;</span> Failure</span>
+            <span style="font-size:10px; color:#94a3b8;"><span style="color:#15803d;">&#9632;</span> Headless</span>
+            <span style="font-size:10px; color:#94a3b8;"><span style="color:#2563eb;">&#9632;</span> Reports</span>
+          </div>
+        </div>
+      </div>
+      <div style="padding:16px 24px;">
+        <table>
+          <thead>
+            <tr><th>Order</th><th>Feature</th><th>Effort</th><th>Depends On</th><th>Rationale</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><span class="badge badge-purple">Week 1</span></td><td><strong>Tagging &amp; Suites</strong></td><td>3&ndash;4 days</td><td>None</td><td>Foundation for suite execution and reports. Quick win.</td></tr>
+            <tr><td><span class="badge badge-purple">Week 2</span></td><td><strong>Env Promotion</strong></td><td>5&ndash;7 days</td><td>Tagging (tags carry over)</td><td>Enables QA/UAT/PROD usage. Unlocks higher-env adoption.</td></tr>
+            <tr><td><span class="badge badge-red">Week 3</span></td><td><strong>Failure Analysis</strong></td><td>5&ndash;7 days</td><td>None</td><td>Required before smart retry. Captures artifacts needed by LLM.</td></tr>
+            <tr><td><span class="badge badge-green">Week 4&ndash;5</span></td><td><strong>Headless + Smart Retry</strong></td><td>7&ndash;10 days</td><td>Tagging + Failure Analysis</td><td>Biggest feature. Needs suites (tagging) and failure artifacts.</td></tr>
+            <tr><td><span class="badge badge-blue">Week 5&ndash;6</span></td><td><strong>Reports</strong></td><td>4&ndash;5 days</td><td>Tagging + Failure Analysis</td><td>Uses suite run data and failure artifacts. Best done last.</td></tr>
+            <tr><td><span class="badge badge-teal">Parallel</span></td><td><strong>Database Evaluation</strong></td><td>2&ndash;3 days</td><td>None</td><td>Research task, can run in parallel with any feature.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="footer">
+    Prompt2Test &mdash; Phase 2 Roadmap &middot; March 2026 &middot; Feature Design Document
+  </div>
+
+</div>
+</body>
+</html>

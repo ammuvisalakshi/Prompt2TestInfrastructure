@@ -151,7 +151,7 @@
     <div class="metric-item"><div class="val" style="color:#22c55e;">5</div><div class="lbl">GitHub Repos</div></div>
     <div class="metric-item"><div class="val" style="color:#f97316;">4</div><div class="lbl">UI Screens</div></div>
     <div class="metric-item"><div class="val" style="color:#14b8a6;">3</div><div class="lbl">CodePipelines</div></div>
-    <div class="metric-item"><div class="val" style="color:#a855f7;">6</div><div class="lbl">Doc Pages</div></div>
+    <div class="metric-item"><div class="val" style="color:#a855f7;">8</div><div class="lbl">Doc Pages</div></div>
     <div class="metric-item" style="background:#f0fdf4;"><div class="val" style="color:#15803d;">15</div><div class="lbl">Days to Build</div></div>
   </div>
 
@@ -356,6 +356,60 @@
       </div>
     </a>
 
+    <!-- 7. CAP Design Improvements -->
+    <a href="Prompt2Test_CAP_DesignImprovements.html" class="doc-card">
+      <div class="doc-card-header">
+        <div class="doc-icon" style="background:#fef2f2; color:#dc2626;">&#x1F6E1;</div>
+        <div>
+          <h3>CAP Design Improvements</h3>
+          <div class="subtitle">HA, consistency, partition tolerance</div>
+        </div>
+      </div>
+      <div class="doc-card-body">
+        <p>Architectural enhancements across 4 tiers to make the platform highly available, strongly consistent, and partition tolerant.</p>
+        <ul class="content-list">
+          <li><span class="dot" style="background:#dc2626;"></span> Current state CAP assessment (per component)</li>
+          <li><span class="dot" style="background:#dc2626;"></span> CP vs AP strategy per data type</li>
+          <li><span class="dot" style="background:#dc2626;"></span> Tier 1: Quick wins (multi-AZ, strong reads, alarms)</li>
+          <li><span class="dot" style="background:#dc2626;"></span> Tier 2: Hardening (API GW, DLQ, WAF, secrets rotation)</li>
+          <li><span class="dot" style="background:#dc2626;"></span> Tier 3: Multi-region (Global Tables, Global DB, Route 53)</li>
+          <li><span class="dot" style="background:#dc2626;"></span> Tier 4: Active-active (Global Accelerator, chaos engineering)</li>
+          <li><span class="dot" style="background:#dc2626;"></span> Priority matrix with effort &amp; cost estimates</li>
+        </ul>
+      </div>
+      <div class="doc-card-footer">
+        <span>Best for: Architects, SRE, production readiness</span>
+        <span class="arrow">&rarr;</span>
+      </div>
+    </a>
+
+    <!-- 8. Phase 2 Feature Enhancements -->
+    <a href="Prompt2Test_Phase2_Roadmap.html" class="doc-card">
+      <div class="doc-card-header">
+        <div class="doc-icon" style="background:#f0fdf4; color:#15803d;">&#x1F680;</div>
+        <div>
+          <h3>Feature Enhancements (Phase 2)</h3>
+          <div class="subtitle">Roadmap for production-grade QA platform</div>
+        </div>
+      </div>
+      <div class="doc-card-body">
+        <p>6 feature enhancements to evolve Prompt2Test from a dev tool into a CI/CD-grade automation platform with environment promotion, smart retries, and reporting.</p>
+        <ul class="content-list">
+          <li><span class="dot" style="background:#15803d;"></span> Environment promotion (DEV &rarr; QA &rarr; UAT &rarr; PROD)</li>
+          <li><span class="dot" style="background:#15803d;"></span> Failure analysis &mdash; screenshots, logs, LLM root cause</li>
+          <li><span class="dot" style="background:#15803d;"></span> Tagging &amp; test suites (regression, smoke, deployment)</li>
+          <li><span class="dot" style="background:#15803d;"></span> Headless suite execution + parallel workers</li>
+          <li><span class="dot" style="background:#15803d;"></span> Smart retry with LLM + email on final failure</li>
+          <li><span class="dot" style="background:#15803d;"></span> Report generation (PDF/HTML, trends, suite reports)</li>
+          <li><span class="dot" style="background:#15803d;"></span> Database evaluation &amp; implementation timeline</li>
+        </ul>
+      </div>
+      <div class="doc-card-footer">
+        <span>Best for: Product owners, tech leads, sprint planning</span>
+        <span class="arrow">&rarr;</span>
+      </div>
+    </a>
+
   </div>
 
   <!-- Content Map -->
@@ -364,149 +418,48 @@
     <table class="overlap-table">
       <thead>
         <tr>
-          <th style="width:30%;">Topic</th>
-          <th style="width:14%;">Overview</th>
-          <th style="width:14%;">Diagram</th>
-          <th style="width:14%;">Architecture</th>
-          <th style="width:14%;">Decisions</th>
-          <th style="width:14%;">Deploy / CI/CD</th>
+          <th style="width:20%;">Topic</th>
+          <th style="width:10%;">Overview</th>
+          <th style="width:10%;">Diagram</th>
+          <th style="width:10%;">Architecture</th>
+          <th style="width:10%;">Decisions</th>
+          <th style="width:12%;">Deploy / CI/CD</th>
+          <th style="width:10%;">CAP Design</th>
+          <th style="width:10%;">Phase 2</th>
         </tr>
       </thead>
       <tbody>
-        <tr>
-          <td><strong>What the platform does</strong></td>
-          <td class="check">&#10003; Primary</td>
-          <td class="dash">&mdash;</td>
-          <td class="dash">&mdash;</td>
-          <td class="dash">&mdash;</td>
-          <td class="dash">&mdash;</td>
-        </tr>
-        <tr>
-          <td><strong>UI screens &amp; features</strong></td>
-          <td class="check">&#10003; Primary</td>
-          <td class="dash">&mdash;</td>
-          <td class="dash">&mdash;</td>
-          <td class="dash">&mdash;</td>
-          <td class="dash">&mdash;</td>
-        </tr>
-        <tr>
-          <td><strong>Build timeline &amp; effort</strong></td>
-          <td class="check">&#10003; Primary</td>
-          <td class="dash">&mdash;</td>
-          <td class="dash">&mdash;</td>
-          <td class="dash">&mdash;</td>
-          <td class="dash">&mdash;</td>
-        </tr>
-        <tr>
-          <td><strong>Visual architecture map</strong></td>
-          <td class="dash">&mdash;</td>
-          <td class="check">&#10003; Primary</td>
-          <td class="dash">&mdash;</td>
-          <td class="dash">&mdash;</td>
-          <td class="dash">&mdash;</td>
-        </tr>
-        <tr>
-          <td><strong>AWS services (detailed specs)</strong></td>
-          <td class="dash">&mdash;</td>
-          <td class="dash">&mdash;</td>
-          <td class="check">&#10003; Primary</td>
-          <td class="dash">&mdash;</td>
-          <td class="dash">&mdash;</td>
-        </tr>
-        <tr>
-          <td><strong>Cognito / Auth flow</strong></td>
-          <td class="dash">&mdash;</td>
-          <td class="dash">&mdash;</td>
-          <td class="check">&#10003; Primary</td>
-          <td class="dash">&mdash;</td>
-          <td class="dash">&mdash;</td>
-        </tr>
-        <tr>
-          <td><strong>AgentCore &amp; LLM config</strong></td>
-          <td class="dash">&mdash;</td>
-          <td class="dash">&mdash;</td>
-          <td class="check">&#10003; Primary</td>
-          <td class="dash">&mdash;</td>
-          <td class="dash">&mdash;</td>
-        </tr>
-        <tr>
-          <td><strong>Cost &amp; scaling model</strong></td>
-          <td class="dash">&mdash;</td>
-          <td class="dash">&mdash;</td>
-          <td class="check">&#10003; Primary</td>
-          <td class="dash">&mdash;</td>
-          <td class="dash">&mdash;</td>
-        </tr>
-        <tr>
-          <td><strong>Timing metrics (cold start, etc.)</strong></td>
-          <td class="dash">&mdash;</td>
-          <td class="dash">&mdash;</td>
-          <td class="check">&#10003; Primary</td>
-          <td class="dash">&mdash;</td>
-          <td class="dash">&mdash;</td>
-        </tr>
-        <tr>
-          <td><strong>ECS Fargate lifecycle</strong></td>
-          <td class="dash">&mdash;</td>
-          <td class="dash">&mdash;</td>
-          <td class="check">&#10003; Primary</td>
-          <td class="dash">&mdash;</td>
-          <td class="dash">&mdash;</td>
-        </tr>
-        <tr>
-          <td><strong>Architecture decisions (ADRs)</strong></td>
-          <td class="dash">&mdash;</td>
-          <td class="dash">&mdash;</td>
-          <td class="dash">&mdash;</td>
-          <td class="check">&#10003; Primary</td>
-          <td class="dash">&mdash;</td>
-        </tr>
-        <tr>
-          <td><strong>Deployment steps</strong></td>
-          <td class="dash">&mdash;</td>
-          <td class="dash">&mdash;</td>
-          <td class="dash">&mdash;</td>
-          <td class="dash">&mdash;</td>
-          <td class="check">&#10003; Deploy Guide</td>
-        </tr>
-        <tr>
-          <td><strong>CI/CD pipelines</strong></td>
-          <td class="dash">&mdash;</td>
-          <td class="dash">&mdash;</td>
-          <td class="dash">&mdash;</td>
-          <td class="dash">&mdash;</td>
-          <td class="check">&#10003; Handover</td>
-        </tr>
-        <tr>
-          <td><strong>Troubleshooting</strong></td>
-          <td class="dash">&mdash;</td>
-          <td class="dash">&mdash;</td>
-          <td class="dash">&mdash;</td>
-          <td class="dash">&mdash;</td>
-          <td class="check">&#10003; Handover</td>
-        </tr>
-        <tr>
-          <td><strong>Data model (Aurora + DynamoDB)</strong></td>
-          <td class="check">&#10003; Schema</td>
-          <td class="dash">&mdash;</td>
-          <td class="check">&#10003; Detail</td>
-          <td class="dash">&mdash;</td>
-          <td class="dash">&mdash;</td>
-        </tr>
-        <tr>
-          <td><strong>GitHub repositories</strong></td>
-          <td class="check">&#10003; Primary</td>
-          <td class="dash">&mdash;</td>
-          <td class="dash">&mdash;</td>
-          <td class="dash">&mdash;</td>
-          <td class="dash">&mdash;</td>
-        </tr>
+        <tr><td><strong>What the platform does</strong></td><td class="check">&#10003; Primary</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td></tr>
+        <tr><td><strong>UI screens &amp; features</strong></td><td class="check">&#10003; Primary</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td></tr>
+        <tr><td><strong>Build timeline &amp; effort</strong></td><td class="check">&#10003; Primary</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td></tr>
+        <tr><td><strong>Visual architecture map</strong></td><td class="dash">&mdash;</td><td class="check">&#10003; Primary</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td></tr>
+        <tr><td><strong>AWS services (detailed specs)</strong></td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="check">&#10003; Primary</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="check">&#10003; Gaps</td><td class="dash">&mdash;</td></tr>
+        <tr><td><strong>Cognito / Auth flow</strong></td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="check">&#10003; Primary</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td></tr>
+        <tr><td><strong>AgentCore &amp; LLM config</strong></td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="check">&#10003; Primary</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td></tr>
+        <tr><td><strong>Cost &amp; scaling model</strong></td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="check">&#10003; Primary</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="check">&#10003; Cost deltas</td><td class="dash">&mdash;</td></tr>
+        <tr><td><strong>Timing metrics</strong></td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="check">&#10003; Primary</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td></tr>
+        <tr><td><strong>ECS Fargate lifecycle</strong></td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="check">&#10003; Primary</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="check">&#10003; Multi-AZ/region</td><td class="dash">&mdash;</td></tr>
+        <tr><td><strong>Architecture decisions (ADRs)</strong></td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="check">&#10003; Primary</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td></tr>
+        <tr><td><strong>Deployment steps</strong></td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="check">&#10003; Deploy Guide</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td></tr>
+        <tr><td><strong>CI/CD pipelines</strong></td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="check">&#10003; Handover</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td></tr>
+        <tr><td><strong>Troubleshooting</strong></td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="check">&#10003; Handover</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td></tr>
+        <tr><td><strong>Data model (Aurora + DynamoDB)</strong></td><td class="check">&#10003; Schema</td><td class="dash">&mdash;</td><td class="check">&#10003; Detail</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td></tr>
+        <tr><td><strong>GitHub repositories</strong></td><td class="check">&#10003; Primary</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td></tr>
+        <tr style="background:#f0fdf4;"><td><strong>Environment promotion</strong></td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="check">&#10003; Primary</td></tr>
+        <tr style="background:#f0fdf4;"><td><strong>Failure analysis &amp; logs</strong></td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="check">&#10003; Primary</td></tr>
+        <tr style="background:#f0fdf4;"><td><strong>Tagging &amp; test suites</strong></td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="check">&#10003; Primary</td></tr>
+        <tr style="background:#f0fdf4;"><td><strong>Headless execution &amp; smart retry</strong></td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="check">&#10003; Primary</td></tr>
+        <tr style="background:#f0fdf4;"><td><strong>Report generation</strong></td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="check">&#10003; Primary</td></tr>
+        <tr style="background:#fff1f2;"><td><strong>CAP assessment &amp; gaps</strong></td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="check">&#10003; Primary</td><td class="dash">&mdash;</td></tr>
+        <tr style="background:#fff1f2;"><td><strong>HA / multi-region strategy</strong></td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="check">&#10003; Primary</td><td class="dash">&mdash;</td></tr>
+        <tr style="background:#fff1f2;"><td><strong>Production hardening (WAF, DLQ, etc.)</strong></td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="check">&#10003; Primary</td><td class="dash">&mdash;</td></tr>
+        <tr style="background:#fff1f2;"><td><strong>Implementation priority matrix</strong></td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="check">&#10003; Primary</td><td class="dash">&mdash;</td></tr>
       </tbody>
     </table>
   </div>
 
   <div class="footer">
-    Prompt2Test Documentation Hub &mdash; 6 pages &middot; Last updated March 2026
+    Prompt2Test Documentation Hub &mdash; 8 pages &middot; Last updated March 2026
   </div>
 
 </div>

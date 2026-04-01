@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prompt2Test — CAP Design Improvements</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f1f5f9; color: #1e293b; font-size: 14px; }
+  .page { max-width: 1300px; margin: 0 auto; padding: 40px 32px; }
+
+  .hero { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%); border-radius: 16px; padding: 48px 40px; margin-bottom: 32px; position: relative; overflow: hidden; }
+  .hero::before { content: ''; position: absolute; top: -60px; right: -60px; width: 300px; height: 300px; border-radius: 50%; background: radial-gradient(circle, rgba(239,68,68,0.12) 0%, transparent 70%); }
+  .hero h1 { font-size: 32px; font-weight: 900; color: #fff; margin-bottom: 10px; }
+  .hero .tagline { font-size: 15px; color: #94a3b8; margin-bottom: 20px; max-width: 800px; line-height: 1.7; }
+  .hero .tags { display: flex; gap: 8px; flex-wrap: wrap; }
+  .hero-tag { font-size: 11px; font-weight: 600; padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.15); color: #e2e8f0; background: rgba(255,255,255,0.07); }
+
+  .section { margin-bottom: 36px; }
+  .section-label { font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #64748b; margin-bottom: 14px; }
+  .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 22px 24px; }
+  .card-title { font-size: 15px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+
+  .theme-blue   { background: #eff6ff; border-color: #bfdbfe; }
+  .theme-purple { background: #faf5ff; border-color: #ddd6fe; }
+  .theme-green  { background: #f0fdf4; border-color: #bbf7d0; }
+  .theme-orange { background: #fff7ed; border-color: #fed7aa; }
+  .theme-teal   { background: #f0fdfa; border-color: #99f6e4; }
+  .theme-rose   { background: #fff1f2; border-color: #fecdd3; }
+  .theme-yellow { background: #fefce8; border-color: #fef08a; }
+
+  .row { display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+  .row .card { flex: 1; min-width: 280px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: #f8fafc; font-weight: 700; color: #475569; text-align: left; padding: 10px 14px; border-bottom: 2px solid #e2e8f0; }
+  td { padding: 10px 14px; border-bottom: 1px solid #f1f5f9; line-height: 1.6; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #f8fafc; }
+
+  .badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 5px; margin: 2px 2px 2px 0; }
+  .badge-red    { background: #fee2e2; color: #dc2626; }
+  .badge-orange { background: #ffedd5; color: #c2410c; }
+  .badge-yellow { background: #fef9c3; color: #a16207; }
+  .badge-green  { background: #dcfce7; color: #15803d; }
+  .badge-blue   { background: #dbeafe; color: #1d4ed8; }
+  .badge-purple { background: #ede9fe; color: #6d28d9; }
+  .badge-teal   { background: #ccfbf1; color: #0f766e; }
+  .badge-gray   { background: #f1f5f9; color: #475569; }
+
+  code { font-family: 'Cascadia Code','Consolas',monospace; font-size: 12px; background: #f1f5f9; color: #4338ca; padding: 2px 5px; border-radius: 3px; }
+  .divider { height: 1px; background: #e2e8f0; margin: 8px 0 20px; }
+
+  .cap-circle { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; font-weight: 800; font-size: 14px; color: white; margin-right: 8px; }
+
+  .tier-header { background: #0f172a; color: #e2e8f0; border-radius: 10px 10px 0 0; padding: 14px 20px; font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+  .tier-body { border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 10px 10px; overflow: hidden; }
+
+  .flow { display: flex; align-items: center; gap: 0; flex-wrap: wrap; justify-content: center; padding: 16px 0; }
+  .flow-box { background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 16px; font-size: 12px; font-weight: 600; color: #334155; text-align: center; min-width: 100px; }
+  .flow-box small { display: block; font-size: 10px; font-weight: 400; color: #94a3b8; margin-top: 2px; }
+  .flow-arrow { font-size: 20px; color: #94a3b8; padding: 0 4px; }
+
+  .improvement-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px 18px; margin-bottom: 12px; border-left: 4px solid #e2e8f0; }
+  .improvement-card h4 { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+  .improvement-card p { font-size: 12px; color: #64748b; line-height: 1.6; }
+  .improvement-card .impl { font-size: 11px; color: #475569; margin-top: 8px; background: #f8fafc; border-radius: 6px; padding: 8px 12px; }
+
+  .footer { text-align: center; font-size: 13px; color: #94a3b8; margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Hero -->
+  <div class="hero">
+    <h1>Prompt2Test &mdash; CAP Design Improvements</h1>
+    <p class="tagline">Architectural enhancements to make the platform Highly Available, Strongly Consistent, and Partition Tolerant. Organized into 4 tiers from quick wins to full multi-region active-active.</p>
+    <div class="tags">
+      <span class="hero-tag">CAP Theorem</span>
+      <span class="hero-tag">High Availability</span>
+      <span class="hero-tag">Multi-Region</span>
+      <span class="hero-tag">Disaster Recovery</span>
+      <span class="hero-tag">Production Hardening</span>
+      <span class="hero-tag">us-east-1 + us-west-2</span>
+    </div>
+  </div>
+
+  <!-- CAP Theorem Primer -->
+  <div class="section">
+    <div class="section-label">CAP Theorem &mdash; Quick Primer</div>
+    <div class="card">
+      <p style="font-size:14px; color:#475569; line-height:1.8; margin-bottom:16px;">
+        The <strong>CAP theorem</strong> states that a distributed system can guarantee at most <strong>two of three</strong> properties simultaneously. In practice, network partitions are inevitable, so the real choice is between <strong>CP</strong> (consistent but may reject requests) and <strong>AP</strong> (available but may serve stale data).
+      </p>
+      <div class="row">
+        <div class="card theme-blue" style="text-align:center;">
+          <div class="card-title" style="justify-content:center;"><span class="cap-circle" style="background:#2563eb;">C</span> Consistency</div>
+          <p style="font-size:13px; color:#475569;">Every read returns the most recent write. All nodes see the same data at the same time.</p>
+          <div style="margin-top:10px;"><span class="badge badge-blue">Aurora (single writer)</span> <span class="badge badge-blue">DynamoDB strong reads</span></div>
+        </div>
+        <div class="card theme-green" style="text-align:center;">
+          <div class="card-title" style="justify-content:center;"><span class="cap-circle" style="background:#16a34a;">A</span> Availability</div>
+          <p style="font-size:13px; color:#475569;">Every request receives a response (success or failure). System never refuses a request.</p>
+          <div style="margin-top:10px;"><span class="badge badge-green">DynamoDB</span> <span class="badge badge-green">CloudFront</span> <span class="badge badge-green">Lambda</span></div>
+        </div>
+        <div class="card theme-orange" style="text-align:center;">
+          <div class="card-title" style="justify-content:center;"><span class="cap-circle" style="background:#ea580c;">P</span> Partition Tolerance</div>
+          <p style="font-size:13px; color:#475569;">System continues to operate despite network partitions between nodes or regions.</p>
+          <div style="margin-top:10px;"><span class="badge badge-orange">DynamoDB Global Tables</span> <span class="badge badge-orange">Aurora Global DB</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Current State Assessment -->
+  <div class="section">
+    <div class="section-label">Current State Assessment</div>
+    <div class="card" style="padding:0; overflow:hidden;">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:20%;">Component</th>
+            <th style="width:22%;">Current Setup</th>
+            <th style="width:12%; text-align:center;">Consistency</th>
+            <th style="width:12%; text-align:center;">Availability</th>
+            <th style="width:14%; text-align:center;">Partition Tolerant</th>
+            <th style="width:20%;">Gap</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Aurora Serverless v2</strong></td>
+            <td>Single region, auto-pause, multi-AZ</td>
+            <td style="text-align:center;"><span class="badge badge-green">Strong</span></td>
+            <td style="text-align:center;"><span class="badge badge-yellow">Partial</span></td>
+            <td style="text-align:center;"><span class="badge badge-red">No</span></td>
+            <td>Single region. 30s cold start on auto-pause resume.</td>
+          </tr>
+          <tr>
+            <td><strong>DynamoDB</strong></td>
+            <td>Single region table, eventual reads</td>
+            <td style="text-align:center;"><span class="badge badge-yellow">Eventual</span></td>
+            <td style="text-align:center;"><span class="badge badge-green">High</span></td>
+            <td style="text-align:center;"><span class="badge badge-red">No</span></td>
+            <td>Eventual consistency may serve stale config to agent.</td>
+          </tr>
+          <tr>
+            <td><strong>ECS Fargate</strong></td>
+            <td>On-demand, single AZ placement</td>
+            <td style="text-align:center;"><span class="badge badge-gray">N/A</span></td>
+            <td style="text-align:center;"><span class="badge badge-yellow">Partial</span></td>
+            <td style="text-align:center;"><span class="badge badge-red">No</span></td>
+            <td>Tasks may land in one AZ. No cross-region fallback.</td>
+          </tr>
+          <tr>
+            <td><strong>Cognito</strong></td>
+            <td>Single region user pool</td>
+            <td style="text-align:center;"><span class="badge badge-green">Strong</span></td>
+            <td style="text-align:center;"><span class="badge badge-green">High</span></td>
+            <td style="text-align:center;"><span class="badge badge-red">No</span></td>
+            <td>Region failure = no login. No native multi-region.</td>
+          </tr>
+          <tr>
+            <td><strong>Bedrock AgentCore</strong></td>
+            <td>us-east-1 only</td>
+            <td style="text-align:center;"><span class="badge badge-gray">N/A</span></td>
+            <td style="text-align:center;"><span class="badge badge-green">High</span></td>
+            <td style="text-align:center;"><span class="badge badge-red">No</span></td>
+            <td>Regional service. No automatic cross-region fallback.</td>
+          </tr>
+          <tr>
+            <td><strong>Lambda Functions</strong></td>
+            <td>Single region, no reserved concurrency</td>
+            <td style="text-align:center;"><span class="badge badge-gray">N/A</span></td>
+            <td style="text-align:center;"><span class="badge badge-green">High</span></td>
+            <td style="text-align:center;"><span class="badge badge-red">No</span></td>
+            <td>Cold starts under burst load. No cross-region deploy.</td>
+          </tr>
+          <tr>
+            <td><strong>CloudFront + Amplify</strong></td>
+            <td>Global CDN, edge caching</td>
+            <td style="text-align:center;"><span class="badge badge-yellow">Eventual</span></td>
+            <td style="text-align:center;"><span class="badge badge-green">High</span></td>
+            <td style="text-align:center;"><span class="badge badge-green">Yes</span></td>
+            <td>Already partition tolerant. Only component that is.</td>
+          </tr>
+          <tr>
+            <td><strong>CodePipeline / CI/CD</strong></td>
+            <td>Single region pipelines</td>
+            <td style="text-align:center;"><span class="badge badge-gray">N/A</span></td>
+            <td style="text-align:center;"><span class="badge badge-gray">N/A</span></td>
+            <td style="text-align:center;"><span class="badge badge-red">No</span></td>
+            <td>Deploy is blocked if us-east-1 is down.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card theme-rose" style="margin-top:12px;">
+      <div class="card-title" style="color:#dc2626;">Critical Finding</div>
+      <p style="font-size:13px; color:#475569;">The platform is <strong>single-region (us-east-1)</strong>. If that region experiences an outage, the entire system is unavailable &mdash; no login, no test creation, no execution, no data access. CloudFront is the only partition-tolerant component.</p>
+    </div>
+  </div>
+
+  <!-- Recommended CAP Strategy -->
+  <div class="section">
+    <div class="section-label">Recommended CAP Strategy for Prompt2Test</div>
+    <div class="card">
+      <p style="font-size:14px; color:#475569; line-height:1.8; margin-bottom:16px;">
+        Since network partitions are inevitable in distributed systems, we must choose between <strong>CP</strong> and <strong>AP</strong> per component based on business requirements:
+      </p>
+      <table>
+        <thead>
+          <tr><th>Data / Operation</th><th>Strategy</th><th>Rationale</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Service Config reads</strong> (DynamoDB)</td>
+            <td><span class="badge badge-blue">CP &mdash; Strong Consistency</span></td>
+            <td>Agent MUST see latest URLs and credentials. Stale config = test runs against wrong environment.</td>
+          </tr>
+          <tr>
+            <td><strong>Test case writes</strong> (Aurora)</td>
+            <td><span class="badge badge-blue">CP &mdash; Strong Consistency</span></td>
+            <td>Cannot lose test results. A PASS/FAIL must be durably written before confirming to user.</td>
+          </tr>
+          <tr>
+            <td><strong>Test case reads / listing</strong> (Aurora)</td>
+            <td><span class="badge badge-green">AP &mdash; Eventual Consistency OK</span></td>
+            <td>Inventory listing can lag by seconds. User won't notice a 1-2s delay in seeing new test cases.</td>
+          </tr>
+          <tr>
+            <td><strong>Browser sessions</strong> (ECS Fargate)</td>
+            <td><span class="badge badge-green">AP &mdash; Availability First</span></td>
+            <td>Better to start a test in a degraded state than refuse the request entirely.</td>
+          </tr>
+          <tr>
+            <td><strong>Authentication</strong> (Cognito)</td>
+            <td><span class="badge badge-blue">CP &mdash; Strong Consistency</span></td>
+            <td>Auth tokens must be valid. Cannot allow stale or forged credentials.</td>
+          </tr>
+          <tr>
+            <td><strong>AI Agent responses</strong> (Bedrock)</td>
+            <td><span class="badge badge-green">AP &mdash; Availability First</span></td>
+            <td>If primary model is unavailable, fall back to a simpler model rather than failing.</td>
+          </tr>
+          <tr>
+            <td><strong>Run records</strong> (Aurora)</td>
+            <td><span class="badge badge-blue">CP &mdash; Strong Consistency</span></td>
+            <td>Execution results are the source of truth. Must not be lost or duplicated.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TIER 1 -->
+  <div class="section">
+    <div class="tier-header" style="background:#1d4ed8;">
+      <span style="font-size:20px;">1</span>
+      Tier 1 &mdash; Quick Wins (HA Within Region)
+      <span class="badge" style="background:rgba(255,255,255,0.15); color:#93c5fd; margin-left:auto;">1&ndash;2 days effort</span>
+    </div>
+    <div class="tier-body">
+      <div style="padding:20px;">
+
+        <div class="improvement-card" style="border-left-color:#2563eb;">
+          <h4 style="color:#2563eb;">1.1 &mdash; DynamoDB: Enable Strongly Consistent Reads</h4>
+          <p>Agent reads service config before every test. Currently uses eventually consistent reads, which may return stale URLs or credentials if config was just updated.</p>
+          <div class="impl">
+            <strong>Implementation:</strong> Add <code>ConsistentRead: true</code> to all <code>QueryCommand</code> and <code>GetCommand</code> calls in agent's <code>get_service_config</code> tool and Lambda functions.<br>
+            <strong>Trade-off:</strong> 2x read cost, slightly higher latency (~5ms). Worth it for correctness.<br>
+            <strong>CAP Impact:</strong> Moves config reads from <strong>AP</strong> to <strong>CP</strong>.
+          </div>
+        </div>
+
+        <div class="improvement-card" style="border-left-color:#16a34a;">
+          <h4 style="color:#16a34a;">1.2 &mdash; Aurora: Verify Multi-AZ Deployment</h4>
+          <p>Aurora Serverless v2 should have instances in at least 2 AZs. If only 1 instance exists, an AZ failure takes down the database.</p>
+          <div class="impl">
+            <strong>Implementation:</strong> In CDK, ensure <code>writer</code> + at least 1 <code>reader</code> instance in different AZs. Set <code>min capacity = 0.5 ACU</code> for the reader to minimize cost.<br>
+            <strong>Trade-off:</strong> ~$30/mo additional cost for the reader instance.<br>
+            <strong>CAP Impact:</strong> Improves <strong>Availability</strong> &mdash; survives single AZ failure.
+          </div>
+        </div>
+
+        <div class="improvement-card" style="border-left-color:#ea580c;">
+          <h4 style="color:#ea580c;">1.3 &mdash; ECS: Multi-AZ Task Placement</h4>
+          <p>Currently Fargate tasks may all land in the same AZ. If that AZ has issues, no browser sessions can start.</p>
+          <div class="impl">
+            <strong>Implementation:</strong> In CDK task definition, ensure subnets span 2+ AZs. Add <code>placementStrategies: [{ type: 'spread', field: 'attribute:ecs.availability-zone' }]</code>.<br>
+            <strong>Trade-off:</strong> None &mdash; no additional cost.<br>
+            <strong>CAP Impact:</strong> Improves <strong>Availability</strong> of browser test sessions.
+          </div>
+        </div>
+
+        <div class="improvement-card" style="border-left-color:#7c3aed;">
+          <h4 style="color:#7c3aed;">1.4 &mdash; Lambda: Reserved Concurrency + Provisioned</h4>
+          <p>Lambda cold starts add 1-3s latency. Under burst load, all instances may be cold simultaneously.</p>
+          <div class="impl">
+            <strong>Implementation:</strong> Set <code>reservedConcurrency: 5</code> for reader/writer Lambdas. Consider <code>provisionedConcurrency: 1</code> for the reader to eliminate cold starts.<br>
+            <strong>Trade-off:</strong> Provisioned concurrency: ~$15/mo. Reserved: free.<br>
+            <strong>CAP Impact:</strong> Improves <strong>Availability</strong> under load.
+          </div>
+        </div>
+
+        <div class="improvement-card" style="border-left-color:#dc2626;">
+          <h4 style="color:#dc2626;">1.5 &mdash; CloudWatch Alarms + SNS Notifications</h4>
+          <p>No alerting today. Team doesn't know if Aurora is paused too long, Lambda errors spike, or ECS tasks fail to start.</p>
+          <div class="impl">
+            <strong>Implementation:</strong> Create CloudWatch alarms for: Aurora connection errors, Lambda error rate > 5%, ECS task launch failures, Bedrock throttling. Route to SNS &rarr; email/Slack.<br>
+            <strong>Trade-off:</strong> ~$1/mo for alarms. Requires Slack webhook or email setup.<br>
+            <strong>CAP Impact:</strong> Doesn't change CAP directly but enables <strong>fast detection</strong> of availability issues.
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- TIER 2 -->
+  <div class="section">
+    <div class="tier-header" style="background:#c2410c;">
+      <span style="font-size:20px;">2</span>
+      Tier 2 &mdash; Production Hardening
+      <span class="badge" style="background:rgba(255,255,255,0.15); color:#fdba74; margin-left:auto;">1&ndash;2 weeks effort</span>
+    </div>
+    <div class="tier-body">
+      <div style="padding:20px;">
+
+        <div class="improvement-card" style="border-left-color:#2563eb;">
+          <h4 style="color:#2563eb;">2.1 &mdash; API Gateway in Front of Lambda</h4>
+          <p>Lambda functions are currently invoked directly from the browser via AWS SDK. No rate limiting, no request validation, no caching, no throttling.</p>
+          <div class="impl">
+            <strong>Implementation:</strong> Create API Gateway REST API with <code>/test-cases</code>, <code>/run-records</code> endpoints. Add usage plans, throttling (100 req/s), and Cognito authorizer. Update React app to call API GW instead of Lambda directly.<br>
+            <strong>Trade-off:</strong> Adds ~50ms latency per request. ~$3.50/million requests.<br>
+            <strong>CAP Impact:</strong> Improves <strong>Availability</strong> via throttling (prevents overload) and <strong>Consistency</strong> via request validation.
+          </div>
+        </div>
+
+        <div class="improvement-card" style="border-left-color:#16a34a;">
+          <h4 style="color:#16a34a;">2.2 &mdash; Dead Letter Queues for Lambda</h4>
+          <p>If a Lambda invocation fails (e.g., Aurora timeout during auto-pause resume), the request is lost silently. Test results may not be saved.</p>
+          <div class="impl">
+            <strong>Implementation:</strong> Add SQS DLQ to both writer and reader Lambdas. Create a CloudWatch alarm when DLQ depth > 0. Add a retry Lambda that processes DLQ messages.<br>
+            <strong>Trade-off:</strong> Minimal cost (~$0.40/million SQS requests).<br>
+            <strong>CAP Impact:</strong> Improves <strong>Consistency</strong> &mdash; ensures writes are never lost, even if first attempt fails.
+          </div>
+        </div>
+
+        <div class="improvement-card" style="border-left-color:#ea580c;">
+          <h4 style="color:#ea580c;">2.3 &mdash; WAF on CloudFront</h4>
+          <p>No DDoS protection or rate limiting at the edge. A bot or attack could overwhelm backend services.</p>
+          <div class="impl">
+            <strong>Implementation:</strong> Attach AWS WAF to CloudFront distribution. Add managed rule groups: AWSManagedRulesCommonRuleSet, AWSManagedRulesKnownBadInputsRuleSet. Add rate-based rule (2000 req/5min per IP).<br>
+            <strong>Trade-off:</strong> ~$5/mo for WAF + $0.60/million requests inspected.<br>
+            <strong>CAP Impact:</strong> Protects <strong>Availability</strong> from DDoS and abuse.
+          </div>
+        </div>
+
+        <div class="improvement-card" style="border-left-color:#7c3aed;">
+          <h4 style="color:#7c3aed;">2.4 &mdash; Secrets Manager Auto-Rotation</h4>
+          <p>Aurora database credentials are stored in Secrets Manager but never rotated. Compromised credentials = permanent access.</p>
+          <div class="impl">
+            <strong>Implementation:</strong> Enable automatic rotation every 30 days using the AWS-provided rotation Lambda. Ensure RDS Data API picks up rotated secrets automatically.<br>
+            <strong>Trade-off:</strong> ~$0.40/secret/month. Rotation Lambda runs monthly.<br>
+            <strong>CAP Impact:</strong> Security improvement that prevents <strong>Availability</strong> loss from credential compromise.
+          </div>
+        </div>
+
+        <div class="improvement-card" style="border-left-color:#0d9488;">
+          <h4 style="color:#0d9488;">2.5 &mdash; Aurora Auto-Pause Retry Pattern</h4>
+          <p>Aurora auto-pause saves cost but causes 25-30s cold start on resume. First request after pause often times out.</p>
+          <div class="impl">
+            <strong>Implementation:</strong> Add exponential retry with backoff in Lambda functions: retry up to 3 times with 5s/10s/20s delays when <code>Communications link failure</code> error is detected. Add a CloudWatch synthetic canary that pings Aurora every 4 minutes to keep it warm during business hours.<br>
+            <strong>Trade-off:</strong> Canary: ~$3/mo. Keeps Aurora warm 8am-6pm, auto-pauses overnight.<br>
+            <strong>CAP Impact:</strong> Dramatically improves <strong>Availability</strong> during business hours. Eliminates the most common user-facing error.
+          </div>
+        </div>
+
+        <div class="improvement-card" style="border-left-color:#dc2626;">
+          <h4 style="color:#dc2626;">2.6 &mdash; S3 Cross-Region Replication</h4>
+          <p>CodePipeline stores build artifacts in S3 in us-east-1. If that region is down, CI/CD cannot function.</p>
+          <div class="impl">
+            <strong>Implementation:</strong> Enable S3 Cross-Region Replication (CRR) to a bucket in us-west-2 for the pipeline artifact bucket.<br>
+            <strong>Trade-off:</strong> Storage cost for replica (~$0.023/GB/month). One-time setup.<br>
+            <strong>CAP Impact:</strong> Enables <strong>Partition Tolerance</strong> for CI/CD artifacts.
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- TIER 3 -->
+  <div class="section">
+    <div class="tier-header" style="background:#15803d;">
+      <span style="font-size:20px;">3</span>
+      Tier 3 &mdash; Multi-Region (Partition Tolerance)
+      <span class="badge" style="background:rgba(255,255,255,0.15); color:#86efac; margin-left:auto;">2&ndash;4 weeks effort</span>
+    </div>
+    <div class="tier-body">
+      <div style="padding:20px;">
+
+        <div class="improvement-card" style="border-left-color:#16a34a;">
+          <h4 style="color:#16a34a;">3.1 &mdash; DynamoDB Global Tables</h4>
+          <p>Replicate the <code>prompt2test-config</code> table to us-west-2. Both regions can read and write, with sub-second replication.</p>
+          <div class="impl">
+            <strong>Implementation:</strong> Enable DynamoDB Global Tables for the config table. Add us-west-2 as a replica region. All writes automatically replicate.<br>
+            <strong>Trade-off:</strong> 1.5x write cost (replicated writes charged). ~1s replication lag.<br>
+            <strong>CAP Impact:</strong> <span class="badge badge-green">Full AP</span> &mdash; Config is available in both regions. Eventual consistency between regions (~1s). Fully <strong>partition tolerant</strong>.
+          </div>
+        </div>
+
+        <div class="improvement-card" style="border-left-color:#2563eb;">
+          <h4 style="color:#2563eb;">3.2 &mdash; Aurora Global Database</h4>
+          <p>Add a read replica cluster in us-west-2. Primary in us-east-1 handles writes, us-west-2 handles reads with ~1s lag. Can promote to writer in &lt;1 minute during failover.</p>
+          <div class="impl">
+            <strong>Implementation:</strong> Create Aurora Global Database. Add secondary cluster in us-west-2. Update reader Lambda to prefer local region's cluster. Set up failover runbook for promotion.<br>
+            <strong>Trade-off:</strong> ~$40-60/mo for secondary cluster (min 0.5 ACU). Cross-region data transfer costs.<br>
+            <strong>CAP Impact:</strong> <span class="badge badge-blue">CP with HA</span> &mdash; Writes are strongly consistent (single writer). Reads from secondary are eventually consistent (~1s). <strong>Partition tolerant</strong> with manual failover.
+          </div>
+        </div>
+
+        <div class="improvement-card" style="border-left-color:#ea580c;">
+          <h4 style="color:#ea580c;">3.3 &mdash; ECS Cluster in us-west-2</h4>
+          <p>Deploy a second ECS Fargate cluster in us-west-2 with identical task definitions. Browser sessions can run in either region.</p>
+          <div class="impl">
+            <strong>Implementation:</strong> CDK multi-region stack. Deploy ECS cluster, ECR replicas, and security groups in us-west-2. Route browser session requests to nearest region.<br>
+            <strong>Trade-off:</strong> ECR replication: ~$0.10/GB. No idle cost (on-demand tasks). Double deployment pipeline needed.<br>
+            <strong>CAP Impact:</strong> <span class="badge badge-green">Full AP</span> &mdash; Browser sessions available from either region. <strong>Partition tolerant</strong>.
+          </div>
+        </div>
+
+        <div class="improvement-card" style="border-left-color:#7c3aed;">
+          <h4 style="color:#7c3aed;">3.4 &mdash; Route 53 Health Checks + DNS Failover</h4>
+          <p>Use Route 53 to automatically route traffic to us-west-2 when us-east-1 health checks fail.</p>
+          <div class="impl">
+            <strong>Implementation:</strong> Create Route 53 health checks against the API endpoint in each region. Configure failover routing policy: primary = us-east-1, secondary = us-west-2. TTL = 60s for fast failover.<br>
+            <strong>Trade-off:</strong> ~$1/health check/month. 60-90s failover time (DNS propagation).<br>
+            <strong>CAP Impact:</strong> Automatic <strong>Partition Tolerance</strong> at the DNS layer. Users are transparently routed to healthy region.
+          </div>
+        </div>
+
+        <div class="improvement-card" style="border-left-color:#0d9488;">
+          <h4 style="color:#0d9488;">3.5 &mdash; Cognito Backup &amp; Custom Sync</h4>
+          <p>Cognito has no native multi-region support. A us-east-1 outage means no one can log in.</p>
+          <div class="impl">
+            <strong>Implementation:</strong> Option A: Pre-issue long-lived JWT refresh tokens (24h) so existing sessions survive region failure. Option B: Create a backup User Pool in us-west-2 with Lambda-based user sync (triggered by Cognito events). Option C: Move to a multi-region auth provider (Auth0, Okta).<br>
+            <strong>Trade-off:</strong> Option A is simplest (1 day). Option B is ~1 week. Option C requires migration.<br>
+            <strong>CAP Impact:</strong> <span class="badge badge-purple">Improves Availability</span> of authentication during region failure. Option A provides graceful degradation; Option B provides full failover.
+          </div>
+        </div>
+
+        <div class="improvement-card" style="border-left-color:#dc2626;">
+          <h4 style="color:#dc2626;">3.6 &mdash; Bedrock Cross-Region Fallback</h4>
+          <p>If Bedrock in us-east-1 is throttled or unavailable, test plan generation fails entirely.</p>
+          <div class="impl">
+            <strong>Implementation:</strong> In the AgentCore container, add a fallback: if Bedrock us-east-1 returns 429 or 5xx, retry against us-west-2 Bedrock endpoint. Use <code>boto3</code> client with configurable region.<br>
+            <strong>Trade-off:</strong> Cross-region API call adds ~50ms latency. Same pricing.<br>
+            <strong>CAP Impact:</strong> <span class="badge badge-green">AP</span> &mdash; AI layer remains <strong>available</strong> even during regional Bedrock issues. <strong>Partition tolerant</strong>.
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- TIER 4 -->
+  <div class="section">
+    <div class="tier-header" style="background:#6d28d9;">
+      <span style="font-size:20px;">4</span>
+      Tier 4 &mdash; Active-Active &amp; Platform Maturity
+      <span class="badge" style="background:rgba(255,255,255,0.15); color:#c4b5fd; margin-left:auto;">1&ndash;2 months effort</span>
+    </div>
+    <div class="tier-body">
+      <div style="padding:20px;">
+
+        <div class="improvement-card" style="border-left-color:#7c3aed;">
+          <h4 style="color:#7c3aed;">4.1 &mdash; AWS Global Accelerator</h4>
+          <p>Replace CloudFront-only routing with Global Accelerator for API traffic. Provides anycast IPs and automatic failover at the TCP layer (faster than DNS failover).</p>
+          <div class="impl">
+            <strong>Implementation:</strong> Create Global Accelerator with endpoints in both regions. Health checks determine routing. Failover in &lt;30s vs 60-90s for DNS.<br>
+            <strong>CAP Impact:</strong> <span class="badge badge-green">Maximum Availability</span> + <strong>Partition Tolerance</strong> with near-instant failover.
+          </div>
+        </div>
+
+        <div class="improvement-card" style="border-left-color:#2563eb;">
+          <h4 style="color:#2563eb;">4.2 &mdash; Multi-Region CI/CD</h4>
+          <p>Deploy to both regions simultaneously. A single git push triggers parallel builds and deployments to us-east-1 and us-west-2.</p>
+          <div class="impl">
+            <strong>Implementation:</strong> CodePipeline with parallel deploy stages, or use CDK Pipelines with cross-region support. ECR replication rules for container images.<br>
+            <strong>CAP Impact:</strong> Ensures both regions are always running the same version. <strong>Consistency</strong> of deployments.
+          </div>
+        </div>
+
+        <div class="improvement-card" style="border-left-color:#ea580c;">
+          <h4 style="color:#ea580c;">4.3 &mdash; Multi-Account Strategy</h4>
+          <p>Separate AWS accounts for dev, staging, and production. Blast radius isolation &mdash; a bad deploy in dev cannot affect production.</p>
+          <div class="impl">
+            <strong>Implementation:</strong> AWS Organizations with 3 accounts. CDK deploys to each via cross-account roles. Shared Cognito or per-account pools.<br>
+            <strong>CAP Impact:</strong> Isolation improves <strong>Availability</strong> &mdash; production is insulated from dev/test failures.
+          </div>
+        </div>
+
+        <div class="improvement-card" style="border-left-color:#16a34a;">
+          <h4 style="color:#16a34a;">4.4 &mdash; Chaos Engineering</h4>
+          <p>Regularly test failover by intentionally breaking things. Verify that AZ failure, Aurora pause, Lambda throttling, and region failover all work as designed.</p>
+          <div class="impl">
+            <strong>Implementation:</strong> Use AWS Fault Injection Simulator (FIS) to simulate: AZ impairment, RDS failover, Lambda throttling, ECS task failures. Run monthly in staging.<br>
+            <strong>CAP Impact:</strong> Validates that all CAP improvements actually work under real failure conditions.
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Target Architecture Summary -->
+  <div class="section">
+    <div class="section-label">Target Architecture &mdash; After All 4 Tiers</div>
+    <div class="card" style="padding:0; overflow:hidden;">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:20%;">Component</th>
+            <th style="width:22%;">Target Setup</th>
+            <th style="width:12%; text-align:center;">Consistency</th>
+            <th style="width:12%; text-align:center;">Availability</th>
+            <th style="width:14%; text-align:center;">Partition Tolerant</th>
+            <th style="width:20%;">CAP Model</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Aurora</strong></td>
+            <td>Global Database (2 regions)</td>
+            <td style="text-align:center;"><span class="badge badge-green">Strong</span></td>
+            <td style="text-align:center;"><span class="badge badge-green">High</span></td>
+            <td style="text-align:center;"><span class="badge badge-green">Yes</span></td>
+            <td><span class="badge badge-blue">CP</span> writes, <span class="badge badge-green">AP</span> reads</td>
+          </tr>
+          <tr>
+            <td><strong>DynamoDB</strong></td>
+            <td>Global Tables (2 regions)</td>
+            <td style="text-align:center;"><span class="badge badge-green">Strong (local)</span></td>
+            <td style="text-align:center;"><span class="badge badge-green">High</span></td>
+            <td style="text-align:center;"><span class="badge badge-green">Yes</span></td>
+            <td><span class="badge badge-green">AP</span> with strong local reads</td>
+          </tr>
+          <tr>
+            <td><strong>ECS Fargate</strong></td>
+            <td>Multi-AZ, multi-region clusters</td>
+            <td style="text-align:center;"><span class="badge badge-gray">N/A</span></td>
+            <td style="text-align:center;"><span class="badge badge-green">High</span></td>
+            <td style="text-align:center;"><span class="badge badge-green">Yes</span></td>
+            <td><span class="badge badge-green">AP</span></td>
+          </tr>
+          <tr>
+            <td><strong>Cognito</strong></td>
+            <td>Long-lived tokens + backup pool</td>
+            <td style="text-align:center;"><span class="badge badge-green">Strong</span></td>
+            <td style="text-align:center;"><span class="badge badge-green">High</span></td>
+            <td style="text-align:center;"><span class="badge badge-yellow">Partial</span></td>
+            <td><span class="badge badge-blue">CP</span> with graceful degradation</td>
+          </tr>
+          <tr>
+            <td><strong>Bedrock</strong></td>
+            <td>Cross-region fallback</td>
+            <td style="text-align:center;"><span class="badge badge-gray">N/A</span></td>
+            <td style="text-align:center;"><span class="badge badge-green">High</span></td>
+            <td style="text-align:center;"><span class="badge badge-green">Yes</span></td>
+            <td><span class="badge badge-green">AP</span></td>
+          </tr>
+          <tr>
+            <td><strong>Lambda + API GW</strong></td>
+            <td>Multi-region, DLQ, throttled</td>
+            <td style="text-align:center;"><span class="badge badge-gray">N/A</span></td>
+            <td style="text-align:center;"><span class="badge badge-green">High</span></td>
+            <td style="text-align:center;"><span class="badge badge-green">Yes</span></td>
+            <td><span class="badge badge-green">AP</span></td>
+          </tr>
+          <tr>
+            <td><strong>CloudFront</strong></td>
+            <td>Global CDN + WAF</td>
+            <td style="text-align:center;"><span class="badge badge-yellow">Eventual</span></td>
+            <td style="text-align:center;"><span class="badge badge-green">High</span></td>
+            <td style="text-align:center;"><span class="badge badge-green">Yes</span></td>
+            <td><span class="badge badge-green">AP</span></td>
+          </tr>
+          <tr>
+            <td><strong>CI/CD</strong></td>
+            <td>Multi-region deploy + S3 CRR</td>
+            <td style="text-align:center;"><span class="badge badge-green">Strong</span></td>
+            <td style="text-align:center;"><span class="badge badge-green">High</span></td>
+            <td style="text-align:center;"><span class="badge badge-green">Yes</span></td>
+            <td><span class="badge badge-blue">CP</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Implementation Priority -->
+  <div class="section">
+    <div class="section-label">Implementation Priority &mdash; Recommended Order</div>
+    <div class="card">
+      <table>
+        <thead>
+          <tr><th>Priority</th><th>Item</th><th>Effort</th><th>Impact</th><th>Cost Delta</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><span class="badge badge-red">P0</span></td><td><strong>1.1</strong> DynamoDB strong consistent reads</td><td>2 hours</td><td>Eliminates stale config bugs</td><td>+$0.50/mo</td></tr>
+          <tr><td><span class="badge badge-red">P0</span></td><td><strong>1.5</strong> CloudWatch alarms + SNS</td><td>4 hours</td><td>Know when things break</td><td>+$1/mo</td></tr>
+          <tr><td><span class="badge badge-red">P0</span></td><td><strong>2.5</strong> Aurora auto-pause retry pattern</td><td>4 hours</td><td>Eliminates #1 user-facing error</td><td>+$3/mo</td></tr>
+          <tr><td><span class="badge badge-orange">P1</span></td><td><strong>1.2</strong> Aurora Multi-AZ verification</td><td>2 hours</td><td>Survive AZ failure</td><td>+$30/mo</td></tr>
+          <tr><td><span class="badge badge-orange">P1</span></td><td><strong>1.3</strong> ECS multi-AZ placement</td><td>1 hour</td><td>Browser sessions survive AZ loss</td><td>$0</td></tr>
+          <tr><td><span class="badge badge-orange">P1</span></td><td><strong>2.2</strong> Dead Letter Queues for Lambda</td><td>4 hours</td><td>Never lose test results</td><td>+$0.40/mo</td></tr>
+          <tr><td><span class="badge badge-orange">P1</span></td><td><strong>2.3</strong> WAF on CloudFront</td><td>2 hours</td><td>DDoS + bot protection</td><td>+$5/mo</td></tr>
+          <tr><td><span class="badge badge-yellow">P2</span></td><td><strong>2.1</strong> API Gateway in front of Lambda</td><td>2 days</td><td>Rate limiting, validation, caching</td><td>+$3/mo</td></tr>
+          <tr><td><span class="badge badge-yellow">P2</span></td><td><strong>2.4</strong> Secrets Manager auto-rotation</td><td>2 hours</td><td>Security compliance</td><td>+$0.40/mo</td></tr>
+          <tr><td><span class="badge badge-blue">P3</span></td><td><strong>3.1</strong> DynamoDB Global Tables</td><td>1 day</td><td>Config survives region failure</td><td>+1.5x writes</td></tr>
+          <tr><td><span class="badge badge-blue">P3</span></td><td><strong>3.2</strong> Aurora Global Database</td><td>2 days</td><td>Data survives region failure</td><td>+$50/mo</td></tr>
+          <tr><td><span class="badge badge-blue">P3</span></td><td><strong>3.4</strong> Route 53 DNS failover</td><td>1 day</td><td>Automatic region failover</td><td>+$1/mo</td></tr>
+          <tr><td><span class="badge badge-purple">P4</span></td><td><strong>3.3</strong> ECS in us-west-2</td><td>3 days</td><td>Browser tests in both regions</td><td>On-demand only</td></tr>
+          <tr><td><span class="badge badge-purple">P4</span></td><td><strong>3.6</strong> Bedrock cross-region fallback</td><td>4 hours</td><td>AI survives region failure</td><td>$0</td></tr>
+          <tr><td><span class="badge badge-purple">P4</span></td><td><strong>4.1</strong> Global Accelerator</td><td>1 day</td><td>Instant failover (&lt;30s)</td><td>+$18/mo</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="footer">
+    Prompt2Test &mdash; CAP Design Improvements &middot; March 2026 &middot; Architecture Review Document
+  </div>
+
+</div>
+</body>
+</html>
