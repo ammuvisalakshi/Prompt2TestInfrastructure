@@ -1,0 +1,136 @@
+h1. {color:#6366f1}Prompt2Test{color} — Architecture Diagram
+
+{tip:title=AWS Architecture — us-east-1 Production}
+Visual system map showing all 18 AWS services across 6 layers with data flows and service interactions.
+{tip}
+
+{info:title=Full SVG Diagram}
+The interactive SVG architecture diagram is available in the HTML documentation. Open {{Prompt2Test_ArchitectureDiagram_Light.html}} in a browser for the full visual. A screenshot can be attached to this page as an image.
+{info}
+
+----
+
+{toc:minLevel=2|maxLevel=3}
+
+----
+
+h2. 6-Layer Architecture
+
+{panel:title=Layer 1: User Layer|borderColor=#3b82f6|bgColor=#eff6ff}
+*Browser (QA Engineer)*
+* React SPA hosted on Amplify + CloudFront CDN
+* Cognito login -> JWT token -> Identity Pool -> scoped IAM role
+* 4 screens: Agent, Inventory, Config, Admin
+{panel}
+
+{panel:title=Layer 2: Frontend & Delivery|borderColor=#8b5cf6|bgColor=#faf5ff}
+|| CloudFront || Amplify || Cognito || IAM Roles || Secrets Manager || CloudWatch ||
+| CDN / Distribution | Hosting + CI/CD | User Auth + Groups | Scoped permissions | Aurora credentials | Logs & monitoring |
+{panel}
+
+{panel:title=Layer 3: AI / Intelligence Layer|borderColor=#f97316|bgColor=#fff7ed}
+|| Bedrock AgentCore || Claude Sonnet 4.5 || Strands SDK Tools ||
+| Runtime Executor | LLM Inference | get_service_config, resolve_config |
+| Runs agent container | Generates test plans | Connects to DynamoDB + MCP |
+{panel}
+
+{panel:title=Layer 4: Compute Layer|borderColor=#ef4444|bgColor=#fef2f2}
+|| ECS Fargate || ECR (Agent) || ECR (Playwright) || Lambda (x3) ||
+| On-demand tasks | prompt2test-agent | prompt2test-playwright-mcp | writer, reader, schema-init |
+| ARM64 2vCPU/4GB | AI agent image | Chromium + noVNC image | Python 3.12 |
+{panel}
+
+{panel:title=Layer 5: Data & Storage|borderColor=#14b8a6|bgColor=#f0fdfa}
+|| Aurora Serverless v2 || DynamoDB || RDS Data API || S3 ||
+| PostgreSQL + pgvector | prompt2test-config | HTTP-based SQL access | Pipeline artifacts |
+| test_cases, run_records | Services, accounts per team/env | No VPC needed for Lambda | CodeBuild output |
+{panel}
+
+{panel:title=Layer 6: CI/CD & DevOps|borderColor=#64748b|bgColor=#f8fafc}
+|| GitHub (5 repos) || Amplify CI/CD || CodePipeline (x3) || CodeBuild || KMS ||
+| Source code | UI auto-deploy | Lambda, Agent, Playwright | Docker + Python builds | Artifact encryption |
+{panel}
+
+----
+
+h2. Data Flow
+
+h3. Test Authoring Flow (Blue arrows)
+
+|| Step || From || To || Protocol ||
+| 1 | Browser | Amplify / CloudFront | HTTPS |
+| 2 | Browser | Cognito | HTTPS (auth) |
+| 3 | Browser | Bedrock AgentCore | AWS SDK (InvokeAgentRuntime) |
+| 4 | AgentCore | Claude Sonnet | Bedrock InvokeModel |
+| 5 | AgentCore | DynamoDB | AWS SDK (get_service_config) |
+| 6 | AgentCore | Browser | Streaming JSON response |
+
+h3. Test Execution Flow (Green arrows)
+
+|| Step || From || To || Protocol ||
+| 1 | AgentCore | ECS Fargate | RunTask API |
+| 2 | ECS Task | ECR | Docker image pull |
+| 3 | AgentCore | Playwright MCP | SSE (MCP protocol) |
+| 4 | Playwright | Chromium | Browser automation |
+| 5 | noVNC | Browser | WebSocket (port 6080) |
+| 6 | AgentCore | ECS | StopTask API |
+
+h3. Data Persistence Flow (Orange arrows)
+
+|| Step || From || To || Protocol ||
+| 1 | Browser | Lambda (writer) | AWS SDK (Invoke) |
+| 2 | Lambda | Aurora | RDS Data API (SQL) |
+| 3 | Lambda | Bedrock | InvokeModel (embeddings) |
+| 4 | Browser | Lambda (reader) | AWS SDK (Invoke) |
+| 5 | Lambda | Aurora | RDS Data API (query) |
+
+h3. CI/CD Flow (Gray arrows)
+
+|| Step || From || To || Trigger ||
+| 1 | Developer | GitHub | git push |
+| 2 | GitHub | CodePipeline | Webhook |
+| 3 | CodePipeline | CodeBuild | Automatic |
+| 4 | CodeBuild | ECR / Lambda | Docker push / Lambda update |
+| 5 | GitHub | Amplify | Auto-deploy on push |
+
+----
+
+h2. Service Color Legend
+
+|| Color || Category || Services ||
+| {color:#3b82f6}Blue{color} | Frontend & Delivery | CloudFront, Amplify, Cognito |
+| {color:#f97316}Orange{color} | AI / Intelligence | Bedrock AgentCore, Claude Sonnet |
+| {color:#ef4444}Red{color} | Compute | ECS Fargate, ECR, Lambda |
+| {color:#14b8a6}Teal{color} | Data & Storage | Aurora, DynamoDB, S3 |
+| {color:#8b5cf6}Purple{color} | Auth & Security | Cognito, IAM, Secrets Manager |
+| {color:#64748b}Gray{color} | CI/CD & DevOps | CodePipeline, CodeBuild, GitHub |
+
+----
+
+h2. Request Flow — 8 Steps
+
+|| Step || What Happens || Services Involved ||
+| *1. Login* | QA engineer logs in via Cognito. JWT contains team group. Identity Pool grants scoped IAM role. | Cognito, IAM |
+| *2. Author* | User types scenario on Agent page. Picks service. Frontend sends to AgentCore. | Amplify, Bedrock AgentCore |
+| *3. Plan* | Agent calls get_service_config (DynamoDB), then Claude generates structured test plan with \{service.KEY\} templates. | Bedrock, Claude, DynamoDB |
+| *4. Save* | User saves test case. Lambda writes to Aurora with pgvector embedding. | Lambda, Aurora, Bedrock (Titan) |
+| *5. Launch* | User clicks Automate. Agent starts ECS Fargate task. Returns noVNC URL. | ECS Fargate, ECR |
+| *6. Execute* | Agent connects to Playwright MCP on ECS task. Executes steps in real Chromium browser. Records Playwright calls. | AgentCore, Playwright MCP, ECS |
+| *7. View* | User watches live execution via noVNC iframe in browser. | noVNC (WebSocket) |
+| *8. Result* | Test completes. Agent returns PASS/FAIL + replay script. Lambda saves run record. ECS task stops. | Lambda, Aurora, ECS |
+
+----
+
+h2. Key Numbers
+
+|| Metric || Value ||
+| Total AWS services | 18 |
+| UI screens | 4 (Agent, Inventory, Config, Admin) |
+| Agent modes | 6 (plan, plan_scenario, start_session, automate, replay, stop_session) |
+| Lambda functions | 3 (writer, reader, schema-init) |
+| CodePipelines | 3 (agent, lambda, playwright) |
+| ECS task specs | ARM64, 2 vCPU, 4 GB RAM |
+| Cold start (ECS) | ~60 seconds |
+| Execution time (4 steps) | ~30-45 seconds |
+| Idle cost | ~$0.50/month |
+| Concurrent sessions | 20+ |
