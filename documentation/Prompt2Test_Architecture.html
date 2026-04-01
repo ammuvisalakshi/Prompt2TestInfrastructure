@@ -535,6 +535,7 @@
           <div class="tag tag-indigo">save_run_record</div>
           <div class="tag tag-indigo">update_test_case</div>
           <div class="tag tag-indigo">delete_test_case</div>
+          <div class="tag tag-indigo">promote_test_case</div>
           <div style="margin-top:6px; font-size:12px; color:#64748b;">
             Runtime: Python 3.12 · Memory: 256 MB · Timeout: 120s
           </div>
@@ -574,11 +575,13 @@
           </div>
           <div class="sub-box">
             <div class="sub-box-title">test_cases table</div>
-            id · env · service<br>
-            description · steps (JSON)<br>
-            tags · created_by · created_at<br>
+            id · env · service · title · scenario<br>
+            description · steps (JSON) · plan_steps (JSON)<br>
+            tags · created_by · created_at · team<br>
             last_result · last_run_at<br>
-            <b>embedding vector(1024)</b>
+            <b>embedding vector(1024)</b><br>
+            promoted_to (TEXT[]) · promoted_from_id · promoted_from_env<br>
+            promoted_by · promoted_at
           </div>
           <div class="sub-box">
             <div class="sub-box-title">run_records table</div>

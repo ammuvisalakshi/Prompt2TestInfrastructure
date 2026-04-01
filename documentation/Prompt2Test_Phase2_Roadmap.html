@@ -97,7 +97,7 @@
           <tr><th>#</th><th>Feature</th><th>Priority</th><th>Effort</th><th>Impact</th></tr>
         </thead>
         <tbody>
-          <tr><td><strong>1</strong></td><td><strong>Environment Promotion</strong> &mdash; promote test cases from DEV to QA/UAT/PROD as deterministic replay only</td><td><span class="badge badge-red">P0</span></td><td><span class="badge badge-orange">5&ndash;7 days</span></td><td>Trust model for higher environments</td></tr>
+          <tr><td><strong>1</strong></td><td><strong>Environment Promotion</strong> &mdash; promote test cases from DEV to QA/UAT/PROD as deterministic replay only</td><td><span class="badge badge-green">SHIPPED</span></td><td><span class="badge badge-green">Done</span></td><td>Trust model for higher environments</td></tr>
           <tr><td><strong>2</strong></td><td><strong>Database Evaluation</strong> &mdash; Aurora vs DynamoDB vs hybrid for test cases at scale</td><td><span class="badge badge-yellow">P2</span></td><td><span class="badge badge-green">2&ndash;3 days</span></td><td>Cost, scale, and consistency optimization</td></tr>
           <tr><td><strong>3</strong></td><td><strong>Failure Analysis &amp; Logs</strong> &mdash; screenshots, DOM state, LLM root cause analysis on failure</td><td><span class="badge badge-red">P0</span></td><td><span class="badge badge-orange">5&ndash;7 days</span></td><td>Reduces debug time from 30 min to 2 min</td></tr>
           <tr><td><strong>4</strong></td><td><strong>Report Generation</strong> &mdash; PDF/HTML reports per run, per suite, with trends</td><td><span class="badge badge-orange">P1</span></td><td><span class="badge badge-orange">4&ndash;5 days</span></td><td>Stakeholder visibility, audit trail</td></tr>
@@ -157,37 +157,44 @@
         </div>
       </div>
 
-      <div class="sub-section">Implementation</div>
+      <div class="sub-section">Implementation <span class="badge badge-green">SHIPPED</span></div>
       <div class="impl-card">
-        <h5>1. Add <code>status</code> field to test_cases table</h5>
-        <p>Values: <code>draft</code> (DEV only), <code>promoted</code> (QA+), <code>locked</code> (UAT/PROD). Only <code>draft</code> test cases can be edited or re-generated.</p>
+        <h5>1. <code>{service.KEY}</code> Config References in Plan Steps <span class="badge badge-green">Done</span></h5>
+        <p>Agent generates plan steps with <code>{service.BESTBUY_USA_URL}</code> template references instead of hardcoded URLs. The LLM's response is post-processed: config values are replaced with <code>{service.KEY}</code> templates automatically. UI shows resolved values with the template in small gray text below.</p>
       </div>
       <div class="impl-card">
-        <h5>2. Add <code>promoted_from</code> and <code>promoted_by</code> fields</h5>
-        <p>Track lineage: which DEV test case this was promoted from, who approved, and when. Creates an audit trail.</p>
+        <h5>2. <code>promote_test_case</code> Lambda Action <span class="badge badge-green">Done</span></h5>
+        <p>New action in <code>p2t-testcase-writer</code> Lambda. Copies test case to target env (ID: <code>TC-xxx-qa</code>), strips <code>action_resolved</code>/<code>expected_resolved</code> fields (templates only), promotes service config keys to target env DynamoDB with empty values, and updates source test case's <code>promoted_to</code> array.</p>
       </div>
       <div class="impl-card">
-        <h5>3. Promote API endpoint</h5>
-        <p>New Lambda endpoint: <code>POST /promote</code> &mdash; copies test case from source env to target env with status = <code>promoted</code>. Replaces all DEV-specific config values (URLs, accounts) with target env values from DynamoDB.</p>
+        <h5>3. Sequential Promotion (DEV &rarr; QA &rarr; UAT &rarr; PROD) <span class="badge badge-green">Done</span></h5>
+        <p>Promotion is sequential only: DEV can promote to QA, QA to UAT, UAT to PROD. No skipping environments. PROD has no promote option.</p>
       </div>
       <div class="impl-card">
-        <h5>4. UI: Promote button in Inventory</h5>
-        <p>In DEV Inventory, add a "Promote to QA" button on each test case. Shows a confirmation dialog with target env, reviewer name. In QA/UAT/PROD, the Agent page shows only "Replay" &mdash; no chat, no AI authoring.</p>
+        <h5>4. Promotion Pipeline Badge on Inventory UI <span class="badge badge-green">Done</span></h5>
+        <p>Each test case row shows an inline <code>D &rarr; Q &rarr; U &rarr; P</code> pipeline badge. Current env = purple filled, promoted envs = green filled, next promotable = orange dashed (clickable to promote), future = gray. Clicking the orange circle opens the promote dialog.</p>
       </div>
       <div class="impl-card">
-        <h5>5. Config value substitution</h5>
-        <p>When promoting, the system automatically swaps config values: DEV URLs &rarr; QA URLs, DEV accounts &rarr; QA accounts. Uses the DynamoDB config table to resolve per-env values.</p>
+        <h5>5. Config Key Promotion <span class="badge badge-green">Done</span></h5>
+        <p>When promoting, service config keys are copied to the target env's DynamoDB table with <strong>empty values</strong>. Admin fills in target-env-specific URLs on the Config page. Existing keys in target env are not overwritten. Lambda role has <code>dynamodb:Query</code> and <code>dynamodb:PutItem</code> permissions on the config table.</p>
+      </div>
+      <div class="impl-card">
+        <h5>6. Replay Script Templatization <span class="badge badge-yellow">In Progress</span></h5>
+        <p>Frontend templatizes the replay script at save time: replaces config values (e.g., <code>www.bestbuy.com</code>) with <code>{service.BESTBUY_USA_URL}</code> references. At replay time in any env, templates resolve to that env's config values. Same script works everywhere &mdash; like environment variables in code.</p>
+      </div>
+      <div class="impl-card">
+        <h5>7. Full Service Config Loading on Agent Page <span class="badge badge-green">Done</span></h5>
+        <p>Agent page loads all service configs (not just names) from DynamoDB at startup. Selected service's full config is passed to the agent via <code>serviceConfig</code> parameter. Agent uses preloaded config instead of querying DynamoDB again.</p>
       </div>
 
-      <div class="sub-section">Data Model Changes</div>
+      <div class="sub-section">Data Model Changes <span class="badge badge-green">SHIPPED</span></div>
       <table>
-        <tr><th>Field</th><th>Type</th><th>Description</th></tr>
-        <tr><td><code>status</code></td><td>string</td><td><code>draft</code> | <code>promoted</code> | <code>locked</code></td></tr>
-        <tr><td><code>promoted_from_env</code></td><td>string</td><td>Source environment (e.g., "dev")</td></tr>
-        <tr><td><code>promoted_from_id</code></td><td>string</td><td>Source test case ID</td></tr>
-        <tr><td><code>promoted_by</code></td><td>string</td><td>User who approved promotion</td></tr>
-        <tr><td><code>promoted_at</code></td><td>timestamp</td><td>When promotion happened</td></tr>
-        <tr><td><code>version</code></td><td>integer</td><td>Increments on each re-promotion from DEV</td></tr>
+        <tr><th>Field</th><th>Type</th><th>Description</th><th>Status</th></tr>
+        <tr><td><code>promoted_to</code></td><td>TEXT[]</td><td>Array of envs this test case has been promoted to (e.g., <code>{qa,uat}</code>)</td><td><span class="badge badge-green">Added</span></td></tr>
+        <tr><td><code>promoted_from_env</code></td><td>TEXT</td><td>Source environment (e.g., "dev")</td><td><span class="badge badge-green">Added</span></td></tr>
+        <tr><td><code>promoted_from_id</code></td><td>TEXT</td><td>Source test case ID</td><td><span class="badge badge-green">Added</span></td></tr>
+        <tr><td><code>promoted_by</code></td><td>TEXT</td><td>User who approved promotion</td><td><span class="badge badge-green">Added</span></td></tr>
+        <tr><td><code>promoted_at</code></td><td>TIMESTAMPTZ</td><td>When promotion happened</td><td><span class="badge badge-green">Added</span></td></tr>
       </table>
     </div>
   </div>
