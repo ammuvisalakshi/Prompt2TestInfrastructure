@@ -1,0 +1,290 @@
+<h1>Prompt2Test -- Project Overview</h1>
+
+<p>An AI-powered test case generation and browser automation platform. QA engineers describe what they want to test in plain English -- the AI agent authors a test plan, spins up a live browser, and executes it end-to-end.</p>
+
+<p><strong>Tags:</strong> AWS Bedrock AgentCore | Claude Sonnet 4.5 | Playwright + noVNC | React + TypeScript | ECS Fargate | Aurora Serverless v2 | DynamoDB | Multi-team / Multi-env</p>
+
+<h2>Key Metrics</h2>
+
+<table>
+<tr><th>Metric</th><th>Value</th></tr>
+<tr><td>AWS Services</td><td><strong>18</strong></td></tr>
+<tr><td>GitHub Repos</td><td><strong>5</strong></td></tr>
+<tr><td>UI Screens</td><td><strong>4</strong></td></tr>
+<tr><td>CodePipelines</td><td><strong>3</strong></td></tr>
+<tr><td>Environments</td><td><strong>4</strong></td></tr>
+<tr><td>ECR Repos</td><td><strong>2</strong></td></tr>
+<tr><td>Lambda Functions</td><td><strong>3</strong></td></tr>
+<tr><td>AgentCore</td><td><strong>1</strong></td></tr>
+<tr><td>Days to Build</td><td><strong>15</strong></td></tr>
+</table>
+
+<h2>Table of Contents</h2>
+<ol>
+<li>End-to-End Flow</li>
+<li>UI Screens</li>
+<li>Feature Coverage</li>
+<li>Implementation Effort</li>
+<li>Build Progress</li>
+<li>Tech Stack</li>
+<li>AWS Services</li>
+<li>CI/CD Pipelines</li>
+<li>Data Model</li>
+<li>Architecture Decisions</li>
+<li>Repositories</li>
+</ol>
+
+<h2>What It Does -- End to End Flow</h2>
+
+<table>
+<tr>
+<td>QA Engineer (types a prompt)</td><td>&rarr;</td>
+<td>React UI (Amplify hosted)</td><td>&rarr;</td>
+<td>Bedrock AgentCore (Claude Sonnet 4.5)</td><td>&rarr;</td>
+<td>AI generates plan (structured steps)</td><td>&rarr;</td>
+<td>ECS Fargate task (spins up on demand)</td><td>&rarr;</td>
+<td>Playwright MCP (executes in browser)</td><td>&rarr;</td>
+<td>Live view noVNC (streamed to UI)</td><td>&rarr;</td>
+<td>PASS / FAIL (saved to Aurora)</td>
+</tr>
+</table>
+
+<h2>UI Screens -- Built and Deployed</h2>
+
+<table>
+<tr><th>Screen</th><th>Description</th><th>Status</th></tr>
+<tr><td><strong>Agent</strong></td><td>Pick a service, describe the test scenario in plain English. AI generates a structured test plan. Review steps, then execute with a live browser.</td><td>(/) Built</td></tr>
+<tr><td><strong>Inventory</strong></td><td>Browse all saved test cases by environment and service. Search semantically via pgvector. View last run result, re-run, edit, or delete.</td><td>(/) Built</td></tr>
+<tr><td><strong>Config</strong></td><td>Manage services (name + URL per env), test accounts (credentials per env), and team members. All stored in DynamoDB.</td><td>(/) Built</td></tr>
+<tr><td><strong>Admin</strong></td><td>Create/delete users, manage Cognito groups (teams), assign users to teams. Visible only to users in the <code>admin</code> group.</td><td>(/) Built</td></tr>
+</table>
+
+<h2>Feature Coverage</h2>
+
+<table>
+<tr><th>Feature</th><th>Description</th><th>Status</th></tr>
+<tr><td><strong>AI Test Plan Generation</strong></td><td>QA types a natural language prompt. Claude Sonnet 4.5 generates a structured plan with actions and expected outcomes.</td><td>(/) Complete</td></tr>
+<tr><td><strong>Live Browser Automation</strong></td><td>Playwright MCP executes test steps in a real Chromium browser. ECS Fargate task spins up on demand, stopped when done.</td><td>(/) Complete</td></tr>
+<tr><td><strong>Live Browser View (noVNC)</strong></td><td>Watch the browser execute in real-time via embedded noVNC iframe. Pop-out button opens a full window.</td><td>(/) Complete</td></tr>
+<tr><td><strong>Test Replay</strong></td><td>Re-execute a saved test case from the Inventory without re-generating the plan. Uses the stored replay script.</td><td>(/) Complete</td></tr>
+<tr><td><strong>Test Case Inventory</strong></td><td>Save, edit, delete test cases. Filter by environment and service. View last run result per test case.</td><td>(/) Complete</td></tr>
+<tr><td><strong>Semantic Search</strong></td><td>pgvector + Titan Embed Text v2 enables similarity search across test cases -- find duplicates or related tests.</td><td>(/) Complete</td></tr>
+<tr><td><strong>Service Config Management</strong></td><td>Add services and URLs per environment (dev/qa/uat/prod) via the UI. Stored in DynamoDB, read by AI agent during test generation.</td><td>(/) Complete</td></tr>
+<tr><td><strong>Test Account Management</strong></td><td>Store test account credentials per environment per team in DynamoDB. Agent uses them to authenticate during browser tests.</td><td>(/) Complete</td></tr>
+<tr><td><strong>Multi-Team Support</strong></td><td>Teams are Cognito groups. Each team has isolated services, accounts, and test cases. Team resolved from JWT at login.</td><td>(/) Complete</td></tr>
+<tr><td><strong>Multi-Environment</strong></td><td>dev / qa / uat / prod. Config, accounts, and test cases are all scoped per environment. Env switcher in sidebar.</td><td>(/) Complete</td></tr>
+<tr><td><strong>Admin Panel</strong></td><td>Create/delete Cognito users, manage team groups, assign users to teams. Shown only to the admin group.</td><td>(/) Complete</td></tr>
+<tr><td><strong>Auth and Access Control</strong></td><td>Cognito User Pool login. Identity Pool grants scoped IAM permissions. Admin vs team member UI differentiated by JWT group.</td><td>(/) Complete</td></tr>
+<tr><td><strong>CI/CD -- 4 Pipelines</strong></td><td>Amplify auto-deploys UI on push. 3 CodePipelines handle Lambda code, Agent Docker image, and Playwright Docker image.</td><td>(/) Complete</td></tr>
+<tr><td><strong>Exploratory Mode</strong></td><td>No service selected -- agent runs in exploratory mode, navigating freely without predefined config context.</td><td>(/) Complete</td></tr>
+<tr><td><strong>Run Records</strong></td><td>Every test execution is stored as a run record in Aurora with result (PASS/FAIL), summary, timestamp, and who ran it.</td><td>(/) Complete</td></tr>
+<tr><td><strong>Environment Promotion (DEV &rarr; QA &rarr; UAT &rarr; PROD)</strong></td><td>Promote test cases across environments with {service.KEY} templates. Config keys promoted with empty values. Sequential promotion with inline pipeline badge on each test case.</td><td>(/) Complete</td></tr>
+<tr><td><strong>Config Template References</strong></td><td>Plan steps use {service.KEY} references instead of hardcoded URLs. Agent post-processes LLM output to replace config values with templates. Portable across environments.</td><td>(/) Complete</td></tr>
+<tr><td><strong>Test Metrics Dashboard</strong></td><td>Aggregate pass/fail rates, trends over time, most-run services -- for team-level QA visibility.</td><td>Planned</td></tr>
+<tr><td><strong>Slack / Email Notifications</strong></td><td>Notify team on test failure or completion. Integrate with Slack webhook or SES for email alerts.</td><td>Planned</td></tr>
+<tr><td><strong>Scheduled Test Runs</strong></td><td>Schedule smoke tests to run automatically on a cron (e.g. every deploy, nightly).</td><td>Planned</td></tr>
+</table>
+
+<h2>Implementation Effort -- Time to Build</h2>
+
+<p><strong>15 Deliverables</strong> | <strong>1 Engineer</strong></p>
+<p>Effort distribution: Infrastructure 22% | Frontend 28% | AI Agent 27% | CI/CD 12% | Docs 11%</p>
+
+<h3>Phase 1 -- Infrastructure and AWS Setup</h3>
+
+<table>
+<tr><th>Feature / Deliverable</th><th>What was built</th><th>Effort</th><th>Complexity</th></tr>
+<tr><td><strong>VPC + Networking</strong></td><td>VPC, 2 public subnets, security groups for ECS + Aurora</td><td>1 day</td><td>Low</td></tr>
+<tr><td><strong>Cognito Auth + Identity Pool</strong></td><td>User Pool, Identity Pool, Cognito Groups for teams, IAM auth role, browser SDK integration</td><td>3 days</td><td>Medium</td></tr>
+<tr><td><strong>Aurora Serverless v2 + pgvector</strong></td><td>Aurora PostgreSQL 16, RDS Data API, Secrets Manager, pgvector extension, schema init Lambda</td><td>3 days</td><td>Medium</td></tr>
+<tr><td><strong>DynamoDB Config Table</strong></td><td>prompt2test-config table, pk/sk schema design, migrated from SSM, CDK definition</td><td>2 days</td><td>Low</td></tr>
+<tr><td><strong>ECS Fargate Cluster + Task</strong></td><td>ECS cluster, ARM64 task definition (2vCPU/4GB), ECR repos, SSM infra params</td><td>2 days</td><td>Medium</td></tr>
+<tr><td><strong>CDK -- Full IaC</strong></td><td>All 18 AWS services as CDK TypeScript, one-command deploy, IAM roles, outputs</td><td>3 days</td><td>High</td></tr>
+<tr><td colspan="2"><strong>Phase 1 Subtotal</strong></td><td><strong>14 days</strong></td><td></td></tr>
+</table>
+
+<h3>Phase 2 -- Backend: Lambda + Playwright MCP</h3>
+
+<table>
+<tr><th>Feature / Deliverable</th><th>What was built</th><th>Effort</th><th>Complexity</th></tr>
+<tr><td><strong>Lambda -- testcase-writer</strong></td><td>Python Lambda for save/update/delete test cases and run records in Aurora</td><td>2 days</td><td>Medium</td></tr>
+<tr><td><strong>Lambda -- testcase-reader</strong></td><td>Python Lambda for list, fetch, semantic search via pgvector + Titan Embed v2</td><td>2 days</td><td>Medium</td></tr>
+<tr><td><strong>Playwright MCP Container</strong></td><td>Playwright + noVNC + Chromium in Docker on ECS Fargate ARM64, MCP server on port 3000</td><td>3 days</td><td>High</td></tr>
+<tr><td colspan="2"><strong>Phase 2 Subtotal</strong></td><td><strong>7 days</strong></td><td></td></tr>
+</table>
+
+<h3>Phase 3 -- AI Agent (Bedrock AgentCore)</h3>
+
+<table>
+<tr><th>Feature / Deliverable</th><th>What was built</th><th>Effort</th><th>Complexity</th></tr>
+<tr><td><strong>AgentCore Container + FastAPI</strong></td><td>Python FastAPI app on port 8080, /invocations + /ping endpoints, Docker on ECR</td><td>2 days</td><td>Medium</td></tr>
+<tr><td><strong>Plan mode</strong></td><td>Strands SDK agent generates conversational test plan from plain English prompt</td><td>2 days</td><td>Medium</td></tr>
+<tr><td><strong>Plan Scenario mode</strong></td><td>Structured JSON output (action + expected steps), MTM-style table in UI, service context injection</td><td>3 days</td><td>High</td></tr>
+<tr><td><strong>Automate mode + ECS session</strong></td><td>Spin up ECS task, connect to Playwright MCP, stream execution events, start/stop session</td><td>3 days</td><td>Very High</td></tr>
+<tr><td><strong>Replay mode</strong></td><td>Re-run saved test without re-generating plan, streaming replay events back to UI</td><td>1 day</td><td>Low</td></tr>
+<tr><td><strong>get_service_config tool (DynamoDB)</strong></td><td>Strands @tool that reads service config from DynamoDB during test generation, team-scoped</td><td>1 day</td><td>Low</td></tr>
+<tr><td colspan="2"><strong>Phase 3 Subtotal</strong></td><td><strong>12 days</strong></td><td></td></tr>
+</table>
+
+<h3>Phase 4 -- React Frontend (4 Screens)</h3>
+
+<table>
+<tr><th>Feature / Deliverable</th><th>What was built</th><th>Effort</th><th>Complexity</th></tr>
+<tr><td><strong>Auth + Layout + Routing</strong></td><td>Cognito login, JWT group parsing, PlatformLayout sidebar, env switcher, team-aware routing</td><td>2 days</td><td>Medium</td></tr>
+<tr><td><strong>Agent Page</strong></td><td>Service picker chips, chat panel, MTM step table, live browser panel (noVNC iframe), pop-out button, streaming agent events</td><td>5 days</td><td>Very High</td></tr>
+<tr><td><strong>Inventory Page</strong></td><td>Test case list/filter by env+service, DynamoDB service loader, run/replay/delete actions</td><td>2 days</td><td>Medium</td></tr>
+<tr><td><strong>Config Page (DynamoDB)</strong></td><td>Services + accounts CRUD per team per env, DynamoDB read/write from browser, multi-env tabs</td><td>3 days</td><td>High</td></tr>
+<tr><td><strong>Admin Page</strong></td><td>User create/delete, Cognito group management, assign users to teams -- admin-only visibility</td><td>2 days</td><td>Medium</td></tr>
+<tr><td colspan="2"><strong>Phase 4 Subtotal</strong></td><td><strong>14 days</strong></td><td></td></tr>
+</table>
+
+<h3>Phase 5 -- CI/CD Pipelines and Documentation</h3>
+
+<table>
+<tr><th>Feature / Deliverable</th><th>What was built</th><th>Effort</th><th>Complexity</th></tr>
+<tr><td><strong>3 CodePipelines</strong></td><td>Lambda, Agent, Playwright MCP pipelines -- GitHub &rarr; CodeBuild &rarr; ECR/Lambda update</td><td>2 days</td><td>Medium</td></tr>
+<tr><td><strong>Amplify CI/CD</strong></td><td>Amplify hosting, auto-deploy on push to master, environment variables, CloudFront CDN</td><td>1 day</td><td>Low</td></tr>
+<tr><td><strong>Architecture Docs (3 HTML files)</strong></td><td>Architecture diagram, ADRs (14 decisions), Deployment Guide -- all as styled HTML</td><td>2 days</td><td>Low</td></tr>
+<tr><td><strong>Handover and Project Overview</strong></td><td>CI/CD Handover Guide, Project Overview page (this doc) -- for team onboarding</td><td>1 day</td><td>Low</td></tr>
+<tr><td colspan="2"><strong>Phase 5 Subtotal</strong></td><td><strong>6 days</strong></td><td></td></tr>
+</table>
+
+<h3>AI Acceleration -- How Long Would This Have Taken?</h3>
+
+<table>
+<tr><th>Phase / Area</th><th>No AI (Traditional team)</th><th>Moderate AI (boilerplate only)</th><th>Aggressive AI (Claude Code)</th></tr>
+<tr><td><strong>Infrastructure + AWS CDK</strong> (VPC, Cognito, Aurora, DynamoDB, ECS, IaC)</td><td>4-5 weeks / 2 engineers</td><td>2-3 weeks / 1-2 engineers</td><td>3 days / 1 engineer</td></tr>
+<tr><td><strong>Backend -- Lambda + Playwright MCP</strong> (Python Lambda, Docker container, pgvector)</td><td>3-4 weeks / 2 engineers</td><td>1-2 weeks / 1 engineer</td><td>2 days / 1 engineer</td></tr>
+<tr><td><strong>AI Agent -- AgentCore + Strands SDK</strong> (plan / automate / replay modes, MCP integration)</td><td>6-8 weeks / 2-3 engineers</td><td>3-4 weeks / 1-2 engineers</td><td>4 days / 1 engineer</td></tr>
+<tr><td><strong>React Frontend -- 4 Screens</strong> (Agent, Inventory, Config, Admin + Auth)</td><td>5-6 weeks / 2 engineers</td><td>2-3 weeks / 1-2 engineers</td><td>5 days / 1 engineer</td></tr>
+<tr><td><strong>CI/CD Pipelines + Documentation</strong> (4 pipelines, IaC deploy guide, architecture docs)</td><td>2-3 weeks / 1 engineer</td><td>1 week / 1 engineer</td><td>1 day / 1 engineer</td></tr>
+<tr><td><strong>Total Time to Production</strong></td><td><strong>~6 months</strong> (4-5 person team)</td><td><strong>~2 months</strong> (2 person team)</td><td><strong>15 days</strong> (1 engineer, Mar 13-28)</td></tr>
+</table>
+
+<p><strong>12x</strong> Faster vs Traditional (6 months &rarr; 15 days) | <strong>4x</strong> Faster vs Moderate AI (2 months &rarr; 15 days) | <strong>15 Calendar Days</strong> (Mar 13-28, 2 weekends fully + evenings 8 PM-3 AM, 1 engineer + Claude Code as co-pilot)</p>
+
+<h2>Build Progress by Area</h2>
+
+<h3>Infrastructure and DevOps</h3>
+<table>
+<tr><th>Item</th><th>Progress</th></tr>
+<tr><td>VPC, Networking, Security Groups</td><td>100%</td></tr>
+<tr><td>Cognito Auth + Identity Pool</td><td>100%</td></tr>
+<tr><td>Aurora Serverless v2 + pgvector</td><td>100%</td></tr>
+<tr><td>DynamoDB Config Table</td><td>100%</td></tr>
+<tr><td>ECS Fargate + Task Definition</td><td>100%</td></tr>
+<tr><td>CI/CD Pipelines (x4)</td><td>100%</td></tr>
+<tr><td>CDK as Code (full IaC)</td><td>100%</td></tr>
+<tr><td>Monitoring and Alerting</td><td>30%</td></tr>
+</table>
+
+<h3>Frontend (React UI)</h3>
+<table>
+<tr><th>Item</th><th>Progress</th></tr>
+<tr><td>Login + Cognito Auth</td><td>100%</td></tr>
+<tr><td>Agent Page (plan + automate)</td><td>100%</td></tr>
+<tr><td>Live Browser (noVNC + pop-out)</td><td>100%</td></tr>
+<tr><td>Inventory Page</td><td>100%</td></tr>
+<tr><td>Config Page (services + accounts)</td><td>100%</td></tr>
+<tr><td>Admin Page (users + teams)</td><td>100%</td></tr>
+<tr><td>Multi-team + Multi-env support</td><td>100%</td></tr>
+<tr><td>Metrics Dashboard</td><td>0%</td></tr>
+</table>
+
+<h3>AI Agent Backend</h3>
+<table>
+<tr><th>Item</th><th>Progress</th></tr>
+<tr><td>AgentCore Runtime (ACTIVE)</td><td>100%</td></tr>
+<tr><td>Plan mode (test plan generation)</td><td>100%</td></tr>
+<tr><td>Plan Scenario (structured steps)</td><td>100%</td></tr>
+<tr><td>Automate mode (execute via MCP)</td><td>100%</td></tr>
+<tr><td>Replay mode</td><td>100%</td></tr>
+<tr><td>get_service_config tool (DynamoDB)</td><td>100%</td></tr>
+<tr><td>ECS session management</td><td>100%</td></tr>
+<tr><td>Multi-agent / parallel runs</td><td>0%</td></tr>
+</table>
+
+<h2>Tech Stack</h2>
+
+<table>
+<tr><th>Layer</th><th>Technologies</th></tr>
+<tr><td><strong>Frontend</strong></td><td>React 18, TypeScript, Vite, React Router v6, AWS Amplify SDK, @aws-sdk/client-dynamodb, @aws-sdk/lib-dynamodb, Cognito Hosted UI</td></tr>
+<tr><td><strong>AI Agent</strong></td><td>Python 3.12, Strands SDK, FastAPI, Claude Sonnet 4.5, Titan Embed Text v2, Bedrock AgentCore, Playwright MCP</td></tr>
+<tr><td><strong>Backend / Data</strong></td><td>Python 3.12, Aurora Serverless v2, PostgreSQL 16 + pgvector, DynamoDB, RDS Data API, Secrets Manager</td></tr>
+<tr><td><strong>Infrastructure</strong></td><td>AWS CDK v2 (TypeScript), ECS Fargate ARM64, CodePipeline, Amplify Hosting, CloudFront CDN, Docker</td></tr>
+</table>
+
+<h2>AWS Services in Use (18)</h2>
+
+<table>
+<tr><th>Service</th><th>Detail</th></tr>
+<tr><td><strong>Cognito</strong></td><td>User Pool + Identity Pool + Groups</td></tr>
+<tr><td><strong>Bedrock</strong></td><td>Claude Sonnet 4.5 + Titan Embed + AgentCore</td></tr>
+<tr><td><strong>Aurora</strong></td><td>Serverless v2 / PostgreSQL 16 + pgvector</td></tr>
+<tr><td><strong>DynamoDB</strong></td><td>prompt2test-config / PAY_PER_REQUEST</td></tr>
+<tr><td><strong>Lambda</strong></td><td>p2t-testcase-writer / reader / schema-init</td></tr>
+<tr><td><strong>ECS Fargate</strong></td><td>playwright-cluster / ARM64 2vCPU/4GB</td></tr>
+<tr><td><strong>ECR</strong></td><td>prompt2test-agent / playwright-mcp</td></tr>
+<tr><td><strong>Amplify</strong></td><td>Prompt2TestUI / CloudFront CDN</td></tr>
+<tr><td><strong>CodePipeline</strong></td><td>3 pipelines / Lambda + Agent + Playwright</td></tr>
+<tr><td><strong>CodeBuild</strong></td><td>Docker builds + Lambda zip</td></tr>
+<tr><td><strong>VPC / EC2</strong></td><td>2 public subnets / Security Groups</td></tr>
+<tr><td><strong>Secrets Manager</strong></td><td>prompt2test/aurora/credentials</td></tr>
+<tr><td><strong>SSM</strong></td><td>ECS + Aurora infra params only</td></tr>
+<tr><td><strong>CloudWatch</strong></td><td>Logs / /prompt2test/playwright-mcp / agentcore</td></tr>
+<tr><td><strong>CloudFormation</strong></td><td>4 stacks via CDK</td></tr>
+<tr><td><strong>IAM</strong></td><td>~12 scoped roles</td></tr>
+<tr><td><strong>S3</strong></td><td>3 pipeline artifact buckets + CDK assets</td></tr>
+<tr><td><strong>KMS</strong></td><td>2 keys / pipeline artifact encryption</td></tr>
+</table>
+
+<h2>CI/CD Pipelines</h2>
+
+<table>
+<tr><th>Pipeline</th><th>Flow</th></tr>
+<tr><td><strong>Prompt2TestUI (React)</strong></td><td>Push to master &rarr; Amplify detect &rarr; npm build &rarr; Live in ~2 min</td></tr>
+<tr><td><strong>Agent Container</strong></td><td>Push to Prompt2TestAgent &rarr; CodeBuild &rarr; Docker build &rarr; ECR push</td></tr>
+<tr><td><strong>Playwright Container</strong></td><td>Push to Prompt2TestPlaywrightMCP &rarr; CodeBuild &rarr; Docker build &rarr; ECR push</td></tr>
+<tr><td><strong>Lambda Code</strong></td><td>Push to Prompt2TestLambda &rarr; CodeBuild &rarr; Zip &rarr; Lambda update x2</td></tr>
+</table>
+
+<h2>Data Model</h2>
+
+<h3>Aurora (PostgreSQL + pgvector)</h3>
+<table>
+<tr><th>Table</th><th>Key Columns</th><th>Purpose</th></tr>
+<tr><td><code>test_cases</code></td><td>id, env, service, description, steps (JSONB), tags, embedding (vector 1024)</td><td>All test cases with vector embeddings for semantic search</td></tr>
+<tr><td><code>run_records</code></td><td>id, test_case_id, env, result, summary, run_by, run_at</td><td>Every execution result -- PASS / FAIL with summary</td></tr>
+</table>
+
+<h3>DynamoDB -- prompt2test-config</h3>
+<table>
+<tr><th>pk</th><th>sk</th><th>val</th><th>Purpose</th></tr>
+<tr><td><code>SERVICE#{team}#{env}</code></td><td><code>{svc}#{key}</code></td><td>URL etc.</td><td>Service configs per team per env</td></tr>
+<tr><td><code>ACCOUNT#{env}</code></td><td><code>{id}#{NAME|CODE}</code></td><td>value</td><td>Test accounts per env</td></tr>
+</table>
+
+<h2>Key Architecture Decisions</h2>
+
+<table>
+<tr><th>Decision</th><th>Choice</th><th>Why</th></tr>
+<tr><td><strong>Config storage</strong></td><td>DynamoDB</td><td>Browser SDK calls DynamoDB directly via Cognito IAM -- no server proxy needed. SSM cannot be called from the browser.</td></tr>
+<tr><td><strong>Team membership</strong></td><td>Cognito Groups</td><td>Team resolved from JWT <code>cognito:groups</code> claim at login -- zero extra lookups.</td></tr>
+<tr><td><strong>Browser sessions</strong></td><td>ECS Fargate on-demand</td><td>One task per test run, auto-stopped on completion. Zero idle cost -- pay only when tests run.</td></tr>
+<tr><td><strong>AI agent runtime</strong></td><td>Bedrock AgentCore</td><td>Managed container runtime -- no EC2/ECS service to maintain. Scales automatically.</td></tr>
+<tr><td><strong>Test case storage</strong></td><td>Aurora + pgvector</td><td>Vector embeddings enable semantic duplicate detection and similarity search.</td></tr>
+<tr><td><strong>Infrastructure</strong></td><td>AWS CDK (TypeScript)</td><td>Full IaC -- entire platform deployable to a new AWS account with one command.</td></tr>
+</table>
+
+<h2>GitHub Repositories</h2>
+
+<table>
+<tr><th>Repo</th><th>Language</th><th>What's in it</th><th>Deploy method</th></tr>
+<tr><td><strong>Prompt2TestUI</strong></td><td>React / TS</td><td>All 4 UI screens, Cognito auth, DynamoDB SDK calls, AgentCore streaming</td><td>Push &rarr; Amplify auto-builds</td></tr>
+<tr><td><strong>Prompt2TestInfrastructure</strong></td><td>CDK / TS</td><td>Full AWS CDK stack, deploy.sh, all documentation</td><td>Manual <code>./deploy.sh</code></td></tr>
+<tr><td><strong>Prompt2TestAgent</strong></td><td>Python</td><td>AgentCore container -- plan, automate, replay modes, Strands SDK tools</td><td>Push &rarr; CodePipeline &rarr; ECR</td></tr>
+<tr><td><strong>Prompt2TestPlaywrightMCP</strong></td><td>Python / Docker</td><td>Playwright MCP server + noVNC + Chromium browser</td><td>Push &rarr; CodePipeline &rarr; ECR</td></tr>
+<tr><td><strong>Prompt2TestLambda</strong></td><td>Python</td><td>testcase-writer + testcase-reader Lambdas (Aurora CRUD + pgvector search)</td><td>Push &rarr; CodePipeline &rarr; Lambda update</td></tr>
+</table>
+
+<p><em>Prompt2Test / AWS us-east-1 / Updated 2026-03-28 / 18 AWS Services / 5 Repos / Production Ready</em></p>

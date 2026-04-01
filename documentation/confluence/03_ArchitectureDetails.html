@@ -1,0 +1,311 @@
+<h1>Prompt2Test -- Complete Architecture</h1>
+<p>UI Deployment / Agent Backend / Playwright MCP / Data Layer / Scaling / CI/CD</p>
+
+<h2>Summary</h2>
+<table>
+<tr><th>Metric</th><th>Value</th></tr>
+<tr><td>AWS Services</td><td><strong>18</strong></td></tr>
+<tr><td>GitHub Repos</td><td><strong>4</strong></td></tr>
+<tr><td>CodePipelines</td><td><strong>3</strong></td></tr>
+<tr><td>Lambda Functions</td><td><strong>3</strong></td></tr>
+<tr><td>ECR Repos</td><td><strong>2</strong></td></tr>
+<tr><td>ECS Cluster</td><td><strong>1</strong></td></tr>
+<tr><td>Aurora Cluster</td><td><strong>1</strong></td></tr>
+<tr><td>AgentCore Runtime</td><td><strong>1</strong></td></tr>
+</table>
+
+<h2>Complete AWS Services Inventory</h2>
+
+<h3>Networking</h3>
+<ul>
+<li><strong>VPC</strong> -- 2 public subnets, Internet Gateway</li>
+<li><strong>Security Group</strong> -- controls ECS Fargate inbound/outbound</li>
+</ul>
+
+<h3>Auth and Identity</h3>
+<ul>
+<li><strong>User Pool</strong> <code>prompt2test-users</code> -- login, passwords, sessions</li>
+<li><strong>Cognito Groups</strong> -- each team = one group; team resolved from <code>cognito:groups</code> JWT claim</li>
+<li><strong>Identity Pool</strong> -- maps users to IAM roles for SDK calls</li>
+<li><strong>Cognito Auth Role</strong> (IAM) -- permissions the React UI gets after login</li>
+</ul>
+
+<h3>Data Layer</h3>
+<ul>
+<li><strong>Aurora Serverless v2</strong> <code>prompt2test-vectors</code> -- PostgreSQL + pgvector, auto-pauses when idle</li>
+<li><strong>RDS Data API</strong> -- Lambda calls Aurora without a VPC connection</li>
+<li><strong>Secrets Manager</strong> <code>prompt2test/aurora/credentials</code> -- Aurora password</li>
+</ul>
+
+<h3>Backend Logic</h3>
+<ul>
+<li><strong>p2t-testcase-writer</strong> -- saves, updates, deletes test cases and run records</li>
+<li><strong>p2t-testcase-reader</strong> -- lists, fetches, semantic search via pgvector</li>
+<li><strong>CDK Custom Resource Lambda</strong> -- one-time DB schema init on first deploy</li>
+</ul>
+
+<h3>AI and Machine Learning</h3>
+<ul>
+<li><strong>Claude Sonnet 4.5</strong> -- powers the AI agent (test case generation)</li>
+<li><strong>Titan Embed Text v2</strong> -- generates vector embeddings for semantic search</li>
+<li><strong>AgentCore</strong> <code>Prompt2TestAgent</code> -- runs the agent container on demand, status: READY</li>
+</ul>
+
+<h3>Browser Automation</h3>
+<ul>
+<li><strong>ECS Fargate Cluster</strong> <code>prompt2test-playwright-cluster</code> -- on-demand per test run, ARM64 2vCPU/4GB</li>
+<li><strong>ECS Task Definition</strong> -- pulls latest image from ECR on each run</li>
+<li><strong>ECR</strong> <code>prompt2test-playwright-mcp</code> -- Playwright + noVNC Docker image</li>
+<li><strong>ECR</strong> <code>prompt2test-agent</code> -- AI agent Docker image</li>
+</ul>
+
+<h3>UI Hosting</h3>
+<ul>
+<li><strong>Amplify Hosting</strong> <code>Prompt2TestUI</code> -- serves the React app via CloudFront CDN</li>
+<li><strong>Auto-deploy</strong> -- push to <code>master</code> &rarr; Amplify rebuilds and re-deploys automatically</li>
+</ul>
+
+<h3>CI/CD -- 3 Pipelines</h3>
+<ul>
+<li><strong>prompt2test-lambda</strong> -- push &rarr; zip &rarr; <code>update-function-code</code></li>
+<li><strong>prompt2test-agent-pipeline</strong> -- push &rarr; Docker build &rarr; ECR</li>
+<li><strong>prompt2test-playwright-mcp-pipeline</strong> -- push &rarr; Docker build &rarr; ECR</li>
+<li><strong>CodeBuild</strong> -- build runner for all 3 pipelines</li>
+<li><strong>S3</strong> (3 buckets) -- pipeline artifact storage</li>
+<li><strong>KMS</strong> (2 keys) -- encrypts pipeline artifacts at rest</li>
+</ul>
+
+<h3>Config, Observability and Infra</h3>
+<ul>
+<li><strong>SSM Parameter Store</strong> -- ECS/Playwright infra params only (cluster-name, task-definition-family, subnet-ids, security-group-id)</li>
+<li><strong>DynamoDB</strong> <code>prompt2test-config</code> -- service configs and test accounts per team per environment</li>
+<li><strong>CloudWatch Logs</strong> -- <code>/prompt2test/playwright-mcp</code> and <code>/prompt2test/agentcore</code></li>
+<li><strong>CloudFormation</strong> (4 stacks) -- CDKToolkit, AgentStack, PlaywrightMCPStack, LambdaPipeline</li>
+<li><strong>IAM</strong> -- ~12 scoped roles for Lambda, ECS, CodeBuild, CodePipeline, AgentCore</li>
+<li><strong>S3</strong> <code>cdk-hnb659fds-assets-...</code> -- CDK deployment assets</li>
+</ul>
+
+<h2>1. Users and Frontend</h2>
+
+<h3>Users</h3>
+<p>5 Teams, 4 members each, ~20 concurrent users. QA Engineers / Testers. Browser &rarr; HTTPS.</p>
+
+<h3>AWS Amplify -- React UI</h3>
+<p><strong>Hosting:</strong> Amplify Gen 1, Global CDN (CloudFront), Auto HTTPS / SSL, Branch: <strong>master</strong>, URL: <strong>dzjt4ryqd68ry.amplifyapp.com</strong></p>
+<p><strong>CI/CD:</strong> Auto-deploy, GitHub push &rarr; Amplify Job, Build: <code>npm run build</code>, ~2 min deploy time</p>
+<p><strong>All Pages:</strong> LoginPage | AgentPage (Author tests, generate plan, save) | InventoryPage (Browse, run, manage TCs) | ConfigPage (Service and account config via DynamoDB) | MembersPage (Team and member management, admin only) | noVNC Popup (Live browser view)</p>
+<p>AgentPage: describe test &rarr; plan &rarr; save TC &rarr; open TestCasePage | TestCasePage: automate (LLM) &rarr; save steps &rarr; run test (deterministic replay)</p>
+
+<h3>Amazon Cognito</h3>
+<p><strong>User Pool:</strong> <code>us-east-1_BI4xQ9MQb</code>, Email/password auth, JWT access tokens</p>
+<p><strong>Identity Pool:</strong> Federated identities, Grants temp AWS creds. Direct SDK calls: AgentCore / Lambda / SSM / DynamoDB / Bedrock / Cognito IDP</p>
+<p><strong>Cognito Groups:</strong> Each team = Cognito Group, Team from JWT <code>cognito:groups</code> claim, Admin creates/manages groups via Members page</p>
+<p><strong>Identity Provider (Admin):</strong> ListGroups / CreateGroup / AdminAddUserToGroup / AdminCreateUser / ListUsers</p>
+
+<h3>Flow: Users &rarr; Backend</h3>
+<table>
+<tr><td>React (Amplify)</td><td>&rarr; HTTPS / Bedrock AgentCore SDK &rarr;</td><td>Bedrock AgentCore Endpoint</td><td>&rarr;</td><td>Agent Container</td></tr>
+<tr><td>React (Amplify)</td><td>&rarr; Lambda SDK &rarr;</td><td>p2t-testcase-writer/reader</td><td></td><td></td></tr>
+</table>
+
+<h2>2. Agent Backend (Bedrock AgentCore)</h2>
+
+<h3>AWS Bedrock AgentCore</h3>
+<p><strong>Runtime:</strong> ID: Prompt2TestAgent-YTVbD4GrTi, Version: 39 (current), Status: READY, Network: PUBLIC</p>
+<p><strong>Container:</strong> ECR: prompt2test-agent, Base: Python 3.12, Framework: Strands Agents, Port: 8080 (internal)</p>
+<p><strong>LLM:</strong> Claude Sonnet 4.5, <code>us.anthropic.claude-sonnet-4-5-20250929-v1:0</code>, Cross-region inference</p>
+
+<p><strong>Agent Modes (main.py):</strong></p>
+<ul>
+<li><strong>plan_scenario</strong> -- enrich test scenario with real config from DynamoDB (SERVICE#{team}#{env})</li>
+<li><strong>start_session</strong> -- RunTask &rarr; poll RUNNING &rarr; get public IP via ENI</li>
+<li><strong>automate</strong> -- LLM drives Playwright via MCP tools &rarr; captures playwright_calls per step &rarr; StopTask</li>
+<li><strong>replay</strong> -- deterministic re-run using saved playwright_calls (raw ClientSession.call_tool, no LLM)</li>
+<li><strong>stop_session</strong> -- explicit ECS StopTask cleanup (called on Stop, success, or failure)</li>
+</ul>
+<p>plan_scenario receives <strong>env</strong> + <strong>team</strong> in payload &rarr; agent reads DynamoDB <code>SERVICE#{team}#{env}</code> partition for service config when generating the plan</p>
+
+<h3>IAM Role</h3>
+<p><strong>prompt2test-agentcore-role</strong></p>
+<p>Permissions: bedrock:InvokeModel, bedrock:ConverseStream, ssm:GetParameter, dynamodb:Query / dynamodb:GetItem, ecs:RunTask / DescribeTasks / StopTask, ec2:DescribeNetworkInterfaces, iam:PassRole (task execution role), lambda:InvokeFunction, ecr:GetAuthToken, logs:*</p>
+<p><strong>Cognito Auth Role</strong> grants browser SDK calls to: AgentCore / Lambda / SSM / DynamoDB / Bedrock / Cognito IDP</p>
+
+<h2>3. Data Layer -- Test Case Management</h2>
+
+<h3>AWS Lambda -- TC Management</h3>
+
+<p><strong>p2t-testcase-writer:</strong> save_test_case, save_run_record, update_test_case, delete_test_case, promote_test_case. Runtime: Python 3.12, Memory: 256 MB, Timeout: 120s</p>
+<p><strong>p2t-testcase-reader:</strong> list_test_cases, list_run_records, get_test_case, search (semantic). Runtime: Python 3.12, Memory: 256 MB, Timeout: 120s</p>
+<p><strong>Aurora Resume Handling:</strong> Retries up to 8x8s = 64s on <code>DatabaseResumingException</code>. First call after idle wait is transparent.</p>
+
+<h3>Aurora Serverless v2 -- PostgreSQL + pgvector</h3>
+
+<p><strong>Cluster:</strong> <code>prompt2test-vectors</code>, Engine: PostgreSQL 15, Extension: pgvector, Region: us-east-1, Auto-pause enabled</p>
+
+<p><strong>test_cases table:</strong> id / env / service / title / scenario / description / steps (JSON) / plan_steps (JSON) / tags / created_by / created_at / team / last_result / last_run_at / <strong>embedding vector(1024)</strong> / promoted_to (TEXT[]) / promoted_from_id / promoted_from_env / promoted_by / promoted_at</p>
+
+<p><strong>run_records table:</strong> id / test_case_id / env / result (PASS/FAIL) / summary / run_by / run_at / FK &rarr; test_cases</p>
+
+<p><strong>Vector Search (pgvector):</strong> Embeddings: 1024 dimensions, Model: Titan Embed v2, Index: IVFFlat cosine, Semantic TC similarity search</p>
+
+<p><strong>Access:</strong> Via RDS Data API (no persistent conn), Credentials from Secrets Manager, Secret: <code>prompt2test/aurora/credentials</code></p>
+
+<h3>Supporting Services</h3>
+<ul>
+<li><strong>Bedrock -- Titan Embed v2:</strong> <code>amazon.titan-embed-text-v2:0</code>, 1024-dim embeddings, Called by writer on TC save, Called by reader on search, ~$0.00002/1K tokens</li>
+<li><strong>Secrets Manager:</strong> 1 secret: Aurora credentials, Auto-rotation capable, $0.40/month (idle cost)</li>
+<li><strong>RDS Data API:</strong> HTTP-based SQL execution, No VPC / no DB drivers, Serverless-friendly</li>
+</ul>
+
+<h3>Flow: Data Layer</h3>
+<table>
+<tr><td>React (Amplify)</td><td>&rarr; Lambda SDK &rarr;</td><td>Lambda (writer/reader)</td><td>&rarr; RDS Data API &rarr;</td><td>Aurora PostgreSQL</td></tr>
+<tr><td colspan="3">writer also &rarr;</td><td>Bedrock Titan Embed v2</td><td>&rarr; 1024-dim vector stored</td></tr>
+</table>
+
+<h2>4. Session Resolution and Infrastructure Configuration</h2>
+
+<h3>AWS Systems Manager -- Parameter Store (infra params only)</h3>
+<p><strong>ECS Config</strong> (Agent reads, CDK writes at deploy):</p>
+<ul>
+<li><code>/prompt2test/playwright/cluster-name</code></li>
+<li><code>/prompt2test/playwright/task-definition-family</code></li>
+<li><code>/prompt2test/playwright/subnet-ids</code></li>
+<li><code>/prompt2test/playwright/security-group-id</code></li>
+</ul>
+<p>Also: <code>/prompt2test/aurora/*</code> used by Lambda. Service config moved to DynamoDB. Team membership moved to Cognito Groups.</p>
+<p><strong>SSM Cache (Agent side):</strong> All ECS params fetched in parallel via ThreadPoolExecutor -- First call: ~80ms, Cached in _SSM_CACHE dict, Subsequent: ~0ms</p>
+
+<h3>DynamoDB -- prompt2test-config</h3>
+<p><strong>Service Config</strong> (UI + Agent reads/writes): <code>pk=SERVICE#{team}#{env}</code>, <code>sk={svc}#{key}</code>, <code>val={value}</code>. e.g. pk=SERVICE#teamA#dev, sk=MyService#URL</p>
+<p><strong>Test Accounts</strong> (UI reads/writes): <code>pk=ACCOUNT#{env}</code>, <code>sk={id}#{NAME|CODE}</code>, <code>val={value}</code></p>
+<p><strong>Access:</strong> Browser &rarr; Cognito IAM creds, Agent &rarr; DynamoDBConfigRead policy, dynamodb:Query, dynamodb:GetItem</p>
+
+<h3>On-Demand Session Flow</h3>
+<ol>
+<li>User describes test &rarr; Agent reads <strong>DynamoDB SERVICE#{team}#{env}</strong> &rarr; generates plan</li>
+<li>User selects service chip + TC name &rarr; Save Test Case &rarr; Lambda saves to Aurora + embeds vector</li>
+<li>User opens TestCasePage &rarr; clicks Automate &rarr; popup opens instantly with progress bar</li>
+<li><strong>start_session:</strong> reads SSM config &rarr; RunTask (dedicated Fargate task)</li>
+<li>Poll DescribeTasks (~60s) &rarr; RUNNING &rarr; public IP via ENI &rarr; TCP poll port 3000 until ready</li>
+<li><strong>Pre-warm:</strong> MCP connect &rarr; <code>browser_navigate about:blank</code> &rarr; Chromium open in noVNC</li>
+<li><strong>automate:</strong> LLM drives Playwright via MCP &rarr; captures playwright_calls per step &rarr; streams results</li>
+<li>User saves steps &rarr; Save Steps persists playwright_calls to Aurora via Lambda</li>
+<li><strong>Run Test:</strong> replay mode &rarr; raw ClientSession.call_tool() (no LLM) &rarr; StopTask &rarr; PASS/FAIL recorded</li>
+</ol>
+
+<h3>Flow: Session Resolution</h3>
+<table>
+<tr><td>Agent (start_session)</td><td>&rarr; SSM &rarr;</td><td>RunTask &rarr; ENI IP</td><td>&rarr; TCP poll :3000 &rarr;</td><td>Pre-warm browser</td><td>&rarr;</td><td>Return ip:3000 + ip:6080</td></tr>
+</table>
+
+<h2>5. Playwright MCP -- ECS Fargate (On-Demand per Session)</h2>
+
+<h3>On-Demand Task Lifecycle</h3>
+<p><strong>Startup (~60s):</strong> RunTask &rarr; PROVISIONING &rarr; PENDING &rarr; RUNNING. ENI assigns public IP, TCP poll :3000 until ready. Pre-warm: browser_navigate about:blank, Chromium open before noVNC loads.</p>
+<p><strong>During Test:</strong> 1 task = 1 user = 1 Xvfb display. Full screen isolation, No cross-user interference, No --isolated flag -- browser persists between MCP connections.</p>
+<p><strong>Teardown:</strong> StopTask called on test end. Task stopped in seconds. Pay only for test duration, ~10-15 min avg per session.</p>
+
+<h3>ECS Fargate -- playwright-mcp Tasks</h3>
+<p>Per-user isolation: Each user gets their own Fargate task.</p>
+<ul>
+<li><strong>User A's Task:</strong> RUNNING, Own public IP, Own Xvfb :99 display, MCP &rarr; ip-A:3000, noVNC &rarr; ip-A:6080</li>
+<li><strong>User B's Task:</strong> RUNNING, Own public IP, Own Xvfb :99 display, MCP &rarr; ip-B:3000, noVNC &rarr; ip-B:6080</li>
+<li><strong>No Warm Pool:</strong> 0 always-on tasks, No NLB (removed), No warm service, No autoscaling policy. Pure on-demand only.</li>
+</ul>
+<p><strong>Task Spec:</strong> CPU: 2 vCPU (ARM64 / Graviton), Memory: 4 GB, Image: ECR prompt2test-playwright-mcp:latest, Mode: BROWSER_MODE=headed (Xvfb + x11vnc + noVNC), Ports: 3000 (MCP) / 6080 (noVNC) / 8080 (health)</p>
+<p><strong>Cluster:</strong> prompt2test-playwright-cluster / VPC: prompt2test-playwright-vpc / Public subnets (2 AZs) / assignPublicIp: ENABLED</p>
+
+<h2>6. Scaling Model and Cost</h2>
+
+<h3>On-Demand Scaling -- 1 Task per User Session</h3>
+<table>
+<tr><th>Metric</th><th>Value</th></tr>
+<tr><td>Always-on tasks (no warm pool)</td><td><strong>0</strong></td></tr>
+<tr><td>Tasks per active test session</td><td><strong>1</strong></td></tr>
+<tr><td>Concurrent users (Fargate limit)</td><td><strong>20+</strong></td></tr>
+</table>
+
+<p><strong>Scale-Out:</strong> Automatic -- each start_session RunTask call = new task. No shared state, no contention. Unlimited concurrent users.</p>
+<p><strong>Scale-In:</strong> Automatic -- StopTask called when test completes or errors. Task goes STOPPED within seconds. Zero idle waste.</p>
+<p><strong>Isolation Model:</strong> Each user gets their own Fargate task with its own Xvfb display :99 -- no cross-user screen sharing. Users always see their own browser, never another user's test.</p>
+
+<h3>Cost Estimate</h3>
+<table>
+<tr><th>Scenario</th><th>Details</th><th>Total</th></tr>
+<tr><td><strong>Idle (zero usage)</strong></td><td>Secrets Manager: $0.40, ECR storage: ~$0.10, Everything else: $0, Aurora: $0 (auto-paused)</td><td><strong>~$0.50/month</strong></td></tr>
+<tr><td><strong>Active (small team)</strong></td><td>Aurora (active ~4hr/day): ~$20, Bedrock (plans + runs): ~$10-40, Fargate (50 runs/month): ~$1-5, Lambda + Amplify: ~$1</td><td><strong>~$30-70/month</strong></td></tr>
+</table>
+<p>Old warm pool (removed): 3 tasks 24/7: ~$216/mo. Always paying, idle or not.</p>
+
+<h2>7. CI/CD Pipelines</h2>
+
+<h3>Lambda Pipeline</h3>
+<table>
+<tr><td>GitHub (Prompt2TestLambda)</td><td>&rarr;</td><td>CodePipeline (Source)</td><td>&rarr;</td><td>CodeBuild (zip + update-function-code)</td></tr>
+</table>
+<p><strong>Build Steps:</strong> zip testcase-writer/ &rarr; writer.zip, zip testcase-reader/ &rarr; reader.zip, <code>aws lambda update-function-code --function-name p2t-testcase-writer</code>, <code>aws lambda update-function-code --function-name p2t-testcase-reader</code></p>
+<p><strong>Trigger:</strong> Any push to Prompt2TestLambda / main auto-deploys both Lambda functions</p>
+
+<h3>Playwright MCP Pipeline</h3>
+<table>
+<tr><td>GitHub (Prompt2TestPlaywrightMCP)</td><td>&rarr;</td><td>CodePipeline (Source)</td><td>&rarr;</td><td>CodeBuild (ARM64 Docker Build)</td><td>&rarr;</td><td>ECR (prompt2test-playwright-mcp:latest)</td></tr>
+</table>
+<p><strong>Build Spec:</strong> docker build &rarr; docker tag &rarr; docker push ECR. ARM64 build image: LinuxArmBuildImage.AMAZON_LINUX_2_STANDARD_3_0. No ECS service to update -- every new RunTask call pulls :latest from ECR automatically.</p>
+<p><strong>Docker Image Contents:</strong> node:20-slim (ARM64), Chromium, Xvfb + x11vnc + noVNC, @playwright/mcp, websockify, entrypoint.sh</p>
+
+<h3>Agent Pipeline</h3>
+<ol>
+<li>GitHub: Prompt2TestAgent</li>
+<li>CodePipeline: Source + Build</li>
+<li>ECR: prompt2test-agent:latest</li>
+<li>Manual: update-agent-runtime</li>
+</ol>
+
+<ac:structured-macro ac:name="warning">
+<ac:rich-text-body><p>No auto-deploy stage yet. After ECR push, run: <code>aws bedrock-agentcore-control update-agent-runtime</code></p></ac:rich-text-body>
+</ac:structured-macro>
+
+<p><strong>Agent Image Contents:</strong> Python 3.12, Strands Agents, agent_runner.py, ecs_session.py, main.py</p>
+
+<h3>UI Pipeline -- Amplify Auto-Deploy</h3>
+<table>
+<tr><td>GitHub push (Prompt2TestUI / master)</td><td>&rarr;</td><td>Amplify Webhook (Auto-triggered)</td><td>&rarr;</td><td>npm install + build (React + TypeScript)</td><td>&rarr;</td><td>CloudFront CDN (Global distribution)</td><td>&rarr;</td><td>Live at Amplify URL (~2 min total)</td></tr>
+</table>
+<p><strong>Lambda Deploy:</strong> Automated via prompt2test-lambda CodePipeline. Source: Prompt2TestLambda repo (separate repo, <code>main</code> branch). Push to that repo &rarr; both functions auto-update.</p>
+
+<h2>8. End-to-End Request Flow</h2>
+
+<h3>Author and Save Test Case</h3>
+<table>
+<tr><td>User (Describes test)</td><td>&rarr; AgentCore SDK + env &rarr;</td><td>AgentCore (Reads DynamoDB config, Generates plan)</td><td>&rarr; Save + service chip &rarr;</td><td>Lambda Writer (Embeds + saves)</td><td>&rarr; RDS Data API &rarr;</td><td>Aurora (TC + vector stored)</td></tr>
+</table>
+
+<h3>Execute Test (from TestCasePage)</h3>
+<table>
+<tr><td>Run click (Popup opens)</td><td>&rarr; AgentCore SDK &rarr;</td><td>AgentCore (start_session &rarr; RunTask)</td><td>&rarr; ~60s &rarr;</td><td>playwright-mcp (Fargate task ip:3000)</td><td>&rarr; ip:6080 &rarr;</td><td>Browser Popup (Live test view)</td><td>&rarr; PASS/FAIL &rarr;</td><td>Lambda Writer (Save run record)</td></tr>
+</table>
+
+<h3>Timing</h3>
+<table>
+<tr><th>Stage</th><th>Duration</th></tr>
+<tr><td>Prompt &rarr; Plan</td><td>LLM streaming via Strands ~2-5s</td></tr>
+<tr><td>Save TC (warm Aurora)</td><td>Lambda + embed + SQL ~1-2s</td></tr>
+<tr><td>Save TC (cold Aurora)</td><td>Aurora resume + retry ~30-60s</td></tr>
+<tr><td>Run click &rarr; Popup</td><td>Blob URL progress bar -- Instant (user gesture)</td></tr>
+<tr><td>RunTask &rarr; RUNNING</td><td>ECS + image pull + boot ~55-60s</td></tr>
+<tr><td>Total: Run &rarr; Test executing</td><td>Progress bar + pre-warm ~63 seconds cold start</td></tr>
+</table>
+
+<h2>9. Repositories, Stacks and Service Summary</h2>
+
+<h3>GitHub Repositories</h3>
+<table>
+<tr><th>Repo</th><th>Tech</th><th>Deploy</th><th>Key Files</th></tr>
+<tr><td><strong>Prompt2TestUI</strong></td><td>React + TypeScript + Vite</td><td>Amplify auto-deploy on push to master</td><td>AgentPage.tsx, InventoryPage.tsx, ConfigPage.tsx, MembersPage.tsx, lib/lambdaClient.ts, lib/agentClient.ts, infrastructure/ (CDK)</td></tr>
+<tr><td><strong>Prompt2TestAgent</strong></td><td>Python 3.12 + Strands</td><td>CodePipeline &rarr; ECR</td><td>main.py, agent_runner.py, ecs_session.py</td></tr>
+<tr><td><strong>Prompt2TestPlaywrightMCP</strong></td><td>Node.js + Playwright + noVNC</td><td>CodePipeline &rarr; ECR</td><td>Dockerfile, entrypoint.sh</td></tr>
+<tr><td><strong>Prompt2TestLambda</strong></td><td>Python 3.12</td><td>CodePipeline &rarr; Lambda update</td><td>testcase-writer/, testcase-reader/</td></tr>
+</table>
+
+<p><em>Prompt2Test -- Complete Architecture / AWS us-east-1 / Updated 2026-03-28</em></p>

@@ -1,0 +1,183 @@
+<h1>Prompt2Test -- CI/CD and Infrastructure Handover Guide</h1>
+<p>Everything a CI/CD or infrastructure engineer needs to deploy and maintain the Prompt2Test platform.</p>
+<p>Repo: github.com/ammuvisalakshi/Prompt2TestInfrastructure | Stack: AWS CDK (TypeScript) | Region: us-east-1 | Updated: 2026-03-28</p>
+
+<h2>Summary</h2>
+<table>
+<tr><th>Metric</th><th>Value</th></tr>
+<tr><td>CDK Stack</td><td><strong>1</strong></td></tr>
+<tr><td>GitHub Repos</td><td><strong>5</strong></td></tr>
+<tr><td>CodePipelines</td><td><strong>3</strong></td></tr>
+<tr><td>AWS Services</td><td><strong>18</strong></td></tr>
+<tr><td>IAM Roles</td><td><strong>2</strong></td></tr>
+<tr><td>Deploy Command</td><td><strong>1</strong></td></tr>
+</table>
+
+<h2>Overview</h2>
+<p>This repo contains the <strong>complete infrastructure</strong> for the Prompt2Test platform -- an AI-powered test case generation and browser automation tool. Everything is defined as code using <strong>AWS CDK (TypeScript)</strong>. A single command (<code>./deploy.sh</code>) deploys the entire platform to a new AWS account -- VPC, databases, Lambda, ECS, AI agent, CI/CD pipelines, and the React UI hosting.</p>
+
+<ac:structured-macro ac:name="tip">
+<ac:rich-text-body><p><strong>TL;DR for a new account:</strong> Fill in <code>cdk.json</code>, run <code>./deploy.sh</code>, follow 3 browser prompts. Done.</p></ac:rich-text-body>
+</ac:structured-macro>
+
+<h2>Repository Structure</h2>
+<p><code>Prompt2TestInfrastructure/</code></p>
+<ul>
+<li><code>bin/infrastructure.ts</code> -- CDK entry point, reads cdk.json context, instantiates stack</li>
+<li><code>lib/prompt2test-stack.ts</code> -- ALL AWS resources defined here, one file, one stack</li>
+<li><code>cdk.json</code> -- CDK config, set githubOwner + githubConnectionArn before deploy</li>
+<li><code>deploy.sh</code> -- End-to-end automated deployment script</li>
+<li><code>lambda-pipeline.yaml</code> -- CloudFormation template for Lambda CodePipeline</li>
+<li><code>package.json</code> -- CDK + TypeScript dependencies</li>
+</ul>
+
+<h2>Prerequisites</h2>
+<table>
+<tr><th>Tool</th><th>Required Version</th><th>Install</th></tr>
+<tr><td><strong>AWS CLI</strong></td><td>v2</td><td>https://aws.amazon.com/cli</td></tr>
+<tr><td><strong>Node.js</strong></td><td>v18+</td><td>https://nodejs.org</td></tr>
+<tr><td><strong>AWS CDK</strong></td><td>v2.x</td><td><code>npm install -g aws-cdk</code></td></tr>
+</table>
+<p>Configure AWS credentials with AdministratorAccess:</p>
+<p><code>aws configure</code> then <code>aws sts get-caller-identity</code> to verify</p>
+
+<h2>What the CDK Stack Creates</h2>
+<p>Everything is in <code>lib/prompt2test-stack.ts</code> -- one file, one stack (<code>Prompt2TestStack</code>).</p>
+
+<table>
+<tr><th>#</th><th>Resource</th><th>Name / Detail</th></tr>
+<tr><td>1</td><td>VPC</td><td><code>prompt2test-vpc</code> -- 2 public subnets, no NAT gateway</td></tr>
+<tr><td>2</td><td>Cognito User Pool</td><td><code>prompt2test-users</code> -- email login, admin-only signup</td></tr>
+<tr><td>2</td><td>Cognito Identity Pool</td><td><code>prompt2test_identity</code> -- maps users to IAM role</td></tr>
+<tr><td>3</td><td>Aurora Serverless v2</td><td><code>prompt2test-vectors</code> -- PostgreSQL 16 + pgvector, auto-pauses at idle</td></tr>
+<tr><td>3</td><td>Secrets Manager</td><td><code>prompt2test/aurora/credentials</code></td></tr>
+<tr><td>3.5</td><td>DynamoDB</td><td><code>prompt2test-config</code> -- service configs + test accounts per team/env</td></tr>
+<tr><td>4</td><td>Lambda (schema init)</td><td><code>p2t-schema-init</code> -- custom resource, runs DB schema on first deploy</td></tr>
+<tr><td>5</td><td>Lambda x2</td><td><code>p2t-testcase-writer</code>, <code>p2t-testcase-reader</code></td></tr>
+<tr><td>6</td><td>ECR x2</td><td><code>prompt2test-agent</code>, <code>prompt2test-playwright-mcp</code></td></tr>
+<tr><td>7</td><td>ECS Fargate Cluster</td><td><code>prompt2test-playwright-cluster</code></td></tr>
+<tr><td>7</td><td>ECS Task Definition</td><td><code>prompt2test-playwright-mcp</code> -- ARM64, 2 vCPU / 4 GB</td></tr>
+<tr><td>8</td><td>SSM Parameters</td><td><code>/prompt2test/playwright/*</code> and <code>/prompt2test/aurora/*</code></td></tr>
+<tr><td>9</td><td>CodePipeline x3</td><td><code>prompt2test-lambda</code>, <code>prompt2test-agent-pipeline</code>, <code>prompt2test-playwright-mcp-pipeline</code></td></tr>
+<tr><td>10</td><td>IAM Role</td><td><code>prompt2test-agentcore-role</code></td></tr>
+<tr><td>11</td><td>IAM Role</td><td><code>prompt2test-cognito-auth-role</code></td></tr>
+<tr><td>12</td><td>Amplify Hosting</td><td><code>Prompt2TestUI</code> -- React app via CloudFront CDN</td></tr>
+</table>
+
+<h2>IAM Roles</h2>
+
+<h3>prompt2test-agentcore-role</h3>
+<p>Used by the Bedrock AgentCore runtime container. Trust: <code>bedrock.amazonaws.com</code>, <code>bedrock-agentcore.amazonaws.com</code>, <code>ecs-tasks.amazonaws.com</code></p>
+<table>
+<tr><th>Permission</th><th>Resource</th><th>Purpose</th></tr>
+<tr><td><code>bedrock:InvokeModel, InvokeModelWithResponseStream</code></td><td>Anthropic Claude ARNs</td><td>Run AI agent</td></tr>
+<tr><td><code>ecs:RunTask / StopTask / DescribeTasks / ListTasks</code></td><td>playwright cluster + task def</td><td>Spin up browser sessions</td></tr>
+<tr><td><code>iam:PassRole</code></td><td>ECS task roles</td><td>Required for RunTask</td></tr>
+<tr><td><code>dynamodb:Query / GetItem</code></td><td>prompt2test-config</td><td>Read service config</td></tr>
+<tr><td><code>ssm:GetParameter</code></td><td>/prompt2test/playwright/*</td><td>Read ECS infra config</td></tr>
+<tr><td><code>secretsmanager:GetSecretValue</code></td><td>prompt2test/*</td><td>Aurora credentials</td></tr>
+<tr><td><code>ecr:GetAuthorizationToken + BatchGetImage</code></td><td>*</td><td>Pull Docker images</td></tr>
+<tr><td><code>logs:CreateLogGroup / CreateLogStream / PutLogEvents</code></td><td>*</td><td>CloudWatch logging</td></tr>
+<tr><td><code>ec2:DescribeNetworkInterfaces</code></td><td>*</td><td>Get task public IP</td></tr>
+</table>
+
+<h3>prompt2test-cognito-auth-role</h3>
+<p>Granted to browser users after Cognito login via Identity Pool.</p>
+<table>
+<tr><th>Permission</th><th>Resource</th><th>Purpose</th></tr>
+<tr><td><code>lambda:InvokeFunction</code></td><td>writer + reader Lambda ARNs</td><td>Save/fetch test cases</td></tr>
+<tr><td><code>dynamodb:Query / GetItem / PutItem / DeleteItem</code></td><td>prompt2test-config</td><td>Manage service configs + accounts</td></tr>
+<tr><td><code>bedrock:InvokeAgentRuntime</code></td><td>*</td><td>Call AgentCore from browser</td></tr>
+<tr><td><code>cognito-idp:ListUsers / AdminCreateUser / AdminDeleteUser / AdminSetUserPassword</code></td><td>User Pool</td><td>Admin user management</td></tr>
+<tr><td><code>cognito-idp:CreateGroup / DeleteGroup / ListGroups / AdminAddUserToGroup / AdminRemoveUserFromGroup / AdminListGroupsForUser</code></td><td>User Pool</td><td>Team group management</td></tr>
+</table>
+
+<h2>Deploying to a New AWS Account</h2>
+
+<ac:structured-macro ac:name="info">
+<ac:rich-text-body><p><strong>Shortcut:</strong> Run <code>./deploy.sh</code> -- it handles everything automatically and only pauses 3 times for browser steps.</p></ac:rich-text-body>
+</ac:structured-macro>
+
+<ol>
+<li><strong>Verify prerequisites:</strong> <code>aws --version</code> (v2), <code>node --version</code> (v18+), <code>cdk --version</code> (v2.x), <code>aws sts get-caller-identity</code></li>
+<li><strong>Enable Bedrock model access (browser):</strong> AWS Console &rarr; Amazon Bedrock &rarr; Model access &rarr; Enable Claude Sonnet 4.5 and Titan Embed Text v2</li>
+<li><strong>Create GitHub CodeStar Connection (browser):</strong> AWS Console &rarr; Developer Tools &rarr; Connections &rarr; Create connection &rarr; GitHub. Name it <code>Prompt2TestGitHub</code>. Copy Connection ARN.</li>
+<li><strong>Update cdk.json:</strong> Set <code>githubOwner</code> and <code>githubConnectionArn</code></li>
+<li><strong>Run the deploy script:</strong> <code>npm install</code> &rarr; <code>cdk bootstrap</code> &rarr; <code>./deploy.sh</code>. Outputs saved to <code>deployment-outputs.txt</code>.</li>
+<li><strong>Connect Amplify to GitHub (browser):</strong> AWS Console &rarr; Amplify &rarr; Prompt2TestUI &rarr; Connect branch &rarr; master &rarr; Save and deploy</li>
+<li><strong>Add teams and services (UI):</strong> Log in as admin &rarr; Config tab &rarr; create teams, add users, add services and accounts.</li>
+</ol>
+
+<h2>GitHub Repositories</h2>
+<table>
+<tr><th>Repo</th><th>Language</th><th>Purpose</th><th>How it deploys</th></tr>
+<tr><td><strong>Prompt2TestUI</strong></td><td>React / TypeScript</td><td>React frontend -- all UI pages</td><td>Push to <code>master</code> &rarr; Amplify auto-rebuilds</td></tr>
+<tr><td><strong>Prompt2TestInfrastructure</strong></td><td>CDK / TypeScript</td><td>All AWS infrastructure (this repo)</td><td>Manual -- <code>./deploy.sh</code> or <code>cdk deploy</code></td></tr>
+<tr><td><strong>Prompt2TestAgent</strong></td><td>Python</td><td>Bedrock AgentCore container</td><td>Push &rarr; <code>prompt2test-agent-pipeline</code> &rarr; ECR</td></tr>
+<tr><td><strong>Prompt2TestPlaywrightMCP</strong></td><td>Python / Docker</td><td>Playwright + noVNC browser automation</td><td>Push &rarr; <code>prompt2test-playwright-mcp-pipeline</code> &rarr; ECR</td></tr>
+<tr><td><strong>Prompt2TestLambda</strong></td><td>Python</td><td>Lambda functions -- test case writer + reader</td><td>Push &rarr; <code>prompt2test-lambda</code> &rarr; Lambda update</td></tr>
+</table>
+
+<h2>CI/CD Pipelines</h2>
+
+<h3>prompt2test-agent-pipeline</h3>
+<table>
+<tr><td>Push to Prompt2TestAgent</td><td>&rarr;</td><td>CodeBuild</td><td>&rarr;</td><td>Docker build</td><td>&rarr;</td><td>ECR: prompt2test-agent</td></tr>
+</table>
+<p>AgentCore picks up the new image on next invocation.</p>
+
+<h3>prompt2test-playwright-mcp-pipeline</h3>
+<table>
+<tr><td>Push to Prompt2TestPlaywrightMCP</td><td>&rarr;</td><td>CodeBuild</td><td>&rarr;</td><td>Docker build</td><td>&rarr;</td><td>ECR: prompt2test-playwright-mcp</td></tr>
+</table>
+<p>ECS tasks pull the latest image on each test run.</p>
+
+<h3>prompt2test-lambda</h3>
+<table>
+<tr><td>Push to Prompt2TestLambda</td><td>&rarr;</td><td>CodeBuild</td><td>&rarr;</td><td>Zip artifact</td><td>&rarr;</td><td>lambda update-function-code x2</td></tr>
+</table>
+<p>Updates both p2t-testcase-writer and p2t-testcase-reader simultaneously.</p>
+
+<h3>Amplify (UI)</h3>
+<table>
+<tr><td>Push to master (Prompt2TestUI)</td><td>&rarr;</td><td>Amplify detects push</td><td>&rarr;</td><td>npm build</td><td>&rarr;</td><td>Live in ~2 min</td></tr>
+</table>
+
+<h3>Manually Trigger a Pipeline</h3>
+<p><code>aws codepipeline start-pipeline-execution --name prompt2test-agent-pipeline --region us-east-1</code></p>
+<p><code>aws codepipeline start-pipeline-execution --name prompt2test-playwright-mcp-pipeline --region us-east-1</code></p>
+<p><code>aws codepipeline start-pipeline-execution --name prompt2test-lambda --region us-east-1</code></p>
+
+<h2>Post-Deploy: Adding Teams and Services</h2>
+
+<ac:structured-macro ac:name="tip">
+<ac:rich-text-body><p>After deploy, all configuration is done through the UI Config tab -- no CLI needed. Everything is stored in DynamoDB (<code>prompt2test-config</code>).</p></ac:rich-text-body>
+</ac:structured-macro>
+
+<table>
+<tr><th>Task</th><th>Where</th><th>Detail</th></tr>
+<tr><td><strong>Create team groups</strong></td><td>Config tab &rarr; Teams</td><td>Create a group (e.g. <code>teama</code>) -- maps to Cognito group</td></tr>
+<tr><td><strong>Add users to teams</strong></td><td>Config tab &rarr; Users</td><td>Assign user to group; team resolved from JWT <code>cognito:groups</code> claim</td></tr>
+<tr><td><strong>Add services</strong></td><td>Config tab &rarr; Services</td><td>Add service name + URL per environment</td></tr>
+<tr><td><strong>Add test accounts</strong></td><td>Config tab &rarr; Accounts</td><td>Add account credentials per environment</td></tr>
+</table>
+
+<h2>Key Design Decisions</h2>
+<table>
+<tr><th>Decision</th><th>Choice</th><th>Reason</th></tr>
+<tr><td>Config storage</td><td>DynamoDB</td><td>Browser can call DynamoDB directly via Cognito IAM; SSM requires server-side proxy</td></tr>
+<tr><td>Team membership</td><td>Cognito Groups</td><td>JWT <code>cognito:groups</code> claim -- no extra DB lookup</td></tr>
+<tr><td>Browser sessions</td><td>ECS Fargate on-demand</td><td>One task per test run -- zero idle cost</td></tr>
+<tr><td>Agent runtime</td><td>Bedrock AgentCore</td><td>Managed container runtime, scales automatically</td></tr>
+<tr><td>Test case storage</td><td>Aurora Serverless v2 + pgvector</td><td>Semantic search via vector embeddings</td></tr>
+</table>
+
+<h2>Useful CLI Commands</h2>
+<p><code>aws cloudformation describe-stacks --stack-name Prompt2TestStack --query "Stacks[0].Outputs" --region us-east-1</code></p>
+<p><code>aws codepipeline list-pipeline-executions --pipeline-name prompt2test-agent-pipeline --max-results 1</code></p>
+<p><code>aws bedrock-agentcore-control list-agent-runtimes --region us-east-1</code></p>
+<p><code>aws ecs list-tasks --cluster prompt2test-playwright-cluster --region us-east-1</code></p>
+<p><code>aws logs tail /aws/lambda/p2t-testcase-reader --follow --region us-east-1</code></p>
+<p><code>aws logs tail /aws/lambda/p2t-testcase-writer --follow --region us-east-1</code></p>
+
+<p><em>Prompt2Test Infrastructure / AWS us-east-1 / Updated 2026-03-28</em></p>

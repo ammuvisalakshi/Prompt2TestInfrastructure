@@ -1,0 +1,264 @@
+<h1>Prompt2Test -- New AWS Account Deployment Guide</h1>
+<p>Complete step-by-step walkthrough with expected output after every step. Brand new AWS account &rarr; fully running platform.</p>
+<p>Estimated Time: 45-60 minutes | AWS Region: us-east-1 | Updated: 2026-03-25</p>
+
+<ac:structured-macro ac:name="info">
+<ac:rich-text-body>
+<p><strong>infrastructure/ folder = CDK code (the automated installer)</strong> -- TypeScript code that, when you run one command (<code>cdk deploy</code>), automatically creates all 16 AWS resources (Cognito, Aurora, Lambda, ECS, ECR, SSM, CodePipeline, Amplify, IAM roles) in your account.</p>
+<p><strong>Manual steps (3 total)</strong> -- Three things CDK cannot automate: enabling Bedrock model access, creating the AgentCore runtime (no CloudFormation support yet), and connecting Amplify to GitHub (requires OAuth).</p>
+</ac:rich-text-body>
+</ac:structured-macro>
+
+<h2>What Gets Deployed</h2>
+
+<table>
+<tr><th>#</th><th>Resource</th><th>AWS Service</th><th>How</th></tr>
+<tr><td>1</td><td>VPC -- 2 AZs, public + isolated subnets</td><td>EC2 / VPC</td><td>CDK Auto</td></tr>
+<tr><td>2</td><td>User Pool + Identity Pool (login)</td><td>Cognito</td><td>CDK Auto</td></tr>
+<tr><td>3</td><td>Aurora Serverless v2 PostgreSQL + pgvector (auto-pause)</td><td>RDS</td><td>CDK Auto</td></tr>
+<tr><td>4</td><td>Aurora credentials secret (auto-generated password)</td><td>Secrets Manager</td><td>CDK Auto</td></tr>
+<tr><td>5</td><td>DB schema init -- tables, indexes, pgvector extension</td><td>Lambda + Custom Resource</td><td>CDK Auto</td></tr>
+<tr><td>6</td><td>p2t-testcase-writer Lambda</td><td>Lambda</td><td>CDK Auto</td></tr>
+<tr><td>7</td><td>p2t-testcase-reader Lambda</td><td>Lambda</td><td>CDK Auto</td></tr>
+<tr><td>8</td><td>ECR repos: prompt2test-agent + prompt2test-playwright-mcp</td><td>ECR</td><td>CDK Auto</td></tr>
+<tr><td>9</td><td>ECS Fargate cluster + task definition (ARM64, 2vCPU/4GB)</td><td>ECS</td><td>CDK Auto</td></tr>
+<tr><td>10</td><td>SSM parameters -- ECS/Playwright infra config</td><td>SSM</td><td>CDK Auto</td></tr>
+<tr><td>11</td><td>CodePipeline: Prompt2TestLambda &rarr; zip &rarr; Lambda update-function-code</td><td>CodePipeline</td><td>CDK Auto</td></tr>
+<tr><td>12</td><td>CodePipeline: GitHub &rarr; ECR (Agent image)</td><td>CodePipeline</td><td>CDK Auto</td></tr>
+<tr><td>13</td><td>CodePipeline: GitHub &rarr; ECR (Playwright MCP image)</td><td>CodePipeline</td><td>CDK Auto</td></tr>
+<tr><td>14</td><td>AgentCore IAM role</td><td>IAM</td><td>CDK Auto</td></tr>
+<tr><td>15</td><td>Cognito auth role (browser SDK permissions)</td><td>IAM</td><td>CDK Auto</td></tr>
+<tr><td>16</td><td>Amplify app (React UI hosting skeleton)</td><td>Amplify</td><td>CDK Auto</td></tr>
+<tr><td>17</td><td>DynamoDB table <code>prompt2test-config</code></td><td>DynamoDB</td><td>CDK Auto</td></tr>
+<tr><td>18</td><td>Bedrock model access -- Claude Sonnet 4.5 + Titan Embed v2</td><td>Bedrock</td><td>Manual</td></tr>
+<tr><td>19</td><td>AgentCore Runtime (the AI agent container)</td><td>Bedrock AgentCore</td><td>Manual</td></tr>
+<tr><td>20</td><td>Amplify GitHub branch connection</td><td>Amplify</td><td>Manual</td></tr>
+</table>
+
+<h2>Before You Begin -- What You Need</h2>
+
+<h3>GitHub Repos Required</h3>
+<table>
+<tr><th>GitHub Repo</th><th>Branch</th><th>What it contains</th><th>Used by</th></tr>
+<tr><td><strong>Prompt2TestUI</strong></td><td>master</td><td>React UI + CDK infrastructure</td><td>Amplify auto-deploy</td></tr>
+<tr><td><strong>Prompt2TestLambda</strong></td><td>main</td><td>testcase-writer + testcase-reader Python functions</td><td>prompt2test-lambda pipeline</td></tr>
+<tr><td><strong>Prompt2TestAgent</strong></td><td>main</td><td>AI agent container (Python + Strands)</td><td>prompt2test-agent pipeline &rarr; ECR &rarr; AgentCore</td></tr>
+<tr><td><strong>Prompt2TestPlaywrightMCP</strong></td><td>main</td><td>Playwright browser automation + noVNC</td><td>prompt2test-playwright-mcp pipeline &rarr; ECR &rarr; ECS</td></tr>
+</table>
+
+<h3>AWS Account Requirements</h3>
+<table>
+<tr><th>Requirement</th><th>Why</th></tr>
+<tr><td>New AWS account with a credit card on file</td><td>Required to provision any paid services</td></tr>
+<tr><td><strong>AdministratorAccess</strong> IAM policy attached to your user</td><td>CDK creates IAM roles, VPC, 15+ services</td></tr>
+</table>
+
+<ac:structured-macro ac:name="warning">
+<ac:rich-text-body><p><strong>If you are the root user of a brand new account</strong>, you already have full access. If you created a separate IAM user, attach <code>AdministratorAccess</code> first: AWS Console &rarr; IAM &rarr; Users &rarr; your user &rarr; Add permissions &rarr; AdministratorAccess.</p></ac:rich-text-body>
+</ac:structured-macro>
+
+<h2>Phase 1: Local Machine Setup</h2>
+
+<h3>Step 1: Install AWS CLI</h3>
+<p>Download from aws.amazon.com/cli. After install run: <code>aws --version</code></p>
+<p>(/) You should see version 2.x.x</p>
+
+<h3>Step 2: Install Node.js (version 18 or higher)</h3>
+<p>Download LTS from nodejs.org. Run: <code>node --version</code></p>
+<p>(/) Any version v18.x.x or higher is fine.</p>
+
+<h3>Step 3: Install AWS CDK globally</h3>
+<p><code>npm install -g aws-cdk</code> then <code>cdk --version</code></p>
+<p>(/) Any 2.x.x version is good.</p>
+
+<h3>Step 4: Attach AdministratorAccess and get your access key</h3>
+<p><strong>Part A -- Attach AdministratorAccess:</strong></p>
+<ol>
+<li>Log into the new AWS account at console.aws.amazon.com</li>
+<li>Search for IAM &rarr; click Users &rarr; click your username</li>
+<li>Click Add permissions &rarr; Attach policies directly</li>
+<li>Search for <code>AdministratorAccess</code> &rarr; check the box &rarr; Next &rarr; Add permissions</li>
+</ol>
+<p><strong>Part B -- Create an access key:</strong></p>
+<ol>
+<li>Click your account name (top-right) &rarr; Security credentials</li>
+<li>Scroll to Access keys &rarr; Create access key</li>
+<li>Select Command Line Interface (CLI) &rarr; confirm &rarr; Next</li>
+<li>Create access key -- copy both Access key ID and Secret access key</li>
+</ol>
+
+<h3>Step 5: Configure AWS CLI</h3>
+<p>Run <code>aws configure</code> and enter: Access Key ID, Secret Access Key, Default region: <code>us-east-1</code>, Output format: <code>json</code></p>
+<p>Verify: <code>aws sts get-caller-identity</code></p>
+<p>(/) The Account number must be your new AWS account ID.</p>
+
+<h3>Step 6: Clone the Prompt2TestUI repository</h3>
+<p><code>git clone https://github.com/YOUR_GITHUB_USERNAME/Prompt2TestUI</code> then <code>cd Prompt2TestUI</code></p>
+<p>You only need Prompt2TestUI locally because it contains the CDK infrastructure code (<code>infrastructure/</code> folder). The other 3 repos are pulled directly from GitHub by the CodePipelines.</p>
+
+<h2>Phase 2: Prepare the AWS Account -- Manual Steps in Console</h2>
+
+<h3>Step 7: Enable Bedrock Model Access</h3>
+<ac:structured-macro ac:name="tip">
+<ac:rich-text-body><p>Start this step first. Bedrock model access approval usually takes 1-5 minutes.</p></ac:rich-text-body>
+</ac:structured-macro>
+<ol>
+<li>AWS Console &rarr; search for Bedrock &rarr; click Amazon Bedrock</li>
+<li>Left sidebar &rarr; Model access</li>
+<li>Click Manage model access</li>
+<li>Check: <strong>Claude Sonnet 4.5</strong> (Anthropic, cross-region inference profile) and <strong>Titan Embed Text v2</strong> (Amazon)</li>
+<li>Click Save changes</li>
+</ol>
+<p>(/) Both should show "Access granted" after 1-5 minutes.</p>
+
+<h3>Step 8: Bootstrap CDK in the new account</h3>
+<p>Get your account ID: <code>aws sts get-caller-identity --query Account --output text</code></p>
+<p>Run: <code>cdk bootstrap aws://123456789012/us-east-1</code> (replace with your account ID)</p>
+<p>(/) Terminal shows "bootstrapped".</p>
+
+<h3>Step 9: Create a GitHub CodeStar Connection</h3>
+<ol>
+<li>AWS Console &rarr; Developer Tools &rarr; Settings &rarr; Connections</li>
+<li>Click Create connection</li>
+<li>Select GitHub &rarr; name it <code>Prompt2TestGitHub</code> &rarr; Connect to GitHub</li>
+<li>GitHub popup -- click Authorize AWS Connector for GitHub</li>
+<li>Back in AWS, click Connect</li>
+<li>Click on your new connection &rarr; copy the Connection ARN</li>
+</ol>
+<p>(/) Status must be <strong>Available</strong>. Save the Connection ARN.</p>
+
+<h2>Phase 3: CDK Deploy -- Creates All 17 AWS Resources Automatically</h2>
+
+<h3>Step 10: Configure cdk.json</h3>
+<p>Open <code>Prompt2TestUI/infrastructure/cdk.json</code> and replace the two placeholder values:</p>
+<ul>
+<li><strong>githubOwner</strong> -- your GitHub username</li>
+<li><strong>githubConnectionArn</strong> -- the ARN from Step 9</li>
+</ul>
+
+<h3>Step 11: Run CDK Deploy</h3>
+<p><code>cd infrastructure</code> &rarr; <code>npm install</code> &rarr; <code>cdk deploy</code></p>
+<p>CDK will show a summary of IAM permissions and ask for confirmation. Type <code>y</code> and press Enter. Takes 5-10 minutes.</p>
+<p>(/) Terminal shows "Prompt2TestStack" with outputs including UserPoolId, UserPoolClientId, IdentityPoolId, Region, AgentCoreRoleArn, AgentEcrUri, AmplifyAppId.</p>
+
+<ac:structured-macro ac:name="note">
+<ac:rich-text-body><p>Copy and save ALL of these Output values. You can always retrieve them later from AWS Console &rarr; CloudFormation &rarr; Prompt2TestStack &rarr; Outputs tab.</p></ac:rich-text-body>
+</ac:structured-macro>
+
+<h2>Phase 4: Deploy Lambda Code and Build Docker Images via CodePipeline</h2>
+
+<h3>Step 12: Trigger all 3 CodePipelines</h3>
+<p><code>aws codepipeline start-pipeline-execution --name prompt2test-lambda</code></p>
+<p><code>aws codepipeline start-pipeline-execution --name prompt2test-playwright-mcp</code></p>
+<p><code>aws codepipeline start-pipeline-execution --name prompt2test-agent</code></p>
+<p>Monitor in AWS Console &rarr; CodePipeline. Wait until all three show Succeeded (5-10 minutes each).</p>
+
+<h2>Phase 5: Create Bedrock AgentCore Runtime -- Manual CLI Step</h2>
+
+<h3>Step 13: Create the AgentCore Runtime</h3>
+<p>Use the ECR URI and IAM role ARN from CDK outputs:</p>
+<p><code>aws bedrock-agentcore-control create-agent-runtime --agent-runtime-name Prompt2TestAgent --agent-runtime-artifact '{"containerConfiguration":{"image":"YOUR_OutAgentEcrUri:latest"}}' --role-arn YOUR_OutAgentCoreRoleArn --network-configuration '{"networkMode":"PUBLIC"}'</code></p>
+<p>(/) Returns JSON with <code>agentRuntimeArn</code> and status "CREATING". Poll until ACTIVE:</p>
+<p><code>aws bedrock-agentcore-control get-agent-runtime --agent-runtime-id XXXXXXXXXX --query 'status' --output text</code></p>
+
+<ac:structured-macro ac:name="note">
+<ac:rich-text-body><p>Copy the <code>agentRuntimeArn</code> value. You need it in Step 14.</p></ac:rich-text-body>
+</ac:structured-macro>
+
+<h2>Phase 6: Connect Amplify to GitHub -- Manual Console Step</h2>
+
+<h3>Step 14: Connect Amplify to GitHub and trigger the first build</h3>
+<ol>
+<li>AWS Console &rarr; AWS Amplify</li>
+<li>Click on Prompt2TestUI (created by CDK)</li>
+<li>Click Connect branch</li>
+<li>Select GitHub &rarr; authorize &rarr; select Prompt2TestUI repo &rarr; branch: master</li>
+<li>Go to Environment variables, find <code>VITE_AGENT_RUNTIME_ARN</code> and replace with the ARN from Step 13</li>
+<li>Click Save and deploy</li>
+</ol>
+<p>(/) Build completes: Provision &rarr; Build &rarr; Deploy &rarr; Verify. App URL shown at top.</p>
+
+<ac:structured-macro ac:name="info">
+<ac:rich-text-body><p>All other environment variables (Cognito IDs, Identity Pool ID, Region) were already set by CDK. You only need to set <code>VITE_AGENT_RUNTIME_ARN</code>.</p></ac:rich-text-body>
+</ac:structured-macro>
+
+<h2>Phase 7: Add Your Services and Create Admin User</h2>
+
+<h3>Step 15: Create teams and configure services via the UI</h3>
+<p><strong>Members page &rarr; Create teams and invite users:</strong></p>
+<ol>
+<li>Go to the Members page (admin only)</li>
+<li>Click Create Team &rarr; enter team name (e.g. <code>teamA</code>)</li>
+<li>Click Invite User &rarr; enter email &rarr; user created in Cognito and added to team group</li>
+</ol>
+<p><strong>Config and Accounts page &rarr; Add service parameters:</strong></p>
+<ol>
+<li>Go to Config and Accounts page</li>
+<li>Select environment (e.g. dev)</li>
+<li>Click Add Service &rarr; enter service name (e.g. MyService)</li>
+<li>Add parameters: URL, API_KEY, or any key-value pair</li>
+<li>Parameters save to DynamoDB with key <code>pk=SERVICE#{team}#{env}</code>, <code>sk={svc}#{key}</code></li>
+</ol>
+
+<h3>Step 16: Create your first admin user and the admin Cognito Group</h3>
+<p>Create admin group: <code>aws cognito-idp create-group --user-pool-id YOUR_OutUserPoolId --group-name admin --region us-east-1</code></p>
+<p>Create admin user: <code>aws cognito-idp admin-create-user --user-pool-id YOUR_OutUserPoolId --username admin@yourcompany.com --temporary-password TempPass123! --user-attributes Name=email,Value=admin@yourcompany.com Name=email_verified,Value=true</code></p>
+<p>Add to admin group: <code>aws cognito-idp admin-add-user-to-group --user-pool-id YOUR_OutUserPoolId --username admin@yourcompany.com --group-name admin --region us-east-1</code></p>
+<p>(/) User status: FORCE_CHANGE_PASSWORD (expected -- user sets password on first login)</p>
+
+<h2>Phase 8: Verify the Full Platform End-to-End</h2>
+
+<h3>Step 17: Log in and test the full flow</h3>
+<ol>
+<li>Open your Amplify URL in a browser</li>
+<li>Log in with <code>admin@yourcompany.com</code> and temporary password <code>TempPass123!</code></li>
+<li>Set a new password when prompted</li>
+<li>Go to Config and Accounts tab -- add a service via the UI</li>
+<li>Go to Agent tab &rarr; select environment and service &rarr; type a test prompt &rarr; agent should respond</li>
+<li>Save the test case &rarr; click View Test Case</li>
+<li>Click Automate &rarr; live browser window opens</li>
+<li>Click Save Steps to persist playwright_calls</li>
+<li>Click Run Test &rarr; deterministic replay &rarr; PASS or FAIL</li>
+<li>Go to Inventory tab &rarr; test case should appear with run result</li>
+</ol>
+
+<p>(/) Login page loads = Amplify working | Password change = Cognito working | Services appear = DynamoDB working | Agent responds = AgentCore active | Test case saves = Lambda + Aurora working | Live browser = ECS Fargate + noVNC working | Steps captured = playwright_calls saved | PASS/FAIL recorded = Full end-to-end complete</p>
+
+<h2>Master Deployment Checklist</h2>
+<ul>
+<li>IAM user has AdministratorAccess policy attached</li>
+<li>AWS CLI installed -- <code>aws --version</code> shows 2.x</li>
+<li>Node.js v18+ installed</li>
+<li>CDK installed -- <code>cdk --version</code> shows 2.x</li>
+<li>AWS CLI configured -- <code>aws sts get-caller-identity</code> shows correct account</li>
+<li>All 4 GitHub repos exist</li>
+<li>Prompt2TestUI repo cloned locally</li>
+<li>Bedrock model access: both show "Access granted"</li>
+<li>CDK bootstrapped</li>
+<li>GitHub CodeStar connection created -- status "Available"</li>
+<li><code>cdk.json</code> updated with real values</li>
+<li><code>cdk deploy</code> completed -- all outputs saved</li>
+<li>All 3 CodePipelines show "Succeeded"</li>
+<li>AgentCore runtime created -- agentRuntimeArn saved</li>
+<li>Amplify connected to GitHub + build succeeded</li>
+<li>DynamoDB table prompt2test-config created</li>
+<li>Admin Cognito Group + admin user created</li>
+<li>Teams and services configured via UI</li>
+<li>End-to-end verified: login &rarr; agent &rarr; save &rarr; run &rarr; PASS/FAIL</li>
+</ul>
+
+<h2>Cost Reference</h2>
+<table>
+<tr><th>Service</th><th>When Idle</th><th>When Actively Used</th></tr>
+<tr><td>Aurora Serverless v2</td><td>$0 (auto-pauses)</td><td>~$10-20/month</td></tr>
+<tr><td>Secrets Manager</td><td>$0.40/month</td><td>$0.40/month</td></tr>
+<tr><td>ECR (2 repos)</td><td>~$0.20/month</td><td>~$0.20/month</td></tr>
+<tr><td>Bedrock AgentCore</td><td>$0</td><td>Pay per invocation</td></tr>
+<tr><td>ECS Fargate</td><td>$0</td><td>~$0.10 per test run</td></tr>
+<tr><td>Amplify Hosting</td><td>$0 (free tier)</td><td>$0 (free tier)</td></tr>
+<tr><td>DynamoDB</td><td>$0 (free tier)</td><td>~$0</td></tr>
+<tr><td>Lambda, SSM, Cognito, VPC</td><td>$0</td><td>$0</td></tr>
+<tr><td><strong>Total</strong></td><td><strong>~$0.60/month</strong></td><td><strong>~$30-70/month</strong></td></tr>
+</table>
+
+<p><em>Prompt2Test Deployment Guide / AWS us-east-1 / Updated 2026-03-25</em></p>

@@ -1,0 +1,170 @@
+<h1>Prompt2Test -- CAP Design Improvements</h1>
+<p>Architectural enhancements to make the platform Highly Available, Strongly Consistent, and Partition Tolerant. Organized into 4 tiers from quick wins to full multi-region active-active.</p>
+<p><strong>Tags:</strong> CAP Theorem | High Availability | Multi-Region | Disaster Recovery | Production Hardening | us-east-1 + us-west-2</p>
+
+<h2>CAP Theorem -- Quick Primer</h2>
+<p>The <strong>CAP theorem</strong> states that a distributed system can guarantee at most <strong>two of three</strong> properties simultaneously. In practice, network partitions are inevitable, so the real choice is between <strong>CP</strong> (consistent but may reject requests) and <strong>AP</strong> (available but may serve stale data).</p>
+
+<table>
+<tr><th>Property</th><th>Description</th><th>Examples in Prompt2Test</th></tr>
+<tr><td><strong>C -- Consistency</strong></td><td>Every read returns the most recent write. All nodes see the same data at the same time.</td><td>Aurora (single writer), DynamoDB strong reads</td></tr>
+<tr><td><strong>A -- Availability</strong></td><td>Every request receives a response. System never refuses a request.</td><td>DynamoDB, CloudFront, Lambda</td></tr>
+<tr><td><strong>P -- Partition Tolerance</strong></td><td>System continues to operate despite network partitions between nodes or regions.</td><td>DynamoDB Global Tables, Aurora Global DB</td></tr>
+</table>
+
+<h2>Current State Assessment</h2>
+
+<table>
+<tr><th>Component</th><th>Current Setup</th><th>Consistency</th><th>Availability</th><th>Partition Tolerant</th><th>Gap</th></tr>
+<tr><td><strong>Aurora Serverless v2</strong></td><td>Single region, auto-pause, multi-AZ</td><td>Strong</td><td>(!) Partial</td><td>(x) No</td><td>Single region. 30s cold start on auto-pause resume.</td></tr>
+<tr><td><strong>DynamoDB</strong></td><td>Single region table, eventual reads</td><td>(!) Eventual</td><td>(/) High</td><td>(x) No</td><td>Eventual consistency may serve stale config to agent.</td></tr>
+<tr><td><strong>ECS Fargate</strong></td><td>On-demand, single AZ placement</td><td>N/A</td><td>(!) Partial</td><td>(x) No</td><td>Tasks may land in one AZ. No cross-region fallback.</td></tr>
+<tr><td><strong>Cognito</strong></td><td>Single region user pool</td><td>Strong</td><td>(/) High</td><td>(x) No</td><td>Region failure = no login. No native multi-region.</td></tr>
+<tr><td><strong>Bedrock AgentCore</strong></td><td>us-east-1 only</td><td>N/A</td><td>(/) High</td><td>(x) No</td><td>Regional service. No automatic cross-region fallback.</td></tr>
+<tr><td><strong>Lambda Functions</strong></td><td>Single region, no reserved concurrency</td><td>N/A</td><td>(/) High</td><td>(x) No</td><td>Cold starts under burst load. No cross-region deploy.</td></tr>
+<tr><td><strong>CloudFront + Amplify</strong></td><td>Global CDN, edge caching</td><td>(!) Eventual</td><td>(/) High</td><td>(/) Yes</td><td>Already partition tolerant. Only component that is.</td></tr>
+<tr><td><strong>CodePipeline / CI/CD</strong></td><td>Single region pipelines</td><td>N/A</td><td>N/A</td><td>(x) No</td><td>Deploy is blocked if us-east-1 is down.</td></tr>
+</table>
+
+<ac:structured-macro ac:name="warning">
+<ac:rich-text-body>
+<p><strong>Critical Finding:</strong> The platform is <strong>single-region (us-east-1)</strong>. If that region experiences an outage, the entire system is unavailable -- no login, no test creation, no execution, no data access. CloudFront is the only partition-tolerant component.</p>
+</ac:rich-text-body>
+</ac:structured-macro>
+
+<h2>Recommended CAP Strategy for Prompt2Test</h2>
+<table>
+<tr><th>Data / Operation</th><th>Strategy</th><th>Rationale</th></tr>
+<tr><td><strong>Service Config reads</strong> (DynamoDB)</td><td>CP -- Strong Consistency</td><td>Agent MUST see latest URLs and credentials. Stale config = test runs against wrong environment.</td></tr>
+<tr><td><strong>Test case writes</strong> (Aurora)</td><td>CP -- Strong Consistency</td><td>Cannot lose test results. A PASS/FAIL must be durably written before confirming to user.</td></tr>
+<tr><td><strong>Test case reads / listing</strong> (Aurora)</td><td>AP -- Eventual Consistency OK</td><td>Inventory listing can lag by seconds.</td></tr>
+<tr><td><strong>Browser sessions</strong> (ECS Fargate)</td><td>AP -- Availability First</td><td>Better to start a test in a degraded state than refuse the request entirely.</td></tr>
+<tr><td><strong>Authentication</strong> (Cognito)</td><td>CP -- Strong Consistency</td><td>Auth tokens must be valid.</td></tr>
+<tr><td><strong>AI Agent responses</strong> (Bedrock)</td><td>AP -- Availability First</td><td>If primary model is unavailable, fall back to a simpler model rather than failing.</td></tr>
+<tr><td><strong>Run records</strong> (Aurora)</td><td>CP -- Strong Consistency</td><td>Execution results are the source of truth. Must not be lost or duplicated.</td></tr>
+</table>
+
+<h2>Tier 1 -- Quick Wins (HA Within Region) -- 1-2 days effort</h2>
+
+<h3>1.1 -- DynamoDB: Enable Strongly Consistent Reads</h3>
+<p>Agent reads service config before every test. Currently uses eventually consistent reads.</p>
+<p><strong>Implementation:</strong> Add <code>ConsistentRead: true</code> to all <code>QueryCommand</code> and <code>GetCommand</code> calls.</p>
+<p><strong>Trade-off:</strong> 2x read cost, slightly higher latency (~5ms). <strong>CAP Impact:</strong> Moves config reads from AP to CP.</p>
+
+<h3>1.2 -- Aurora: Verify Multi-AZ Deployment</h3>
+<p>Ensure writer + at least 1 reader instance in different AZs. Set min capacity = 0.5 ACU for reader.</p>
+<p><strong>Trade-off:</strong> ~$30/mo additional cost. <strong>CAP Impact:</strong> Improves Availability -- survives single AZ failure.</p>
+
+<h3>1.3 -- ECS: Multi-AZ Task Placement</h3>
+<p>Ensure subnets span 2+ AZs. Add <code>placementStrategies: [{ type: 'spread', field: 'attribute:ecs.availability-zone' }]</code>.</p>
+<p><strong>Trade-off:</strong> None -- no additional cost. <strong>CAP Impact:</strong> Improves Availability of browser test sessions.</p>
+
+<h3>1.4 -- Lambda: Reserved Concurrency + Provisioned</h3>
+<p>Set <code>reservedConcurrency: 5</code> for reader/writer. Consider <code>provisionedConcurrency: 1</code> for the reader.</p>
+<p><strong>Trade-off:</strong> Provisioned: ~$15/mo. Reserved: free. <strong>CAP Impact:</strong> Improves Availability under load.</p>
+
+<h3>1.5 -- CloudWatch Alarms + SNS Notifications</h3>
+<p>Create alarms for: Aurora connection errors, Lambda error rate > 5%, ECS task launch failures, Bedrock throttling. Route to SNS &rarr; email/Slack.</p>
+<p><strong>Trade-off:</strong> ~$1/mo. <strong>CAP Impact:</strong> Enables fast detection of availability issues.</p>
+
+<h2>Tier 2 -- Production Hardening -- 1-2 weeks effort</h2>
+
+<h3>2.1 -- API Gateway in Front of Lambda</h3>
+<p>Create API Gateway REST API with <code>/test-cases</code>, <code>/run-records</code> endpoints. Add usage plans, throttling (100 req/s), and Cognito authorizer.</p>
+<p><strong>Trade-off:</strong> ~50ms latency. ~$3.50/million requests. <strong>CAP Impact:</strong> Improves Availability via throttling and Consistency via validation.</p>
+
+<h3>2.2 -- Dead Letter Queues for Lambda</h3>
+<p>Add SQS DLQ to both writer and reader Lambdas. Alarm when DLQ depth > 0. Add retry Lambda.</p>
+<p><strong>Trade-off:</strong> ~$0.40/million SQS requests. <strong>CAP Impact:</strong> Improves Consistency -- writes never lost.</p>
+
+<h3>2.3 -- WAF on CloudFront</h3>
+<p>Attach AWS WAF with managed rule groups. Rate-based rule: 2000 req/5min per IP.</p>
+<p><strong>Trade-off:</strong> ~$5/mo. <strong>CAP Impact:</strong> Protects Availability from DDoS.</p>
+
+<h3>2.4 -- Secrets Manager Auto-Rotation</h3>
+<p>Enable automatic rotation every 30 days. <strong>Trade-off:</strong> ~$0.40/secret/month.</p>
+
+<h3>2.5 -- Aurora Auto-Pause Retry Pattern</h3>
+<p>Exponential retry with backoff in Lambda. CloudWatch synthetic canary to ping Aurora every 4 minutes during business hours.</p>
+<p><strong>Trade-off:</strong> Canary: ~$3/mo. <strong>CAP Impact:</strong> Dramatically improves Availability during business hours.</p>
+
+<h3>2.6 -- S3 Cross-Region Replication</h3>
+<p>Enable S3 CRR to us-west-2 for pipeline artifact bucket.</p>
+<p><strong>Trade-off:</strong> ~$0.023/GB/month for replica. <strong>CAP Impact:</strong> Enables Partition Tolerance for CI/CD artifacts.</p>
+
+<h2>Tier 3 -- Multi-Region (Partition Tolerance) -- 2-4 weeks effort</h2>
+
+<h3>3.1 -- DynamoDB Global Tables</h3>
+<p>Replicate <code>prompt2test-config</code> to us-west-2. Both regions can read and write.</p>
+<p><strong>Trade-off:</strong> 1.5x write cost. ~1s replication lag. <strong>CAP Impact:</strong> Full AP, partition tolerant.</p>
+
+<h3>3.2 -- Aurora Global Database</h3>
+<p>Read replica cluster in us-west-2. Primary handles writes. Can promote in &lt;1 minute during failover.</p>
+<p><strong>Trade-off:</strong> ~$40-60/mo for secondary cluster. <strong>CAP Impact:</strong> CP with HA, partition tolerant with manual failover.</p>
+
+<h3>3.3 -- ECS Cluster in us-west-2</h3>
+<p>Second ECS Fargate cluster with identical task definitions. Browser sessions can run in either region.</p>
+<p><strong>Trade-off:</strong> ECR replication: ~$0.10/GB. No idle cost. <strong>CAP Impact:</strong> Full AP, partition tolerant.</p>
+
+<h3>3.4 -- Route 53 Health Checks + DNS Failover</h3>
+<p>Failover routing: primary = us-east-1, secondary = us-west-2. TTL = 60s.</p>
+<p><strong>Trade-off:</strong> ~$1/health check/month. 60-90s failover. <strong>CAP Impact:</strong> Automatic Partition Tolerance at DNS layer.</p>
+
+<h3>3.5 -- Cognito Backup and Custom Sync</h3>
+<p>Option A: Pre-issue long-lived JWT refresh tokens (24h). Option B: Backup User Pool in us-west-2 with Lambda sync. Option C: Move to multi-region auth provider.</p>
+<p><strong>Trade-off:</strong> Option A is 1 day. Option B is ~1 week. Option C requires migration.</p>
+
+<h3>3.6 -- Bedrock Cross-Region Fallback</h3>
+<p>If Bedrock us-east-1 returns 429 or 5xx, retry against us-west-2 endpoint.</p>
+<p><strong>Trade-off:</strong> ~50ms cross-region latency. <strong>CAP Impact:</strong> AP, partition tolerant for AI layer.</p>
+
+<h2>Tier 4 -- Active-Active and Platform Maturity -- 1-2 months effort</h2>
+
+<h3>4.1 -- AWS Global Accelerator</h3>
+<p>Anycast IPs and automatic failover at TCP layer. Failover in &lt;30s vs 60-90s for DNS.</p>
+
+<h3>4.2 -- Multi-Region CI/CD</h3>
+<p>Single git push triggers parallel builds and deployments to us-east-1 and us-west-2.</p>
+
+<h3>4.3 -- Multi-Account Strategy</h3>
+<p>Separate AWS accounts for dev, staging, and production. Blast radius isolation.</p>
+
+<h3>4.4 -- Chaos Engineering</h3>
+<p>Use AWS Fault Injection Simulator (FIS) to simulate: AZ impairment, RDS failover, Lambda throttling, ECS task failures. Run monthly in staging.</p>
+
+<h2>Target Architecture -- After All 4 Tiers</h2>
+
+<table>
+<tr><th>Component</th><th>Target Setup</th><th>Consistency</th><th>Availability</th><th>Partition Tolerant</th><th>CAP Model</th></tr>
+<tr><td><strong>Aurora</strong></td><td>Global Database (2 regions)</td><td>Strong</td><td>High</td><td>(/) Yes</td><td>CP writes, AP reads</td></tr>
+<tr><td><strong>DynamoDB</strong></td><td>Global Tables (2 regions)</td><td>Strong (local)</td><td>High</td><td>(/) Yes</td><td>AP with strong local reads</td></tr>
+<tr><td><strong>ECS Fargate</strong></td><td>Multi-AZ, multi-region clusters</td><td>N/A</td><td>High</td><td>(/) Yes</td><td>AP</td></tr>
+<tr><td><strong>Cognito</strong></td><td>Long-lived tokens + backup pool</td><td>Strong</td><td>High</td><td>(!) Partial</td><td>CP with graceful degradation</td></tr>
+<tr><td><strong>Bedrock</strong></td><td>Cross-region fallback</td><td>N/A</td><td>High</td><td>(/) Yes</td><td>AP</td></tr>
+<tr><td><strong>Lambda + API GW</strong></td><td>Multi-region, DLQ, throttled</td><td>N/A</td><td>High</td><td>(/) Yes</td><td>AP</td></tr>
+<tr><td><strong>CloudFront</strong></td><td>Global CDN + WAF</td><td>Eventual</td><td>High</td><td>(/) Yes</td><td>AP</td></tr>
+<tr><td><strong>CI/CD</strong></td><td>Multi-region deploy + S3 CRR</td><td>Strong</td><td>High</td><td>(/) Yes</td><td>CP</td></tr>
+</table>
+
+<h2>Implementation Priority -- Recommended Order</h2>
+
+<table>
+<tr><th>Priority</th><th>Item</th><th>Effort</th><th>Impact</th><th>Cost Delta</th></tr>
+<tr><td><strong>P0</strong></td><td>1.1 DynamoDB strong consistent reads</td><td>2 hours</td><td>Eliminates stale config bugs</td><td>+$0.50/mo</td></tr>
+<tr><td><strong>P0</strong></td><td>1.5 CloudWatch alarms + SNS</td><td>4 hours</td><td>Know when things break</td><td>+$1/mo</td></tr>
+<tr><td><strong>P0</strong></td><td>2.5 Aurora auto-pause retry pattern</td><td>4 hours</td><td>Eliminates #1 user-facing error</td><td>+$3/mo</td></tr>
+<tr><td><strong>P1</strong></td><td>1.2 Aurora Multi-AZ verification</td><td>2 hours</td><td>Survive AZ failure</td><td>+$30/mo</td></tr>
+<tr><td><strong>P1</strong></td><td>1.3 ECS multi-AZ placement</td><td>1 hour</td><td>Browser sessions survive AZ loss</td><td>$0</td></tr>
+<tr><td><strong>P1</strong></td><td>2.2 Dead Letter Queues for Lambda</td><td>4 hours</td><td>Never lose test results</td><td>+$0.40/mo</td></tr>
+<tr><td><strong>P1</strong></td><td>2.3 WAF on CloudFront</td><td>2 hours</td><td>DDoS + bot protection</td><td>+$5/mo</td></tr>
+<tr><td><strong>P2</strong></td><td>2.1 API Gateway in front of Lambda</td><td>2 days</td><td>Rate limiting, validation</td><td>+$3/mo</td></tr>
+<tr><td><strong>P2</strong></td><td>2.4 Secrets Manager auto-rotation</td><td>2 hours</td><td>Security compliance</td><td>+$0.40/mo</td></tr>
+<tr><td><strong>P3</strong></td><td>3.1 DynamoDB Global Tables</td><td>1 day</td><td>Config survives region failure</td><td>+1.5x writes</td></tr>
+<tr><td><strong>P3</strong></td><td>3.2 Aurora Global Database</td><td>2 days</td><td>Data survives region failure</td><td>+$50/mo</td></tr>
+<tr><td><strong>P3</strong></td><td>3.4 Route 53 DNS failover</td><td>1 day</td><td>Automatic region failover</td><td>+$1/mo</td></tr>
+<tr><td><strong>P4</strong></td><td>3.3 ECS in us-west-2</td><td>3 days</td><td>Browser tests in both regions</td><td>On-demand only</td></tr>
+<tr><td><strong>P4</strong></td><td>3.6 Bedrock cross-region fallback</td><td>4 hours</td><td>AI survives region failure</td><td>$0</td></tr>
+<tr><td><strong>P4</strong></td><td>4.1 Global Accelerator</td><td>1 day</td><td>Instant failover (&lt;30s)</td><td>+$18/mo</td></tr>
+</table>
+
+<p><em>Prompt2Test -- CAP Design Improvements / March 2026 / Architecture Review Document</em></p>
