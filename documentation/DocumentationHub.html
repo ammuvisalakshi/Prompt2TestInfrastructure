@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prompt2Test — Documentation Hub</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f1f5f9; color: #1e293b; }
+  .page { max-width: 1200px; margin: 0 auto; padding: 40px 32px; }
+
+  /* Hero */
+  .hero {
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+    border-radius: 16px; padding: 48px 40px 40px; margin-bottom: 36px;
+    position: relative; overflow: hidden;
+  }
+  .hero::before {
+    content: ''; position: absolute; top: -60px; right: -60px;
+    width: 300px; height: 300px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%);
+  }
+  .hero h1 { font-size: 34px; font-weight: 900; color: #fff; margin-bottom: 10px; }
+  .hero .tagline { font-size: 15px; color: #94a3b8; margin-bottom: 20px; max-width: 750px; line-height: 1.7; }
+  .hero .tags { display: flex; gap: 8px; flex-wrap: wrap; }
+  .hero-tag {
+    font-size: 11px; font-weight: 600; padding: 4px 12px; border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.15); color: #e2e8f0; background: rgba(255,255,255,0.07);
+  }
+
+  /* Metric bar */
+  .metric-bar {
+    display: grid; grid-template-columns: repeat(6, 1fr);
+    background: #fff; border-radius: 12px; border: 1px solid #e2e8f0;
+    overflow: hidden; margin-bottom: 36px;
+  }
+  .metric-item { padding: 18px 12px; text-align: center; border-right: 1px solid #f1f5f9; }
+  .metric-item:last-child { border-right: none; }
+  .metric-item .val { font-size: 28px; font-weight: 900; margin-bottom: 3px; }
+  .metric-item .lbl { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* Content map heading */
+  .map-heading {
+    font-size: 12px; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; color: #64748b; margin-bottom: 16px;
+  }
+
+  /* Doc cards grid */
+  .doc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 40px; }
+
+  .doc-card {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 14px;
+    padding: 0; overflow: hidden; transition: box-shadow 0.2s, border-color 0.2s;
+    text-decoration: none; color: inherit; display: flex; flex-direction: column;
+  }
+  .doc-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.08); border-color: #c7d2fe; }
+
+  .doc-card-header {
+    padding: 20px 24px 14px; display: flex; align-items: center; gap: 14px;
+  }
+  .doc-icon {
+    width: 48px; height: 48px; border-radius: 12px; display: flex;
+    align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;
+  }
+  .doc-card-header h3 { font-size: 16px; font-weight: 800; color: #0f172a; margin-bottom: 2px; }
+  .doc-card-header .subtitle { font-size: 12px; color: #64748b; }
+
+  .doc-card-body { padding: 0 24px 20px; flex: 1; }
+  .doc-card-body p { font-size: 13px; color: #475569; line-height: 1.7; margin-bottom: 14px; }
+
+  .content-list { list-style: none; padding: 0; }
+  .content-list li {
+    font-size: 12px; color: #334155; padding: 5px 0;
+    border-bottom: 1px solid #f8fafc;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .content-list li:last-child { border-bottom: none; }
+  .content-list .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+  .doc-card-footer {
+    padding: 12px 24px; background: #f8fafc; border-top: 1px solid #f1f5f9;
+    font-size: 12px; font-weight: 700; color: #6366f1; display: flex;
+    align-items: center; justify-content: space-between;
+  }
+  .doc-card-footer .arrow { font-size: 16px; }
+
+  /* Overlap guide */
+  .overlap-section { margin-bottom: 40px; }
+  .overlap-table {
+    width: 100%; border-collapse: collapse; font-size: 13px;
+    background: #fff; border-radius: 12px; overflow: hidden;
+    border: 1px solid #e2e8f0;
+  }
+  .overlap-table th {
+    background: #0f172a; color: #e2e8f0; font-weight: 700;
+    padding: 12px 16px; text-align: left; font-size: 12px;
+    letter-spacing: 0.5px;
+  }
+  .overlap-table td {
+    padding: 10px 16px; border-bottom: 1px solid #f1f5f9; vertical-align: middle;
+  }
+  .overlap-table tr:last-child td { border-bottom: none; }
+  .overlap-table tr:hover td { background: #f8fafc; }
+  .check { color: #16a34a; font-weight: 700; text-align: center; }
+  .dash { color: #cbd5e1; text-align: center; }
+
+  /* Quick start */
+  .quick-flow {
+    display: flex; align-items: center; gap: 0; flex-wrap: wrap;
+    justify-content: center; padding: 20px 0;
+  }
+  .qf-box {
+    background: #fff; border: 2px solid #e2e8f0; border-radius: 10px;
+    padding: 14px 20px; text-align: center; min-width: 140px;
+  }
+  .qf-box .qf-num { font-size: 11px; font-weight: 800; color: #6366f1; margin-bottom: 4px; }
+  .qf-box .qf-title { font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 2px; }
+  .qf-box .qf-sub { font-size: 11px; color: #64748b; }
+  .qf-arrow { font-size: 22px; color: #c7d2fe; padding: 0 6px; }
+
+  .footer { text-align: center; font-size: 13px; color: #94a3b8; margin-top: 32px; padding-top: 20px; border-top: 1px solid #e2e8f0; }
+
+  @media (max-width: 768px) {
+    .doc-grid { grid-template-columns: 1fr; }
+    .metric-bar { grid-template-columns: repeat(3, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Hero -->
+  <div class="hero">
+    <h1>Prompt2Test &mdash; Documentation Hub</h1>
+    <p class="tagline">AI-powered test case generation and browser automation platform. All project documentation in one place &mdash; from high-level overview to deployment runbooks.</p>
+    <div class="tags">
+      <span class="hero-tag">AWS Bedrock AgentCore</span>
+      <span class="hero-tag">Claude Sonnet 4.5</span>
+      <span class="hero-tag">Playwright + noVNC</span>
+      <span class="hero-tag">React + TypeScript</span>
+      <span class="hero-tag">ECS Fargate</span>
+      <span class="hero-tag">Aurora Serverless v2</span>
+      <span class="hero-tag">DynamoDB</span>
+      <span class="hero-tag">Multi-team &middot; Multi-env</span>
+    </div>
+  </div>
+
+  <!-- Metric bar -->
+  <div class="metric-bar">
+    <div class="metric-item"><div class="val" style="color:#6366f1;">18</div><div class="lbl">AWS Services</div></div>
+    <div class="metric-item"><div class="val" style="color:#22c55e;">5</div><div class="lbl">GitHub Repos</div></div>
+    <div class="metric-item"><div class="val" style="color:#f97316;">4</div><div class="lbl">UI Screens</div></div>
+    <div class="metric-item"><div class="val" style="color:#14b8a6;">3</div><div class="lbl">CodePipelines</div></div>
+    <div class="metric-item"><div class="val" style="color:#a855f7;">6</div><div class="lbl">Doc Pages</div></div>
+    <div class="metric-item" style="background:#f0fdf4;"><div class="val" style="color:#15803d;">15</div><div class="lbl">Days to Build</div></div>
+  </div>
+
+  <!-- Reading Order -->
+  <div class="map-heading">Recommended Reading Order</div>
+  <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:24px; margin-bottom:36px;">
+    <div class="quick-flow">
+      <div class="qf-box" style="border-color:#6366f1;">
+        <div class="qf-num">START HERE</div>
+        <div class="qf-title">Project Overview</div>
+        <div class="qf-sub">What, why, features</div>
+      </div>
+      <div class="qf-arrow">&rarr;</div>
+      <div class="qf-box">
+        <div class="qf-num">2</div>
+        <div class="qf-title">Architecture Diagram</div>
+        <div class="qf-sub">Visual system map</div>
+      </div>
+      <div class="qf-arrow">&rarr;</div>
+      <div class="qf-box">
+        <div class="qf-num">3</div>
+        <div class="qf-title">Architecture Details</div>
+        <div class="qf-sub">Deep technical specs</div>
+      </div>
+      <div class="qf-arrow">&rarr;</div>
+      <div class="qf-box">
+        <div class="qf-num">4</div>
+        <div class="qf-title">Architecture Decisions</div>
+        <div class="qf-sub">Why we chose what</div>
+      </div>
+      <div class="qf-arrow">&rarr;</div>
+      <div class="qf-box">
+        <div class="qf-num">5</div>
+        <div class="qf-title">Deployment Guide</div>
+        <div class="qf-sub">Setup &amp; deploy steps</div>
+      </div>
+      <div class="qf-arrow">&rarr;</div>
+      <div class="qf-box">
+        <div class="qf-num">6</div>
+        <div class="qf-title">CI/CD Handover</div>
+        <div class="qf-sub">Pipelines &amp; ops</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Document Cards -->
+  <div class="map-heading">All Documentation</div>
+  <div class="doc-grid">
+
+    <!-- 1. Project Overview -->
+    <a href="Prompt2Test_ProjectOverview.html" class="doc-card">
+      <div class="doc-card-header">
+        <div class="doc-icon" style="background:#eef2ff; color:#6366f1;">&#x1F9EA;</div>
+        <div>
+          <h3>Project Overview</h3>
+          <div class="subtitle">Business context, features, build progress</div>
+        </div>
+      </div>
+      <div class="doc-card-body">
+        <p>High-level view of the entire platform. What it does, who it's for, what's built, and what's next.</p>
+        <ul class="content-list">
+          <li><span class="dot" style="background:#6366f1;"></span> End-to-end flow (prompt &rarr; test &rarr; result)</li>
+          <li><span class="dot" style="background:#6366f1;"></span> 4 UI screens &mdash; Agent, Inventory, Config, Admin</li>
+          <li><span class="dot" style="background:#6366f1;"></span> Feature coverage grid (13 features)</li>
+          <li><span class="dot" style="background:#6366f1;"></span> Implementation effort &amp; timeline (15 days)</li>
+          <li><span class="dot" style="background:#6366f1;"></span> Build progress by area</li>
+          <li><span class="dot" style="background:#6366f1;"></span> Tech stack overview</li>
+          <li><span class="dot" style="background:#6366f1;"></span> AI acceleration comparison (6 months &rarr; 15 days)</li>
+        </ul>
+      </div>
+      <div class="doc-card-footer">
+        <span>Best for: Stakeholders, new team members</span>
+        <span class="arrow">&rarr;</span>
+      </div>
+    </a>
+
+    <!-- 2. Architecture Diagram -->
+    <a href="Prompt2Test_ArchitectureDiagram_Light.html" class="doc-card">
+      <div class="doc-card-header">
+        <div class="doc-icon" style="background:#f0fdf4; color:#16a34a;">&#x1F5FA;</div>
+        <div>
+          <h3>Architecture Diagram</h3>
+          <div class="subtitle">Visual SVG system map</div>
+        </div>
+      </div>
+      <div class="doc-card-body">
+        <p>Interactive SVG diagram showing all AWS services, layers, and data flows. The single-page visual reference.</p>
+        <ul class="content-list">
+          <li><span class="dot" style="background:#16a34a;"></span> 6-layer architecture (User &rarr; Frontend &rarr; AI &rarr; Compute &rarr; Data &rarr; CI/CD)</li>
+          <li><span class="dot" style="background:#16a34a;"></span> Color-coded service categories</li>
+          <li><span class="dot" style="background:#16a34a;"></span> Data flow arrows between components</li>
+          <li><span class="dot" style="background:#16a34a;"></span> 8-step request flow walkthrough</li>
+          <li><span class="dot" style="background:#16a34a;"></span> Legend with service type colors</li>
+        </ul>
+      </div>
+      <div class="doc-card-footer">
+        <span>Best for: Visual learners, presentations</span>
+        <span class="arrow">&rarr;</span>
+      </div>
+    </a>
+
+    <!-- 3. Architecture Details -->
+    <a href="Prompt2Test_Architecture.html" class="doc-card">
+      <div class="doc-card-header">
+        <div class="doc-icon" style="background:#faf5ff; color:#7c3aed;">&#x1F527;</div>
+        <div>
+          <h3>Architecture Details</h3>
+          <div class="subtitle">Deep technical specifications</div>
+        </div>
+      </div>
+      <div class="doc-card-body">
+        <p>The engineer's manual. Every AWS service with exact specs, config, IAM permissions, cost estimates, and timing metrics.</p>
+        <ul class="content-list">
+          <li><span class="dot" style="background:#7c3aed;"></span> 18 AWS services with specs (cluster names, CPU/memory, ports)</li>
+          <li><span class="dot" style="background:#7c3aed;"></span> Cognito auth flow (User Pool, Identity Pool, JWT)</li>
+          <li><span class="dot" style="background:#7c3aed;"></span> Bedrock AgentCore config (agent ID, modes, LLM settings)</li>
+          <li><span class="dot" style="background:#7c3aed;"></span> 9-step on-demand session flow</li>
+          <li><span class="dot" style="background:#7c3aed;"></span> ECS Fargate task isolation &amp; lifecycle</li>
+          <li><span class="dot" style="background:#7c3aed;"></span> Cost breakdown (idle $0.50/mo, active $30-70/mo)</li>
+          <li><span class="dot" style="background:#7c3aed;"></span> End-to-end timing (cold start ~63s, prompt &rarr; plan 2-5s)</li>
+        </ul>
+      </div>
+      <div class="doc-card-footer">
+        <span>Best for: Engineers, debugging, capacity planning</span>
+        <span class="arrow">&rarr;</span>
+      </div>
+    </a>
+
+    <!-- 4. Architecture Decisions -->
+    <a href="Prompt2Test_ArchitectureDecisions.html" class="doc-card">
+      <div class="doc-card-header">
+        <div class="doc-icon" style="background:#fff7ed; color:#ea580c;">&#x1F4CB;</div>
+        <div>
+          <h3>Architecture Decisions</h3>
+          <div class="subtitle">ADRs &mdash; why we chose what</div>
+        </div>
+      </div>
+      <div class="doc-card-body">
+        <p>Architecture Decision Records. Every major technical choice with context, options considered, and rationale.</p>
+        <ul class="content-list">
+          <li><span class="dot" style="background:#ea580c;"></span> DynamoDB for config (not SSM)</li>
+          <li><span class="dot" style="background:#ea580c;"></span> Cognito Groups for multi-team</li>
+          <li><span class="dot" style="background:#ea580c;"></span> ECS Fargate on-demand (not warm pool)</li>
+          <li><span class="dot" style="background:#ea580c;"></span> Bedrock AgentCore (not self-hosted)</li>
+          <li><span class="dot" style="background:#ea580c;"></span> Aurora + pgvector for semantic search</li>
+          <li><span class="dot" style="background:#ea580c;"></span> CDK Infrastructure as Code</li>
+        </ul>
+      </div>
+      <div class="doc-card-footer">
+        <span>Best for: Architects, tech leads, audits</span>
+        <span class="arrow">&rarr;</span>
+      </div>
+    </a>
+
+    <!-- 5. Deployment Guide -->
+    <a href="Prompt2Test_DeploymentGuide.html" class="doc-card">
+      <div class="doc-card-header">
+        <div class="doc-icon" style="background:#f0fdfa; color:#0d9488;">&#x1F680;</div>
+        <div>
+          <h3>Deployment Guide</h3>
+          <div class="subtitle">New AWS account setup &amp; deploy</div>
+        </div>
+      </div>
+      <div class="doc-card-body">
+        <p>Step-by-step guide to deploy the entire platform into a new AWS account. Prerequisites, CDK stacks, config, and verification.</p>
+        <ul class="content-list">
+          <li><span class="dot" style="background:#0d9488;"></span> Prerequisites &amp; AWS account setup</li>
+          <li><span class="dot" style="background:#0d9488;"></span> CDK stack deployment order</li>
+          <li><span class="dot" style="background:#0d9488;"></span> Environment configuration</li>
+          <li><span class="dot" style="background:#0d9488;"></span> Cognito user &amp; group setup</li>
+          <li><span class="dot" style="background:#0d9488;"></span> Verification checklist</li>
+        </ul>
+      </div>
+      <div class="doc-card-footer">
+        <span>Best for: DevOps, initial setup, new environments</span>
+        <span class="arrow">&rarr;</span>
+      </div>
+    </a>
+
+    <!-- 6. CI/CD Handover -->
+    <a href="HandoverGuideCICD.html" class="doc-card">
+      <div class="doc-card-header">
+        <div class="doc-icon" style="background:#fff1f2; color:#e11d48;">&#x1F504;</div>
+        <div>
+          <h3>CI/CD &amp; Infrastructure Handover</h3>
+          <div class="subtitle">Pipelines, operations, troubleshooting</div>
+        </div>
+      </div>
+      <div class="doc-card-body">
+        <p>Day-to-day operations guide. How the 3 CodePipelines work, how to deploy changes, troubleshoot failures, and manage infrastructure.</p>
+        <ul class="content-list">
+          <li><span class="dot" style="background:#e11d48;"></span> 3 CodePipelines (Lambda, Agent, Playwright)</li>
+          <li><span class="dot" style="background:#e11d48;"></span> Amplify auto-deploy for UI</li>
+          <li><span class="dot" style="background:#e11d48;"></span> Build &amp; deploy procedures</li>
+          <li><span class="dot" style="background:#e11d48;"></span> Troubleshooting common failures</li>
+          <li><span class="dot" style="background:#e11d48;"></span> Infrastructure operations</li>
+        </ul>
+      </div>
+      <div class="doc-card-footer">
+        <span>Best for: DevOps, on-call, day-to-day ops</span>
+        <span class="arrow">&rarr;</span>
+      </div>
+    </a>
+
+  </div>
+
+  <!-- Content Map -->
+  <div class="overlap-section">
+    <div class="map-heading">Content Map &mdash; Where to Find What</div>
+    <table class="overlap-table">
+      <thead>
+        <tr>
+          <th style="width:30%;">Topic</th>
+          <th style="width:14%;">Overview</th>
+          <th style="width:14%;">Diagram</th>
+          <th style="width:14%;">Architecture</th>
+          <th style="width:14%;">Decisions</th>
+          <th style="width:14%;">Deploy / CI/CD</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>What the platform does</strong></td>
+          <td class="check">&#10003; Primary</td>
+          <td class="dash">&mdash;</td>
+          <td class="dash">&mdash;</td>
+          <td class="dash">&mdash;</td>
+          <td class="dash">&mdash;</td>
+        </tr>
+        <tr>
+          <td><strong>UI screens &amp; features</strong></td>
+          <td class="check">&#10003; Primary</td>
+          <td class="dash">&mdash;</td>
+          <td class="dash">&mdash;</td>
+          <td class="dash">&mdash;</td>
+          <td class="dash">&mdash;</td>
+        </tr>
+        <tr>
+          <td><strong>Build timeline &amp; effort</strong></td>
+          <td class="check">&#10003; Primary</td>
+          <td class="dash">&mdash;</td>
+          <td class="dash">&mdash;</td>
+          <td class="dash">&mdash;</td>
+          <td class="dash">&mdash;</td>
+        </tr>
+        <tr>
+          <td><strong>Visual architecture map</strong></td>
+          <td class="dash">&mdash;</td>
+          <td class="check">&#10003; Primary</td>
+          <td class="dash">&mdash;</td>
+          <td class="dash">&mdash;</td>
+          <td class="dash">&mdash;</td>
+        </tr>
+        <tr>
+          <td><strong>AWS services (detailed specs)</strong></td>
+          <td class="dash">&mdash;</td>
+          <td class="dash">&mdash;</td>
+          <td class="check">&#10003; Primary</td>
+          <td class="dash">&mdash;</td>
+          <td class="dash">&mdash;</td>
+        </tr>
+        <tr>
+          <td><strong>Cognito / Auth flow</strong></td>
+          <td class="dash">&mdash;</td>
+          <td class="dash">&mdash;</td>
+          <td class="check">&#10003; Primary</td>
+          <td class="dash">&mdash;</td>
+          <td class="dash">&mdash;</td>
+        </tr>
+        <tr>
+          <td><strong>AgentCore &amp; LLM config</strong></td>
+          <td class="dash">&mdash;</td>
+          <td class="dash">&mdash;</td>
+          <td class="check">&#10003; Primary</td>
+          <td class="dash">&mdash;</td>
+          <td class="dash">&mdash;</td>
+        </tr>
+        <tr>
+          <td><strong>Cost &amp; scaling model</strong></td>
+          <td class="dash">&mdash;</td>
+          <td class="dash">&mdash;</td>
+          <td class="check">&#10003; Primary</td>
+          <td class="dash">&mdash;</td>
+          <td class="dash">&mdash;</td>
+        </tr>
+        <tr>
+          <td><strong>Timing metrics (cold start, etc.)</strong></td>
+          <td class="dash">&mdash;</td>
+          <td class="dash">&mdash;</td>
+          <td class="check">&#10003; Primary</td>
+          <td class="dash">&mdash;</td>
+          <td class="dash">&mdash;</td>
+        </tr>
+        <tr>
+          <td><strong>ECS Fargate lifecycle</strong></td>
+          <td class="dash">&mdash;</td>
+          <td class="dash">&mdash;</td>
+          <td class="check">&#10003; Primary</td>
+          <td class="dash">&mdash;</td>
+          <td class="dash">&mdash;</td>
+        </tr>
+        <tr>
+          <td><strong>Architecture decisions (ADRs)</strong></td>
+          <td class="dash">&mdash;</td>
+          <td class="dash">&mdash;</td>
+          <td class="dash">&mdash;</td>
+          <td class="check">&#10003; Primary</td>
+          <td class="dash">&mdash;</td>
+        </tr>
+        <tr>
+          <td><strong>Deployment steps</strong></td>
+          <td class="dash">&mdash;</td>
+          <td class="dash">&mdash;</td>
+          <td class="dash">&mdash;</td>
+          <td class="dash">&mdash;</td>
+          <td class="check">&#10003; Deploy Guide</td>
+        </tr>
+        <tr>
+          <td><strong>CI/CD pipelines</strong></td>
+          <td class="dash">&mdash;</td>
+          <td class="dash">&mdash;</td>
+          <td class="dash">&mdash;</td>
+          <td class="dash">&mdash;</td>
+          <td class="check">&#10003; Handover</td>
+        </tr>
+        <tr>
+          <td><strong>Troubleshooting</strong></td>
+          <td class="dash">&mdash;</td>
+          <td class="dash">&mdash;</td>
+          <td class="dash">&mdash;</td>
+          <td class="dash">&mdash;</td>
+          <td class="check">&#10003; Handover</td>
+        </tr>
+        <tr>
+          <td><strong>Data model (Aurora + DynamoDB)</strong></td>
+          <td class="check">&#10003; Schema</td>
+          <td class="dash">&mdash;</td>
+          <td class="check">&#10003; Detail</td>
+          <td class="dash">&mdash;</td>
+          <td class="dash">&mdash;</td>
+        </tr>
+        <tr>
+          <td><strong>GitHub repositories</strong></td>
+          <td class="check">&#10003; Primary</td>
+          <td class="dash">&mdash;</td>
+          <td class="dash">&mdash;</td>
+          <td class="dash">&mdash;</td>
+          <td class="dash">&mdash;</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="footer">
+    Prompt2Test Documentation Hub &mdash; 6 pages &middot; Last updated March 2026
+  </div>
+
+</div>
+</body>
+</html>
