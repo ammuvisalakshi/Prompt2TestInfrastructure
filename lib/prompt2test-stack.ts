@@ -275,6 +275,11 @@ def handler(event, context):
             actions: ['bedrock:InvokeModel'],
             resources: ['*'], // Titan Embed v2 — scoped to model in prod
           }),
+          new iam.PolicyStatement({
+            sid: 'DynamoDBConfigAccess',
+            actions: ['dynamodb:Query', 'dynamodb:GetItem', 'dynamodb:PutItem'],
+            resources: [configTable.tableArn],
+          }),
         ]}),
       },
     })
