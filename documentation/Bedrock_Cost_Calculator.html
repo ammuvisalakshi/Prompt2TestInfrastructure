@@ -87,23 +87,13 @@
         </div>
       </div>
       <div class="input-box">
-        <label>Tests per Day</label>
-        <div class="hint">How many test cases does your team run daily?</div>
-        <input type="number" id="testsPerDay" value="20" min="1" max="500" oninput="syncSlider('testsPerDay','testsPerDaySlider'); calculate()">
+        <label>Number of Test Cases</label>
+        <div class="hint">Total test cases you plan to automate</div>
+        <input type="number" id="numTests" value="50" min="1" max="5000" oninput="syncSlider('numTests','numTestsSlider'); calculate()">
         <div class="slider-row">
           <span class="slider-min">1</span>
-          <input type="range" id="testsPerDaySlider" min="1" max="500" value="20" oninput="syncInput('testsPerDaySlider','testsPerDay'); calculate()">
-          <span class="slider-max">500</span>
-        </div>
-      </div>
-      <div class="input-box">
-        <label>Working Days / Month</label>
-        <div class="hint">Typically 22 weekdays</div>
-        <input type="number" id="workDays" value="22" min="15" max="30" oninput="syncSlider('workDays','workDaysSlider'); calculate()">
-        <div class="slider-row">
-          <span class="slider-min">15</span>
-          <input type="range" id="workDaysSlider" min="15" max="30" value="22" oninput="syncInput('workDaysSlider','workDays'); calculate()">
-          <span class="slider-max">30</span>
+          <input type="range" id="numTestsSlider" min="1" max="5000" value="50" oninput="syncInput('numTestsSlider','numTests'); calculate()">
+          <span class="slider-max">5000</span>
         </div>
       </div>
     </div>
@@ -131,7 +121,7 @@
     <div style="display:flex; align-items:center; gap:12px; padding:12px 16px; background:#f8fafc; border-radius:10px; margin-top:4px;">
       <span style="font-size:13px; color:#64748b;">Estimated tokens per test:</span>
       <span id="tokens-per-test" style="font-size:18px; font-weight:800; color:#7c3aed;"></span>
-      <span style="font-size:13px; color:#64748b; margin-left:8px;">Tests per month:</span>
+      <span style="font-size:13px; color:#64748b; margin-left:8px;">Total test cases:</span>
       <span id="tests-per-month" style="font-size:18px; font-weight:800; color:#0f172a;"></span>
     </div>
   </div>
@@ -141,7 +131,7 @@
 
   <!-- BAR CHART -->
   <div class="card">
-    <div class="card-title">Monthly Cost Comparison</div>
+    <div class="card-title">Total Cost Comparison (<span id="bar-chart-count"></span> test cases)</div>
     <div id="bar-chart"></div>
   </div>
 
@@ -240,14 +230,12 @@ const API_PROFILES = {
 
 function calculate() {
   const steps = +document.getElementById('steps').value || 8;
-  const testsPerDay = +document.getElementById('testsPerDay').value || 20;
-  const workDays = +document.getElementById('workDays').value || 22;
+  const numTests = +document.getElementById('numTests').value || 50;
   const complexity = document.getElementById('complexity').value;
   const hasApi = document.getElementById('hasApi').value;
 
   const profile = PROFILES[complexity];
   const apiProfile = API_PROFILES[hasApi];
-  const testsPerMonth = testsPerDay * workDays;
 
   // Token math (calibrated against real 130K observation)
   const systemTokens = 1546;
@@ -263,73 +251,67 @@ function calculate() {
   const totalTokens = totalInput + totalOutput;
 
   document.getElementById('tokens-per-test').textContent = Math.round(totalTokens / 1000) + 'K tokens';
-  document.getElementById('tests-per-month').textContent = testsPerMonth.toLocaleString();
+  document.getElementById('tests-per-month').textContent = numTests.toLocaleString();
 
   // Calculate costs
   const results = MODELS.map(m => {
     const costPerTest = (totalInput / 1e6) * m.input + (totalOutput / 1e6) * m.output;
-    const monthly = costPerTest * testsPerMonth;
-    const yearly = monthly * 12;
-    return { ...m, costPerTest, monthly, yearly };
+    const totalCost = costPerTest * numTests;
+    return { ...m, costPerTest, totalCost };
   });
 
-  const cheapest = Math.min(...results.map(r => r.monthly));
-  const mostExpensive = Math.max(...results.map(r => r.monthly));
+  const cheapest = Math.min(...results.map(r => r.totalCost));
+  const mostExpensive = Math.max(...results.map(r => r.totalCost));
 
   // Model cards
   document.getElementById('model-cards').innerHTML = results.map(r => {
-    const isCheapest = r.monthly === cheapest;
+    const isCheapest = r.totalCost === cheapest;
     return `<div class="model-card${isCheapest ? ' highlight' : ''}" style="background:${r.bg}; border-color:${isCheapest ? '#16a34a' : r.border};">
       <div class="name" style="color:${r.color};">${r.name}</div>
       <div class="provider">${r.provider}</div>
       <div style="font-size:11px; font-weight:700; color:${r.color}; background:${r.bg}; border:1px solid ${r.border}; border-radius:6px; padding:2px 8px; display:inline-block; margin-bottom:4px;">${r.ctx} context</div>
       <div style="font-size:9px; color:#94a3b8;">Max output: ${r.maxOut}</div>
       <div class="price-test" style="color:${r.color};">$${r.costPerTest < 0.01 ? r.costPerTest.toFixed(3) : r.costPerTest.toFixed(2)}</div>
-      <div class="price-label">per test</div>
-      <div style="margin-top:6px; font-size:12px; color:#475569;">$${(r.costPerTest * testsPerDay).toFixed(2)}<span style="font-size:10px; color:#94a3b8;"> /day</span></div>
-      <div style="font-size:12px; color:#475569;">$${(r.costPerTest * testsPerDay * 5).toFixed(2)}<span style="font-size:10px; color:#94a3b8;"> /week</span></div>
-      <div class="price-month" style="color:${r.color};">$${r.monthly < 1 ? r.monthly.toFixed(2) : r.monthly.toFixed(0)}</div>
-      <div class="month-label">/ month</div>
+      <div class="price-label">per test case</div>
+      <div class="price-month" style="color:${r.color}; margin-top:8px;">$${r.totalCost < 1 ? r.totalCost.toFixed(2) : r.totalCost.toFixed(0)}</div>
+      <div class="month-label">for ${numTests} test cases</div>
       <div style="margin-top:6px; font-size:9px; color:#94a3b8;">$${r.input}/MTok in &middot; $${r.output}/MTok out</div>
       ${isCheapest ? '<div style="margin-top:4px;"><span class="savings">Cheapest</span></div>' : ''}
-      ${r.monthly === mostExpensive && results.length > 1 ? `<div style="margin-top:4px; font-size:10px; color:#94a3b8;">${Math.round(mostExpensive / cheapest)}x more than cheapest</div>` : ''}
+      ${r.totalCost === mostExpensive && results.length > 1 ? `<div style="margin-top:4px; font-size:10px; color:#94a3b8;">${Math.round(mostExpensive / cheapest)}x more than cheapest</div>` : ''}
     </div>`;
   }).join('');
 
   // Bar chart
-  const maxMonthly = mostExpensive;
+  document.getElementById('bar-chart-count').textContent = numTests;
   document.getElementById('bar-chart').innerHTML = results.map(r => {
-    const pct = maxMonthly > 0 ? (r.monthly / maxMonthly) * 100 : 0;
+    const pct = mostExpensive > 0 ? (r.totalCost / mostExpensive) * 100 : 0;
     return `<div class="bar-row">
       <span class="bar-label">${r.name}</span>
       <div class="bar-track">
         <div class="bar-fill" style="width:${Math.max(pct, 4)}%; background:${r.color};"></div>
       </div>
-      <span class="bar-amount" style="color:${r.color};">$${r.monthly < 1 ? r.monthly.toFixed(2) : r.monthly.toFixed(0)}/mo</span>
+      <span class="bar-amount" style="color:${r.color};">$${r.totalCost < 1 ? r.totalCost.toFixed(2) : r.totalCost.toFixed(0)}</span>
     </div>`;
   }).join('');
 
-  // Detail table with daily, weekly, monthly
-  const weekly = (r) => r.costPerTest * testsPerDay * 5;
+  // Detail table
   document.getElementById('detail-table').innerHTML = `
     <thead>
-      <tr><th>Model</th><th>Context</th><th>Per Test</th><th>Per Day</th><th>Per Week</th><th>Per Month</th><th>Per Year</th><th>vs Most Expensive</th></tr>
+      <tr><th>Model</th><th>Context</th><th>Cost per Test</th><th>10 Tests</th><th>50 Tests</th><th>100 Tests</th><th>${numTests} Tests</th><th>vs Most Expensive</th></tr>
     </thead>
     <tbody>
       ${results.map((r, i) => {
-        const daily = r.costPerTest * testsPerDay;
-        const week = daily * 5;
-        const savingsVsTop = results[0].monthly > 0 ? Math.round((1 - r.monthly / results[0].monthly) * 100) : 0;
+        const savingsVsTop = results[0].totalCost > 0 ? Math.round((1 - r.totalCost / results[0].totalCost) * 100) : 0;
         return `
-        <tr${r.monthly === cheapest ? ' style="background:#f0fdf4;"' : ''}>
+        <tr${r.totalCost === cheapest ? ' style="background:#f0fdf4;"' : ''}>
           <td style="font-weight:700; color:${r.color};">${r.name}</td>
           <td style="font-size:11px;">${r.ctx}</td>
           <td>$${r.costPerTest < 0.01 ? r.costPerTest.toFixed(4) : r.costPerTest.toFixed(3)}</td>
-          <td>$${daily.toFixed(2)}</td>
-          <td>$${week.toFixed(2)}</td>
-          <td style="font-weight:700;">$${r.monthly.toFixed(2)}</td>
-          <td>$${r.yearly.toFixed(0)}</td>
-          <td>${i === 0 ? '<span style="font-size:11px;color:#94a3b8;">baseline</span>' : savingsVsTop > 0 ? `<span class="savings">${savingsVsTop}% cheaper</span>` : '—'}</td>
+          <td>$${(r.costPerTest * 10).toFixed(2)}</td>
+          <td>$${(r.costPerTest * 50).toFixed(2)}</td>
+          <td>$${(r.costPerTest * 100).toFixed(2)}</td>
+          <td style="font-weight:700; color:${r.color};">$${r.totalCost.toFixed(2)}</td>
+          <td>${i === 0 ? '<span style="font-size:11px;color:#94a3b8;">most expensive</span>' : savingsVsTop > 0 ? `<span class="savings">${savingsVsTop}% cheaper</span>` : '—'}</td>
         </tr>`;
       }).join('')}
     </tbody>
