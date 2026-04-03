@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bedrock Cost Calculator — Prompt2Test</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', -apple-system, sans-serif; background: #f1f5f9; color: #1e293b; font-size: 14px; }
+  .page { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+
+  .hero { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%); border-radius: 16px; padding: 36px 40px; margin-bottom: 28px; }
+  .hero h1 { font-size: 26px; font-weight: 900; color: #fff; margin-bottom: 6px; }
+  .hero p { font-size: 14px; color: #94a3b8; line-height: 1.6; }
+
+  .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 24px; margin-bottom: 20px; }
+  .card-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #64748b; margin-bottom: 16px; }
+
+  .input-row { display: flex; gap: 20px; margin-bottom: 16px; flex-wrap: wrap; }
+  .input-box { flex: 1; min-width: 200px; }
+  .input-box label { display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px; }
+  .input-box .hint { font-size: 11px; color: #94a3b8; margin-bottom: 6px; }
+  .input-box input[type=number], .input-box select {
+    width: 100%; padding: 10px 14px; background: #f8fafc; border: 1.5px solid #e2e8f0;
+    border-radius: 10px; font-size: 15px; font-weight: 600; color: #0f172a; outline: none; font-family: inherit;
+  }
+  .input-box input[type=number]:focus { border-color: #7c3aed; }
+  .slider-row { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+  .slider-row input[type=range] { flex: 1; accent-color: #7c3aed; height: 6px; }
+  .slider-row .slider-min, .slider-row .slider-max { font-size: 10px; color: #94a3b8; }
+
+  /* Model cards */
+  .model-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 20px; }
+  .model-card { border-radius: 12px; padding: 18px 14px; text-align: center; border: 2px solid #e2e8f0; transition: all 0.2s; }
+  .model-card .name { font-size: 12px; font-weight: 700; margin-bottom: 2px; }
+  .model-card .provider { font-size: 10px; color: #94a3b8; margin-bottom: 8px; }
+  .model-card .price-test { font-size: 30px; font-weight: 900; margin-bottom: 2px; }
+  .model-card .price-label { font-size: 11px; color: #64748b; }
+  .model-card .price-month { font-size: 18px; font-weight: 800; margin-top: 8px; }
+  .model-card .month-label { font-size: 10px; color: #94a3b8; }
+  .model-card .context { font-size: 10px; color: #94a3b8; margin-top: 6px; }
+
+  /* Bar chart */
+  .bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .bar-label { width: 130px; font-size: 12px; font-weight: 600; color: #475569; text-align: right; }
+  .bar-track { flex: 1; height: 30px; background: #f1f5f9; border-radius: 8px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 8px; display: flex; align-items: center; padding: 0 10px; font-size: 12px; font-weight: 700; color: white; transition: width 0.4s; }
+  .bar-amount { min-width: 80px; font-size: 13px; font-weight: 700; }
+
+  /* Table */
+  .tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .tbl th { background: #f8fafc; font-weight: 700; color: #475569; text-align: left; padding: 10px 14px; border-bottom: 2px solid #e2e8f0; }
+  .tbl td { padding: 10px 14px; border-bottom: 1px solid #f1f5f9; }
+  .tbl tr:last-child td { border-bottom: none; }
+
+  .highlight { background: #f0fdf4; border: 2px solid #16a34a; }
+  .savings { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; background: #dcfce7; color: #15803d; }
+
+  .note { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 14px 18px; margin-top: 16px; }
+  .note-title { font-size: 12px; font-weight: 700; color: #1d4ed8; margin-bottom: 4px; }
+  .note p { font-size: 12px; color: #475569; line-height: 1.7; }
+
+  .footer { text-align: center; font-size: 11px; color: #94a3b8; margin-top: 24px; }
+  .footer a { color: #6366f1; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="hero">
+    <h1>Bedrock LLM Cost Calculator</h1>
+    <p>How much does it cost to automate browser tests with AI? Enter your test volume below.</p>
+  </div>
+
+  <!-- INPUTS -->
+  <div class="card">
+    <div class="card-title">Your Test Volume</div>
+    <div class="input-row">
+      <div class="input-box">
+        <label>Test Steps per Test Case</label>
+        <div class="hint">Login + navigate + search + verify = count each action</div>
+        <input type="number" id="steps" value="8" min="1" max="100" oninput="syncSlider('steps','stepsSlider'); calculate()">
+        <div class="slider-row">
+          <span class="slider-min">1</span>
+          <input type="range" id="stepsSlider" min="1" max="100" value="8" oninput="syncInput('stepsSlider','steps'); calculate()">
+          <span class="slider-max">100</span>
+        </div>
+      </div>
+      <div class="input-box">
+        <label>Tests per Day</label>
+        <div class="hint">How many test cases does your team run daily?</div>
+        <input type="number" id="testsPerDay" value="20" min="1" max="500" oninput="syncSlider('testsPerDay','testsPerDaySlider'); calculate()">
+        <div class="slider-row">
+          <span class="slider-min">1</span>
+          <input type="range" id="testsPerDaySlider" min="1" max="500" value="20" oninput="syncInput('testsPerDaySlider','testsPerDay'); calculate()">
+          <span class="slider-max">500</span>
+        </div>
+      </div>
+      <div class="input-box">
+        <label>Working Days / Month</label>
+        <div class="hint">Typically 22 weekdays</div>
+        <input type="number" id="workDays" value="22" min="15" max="30" oninput="syncSlider('workDays','workDaysSlider'); calculate()">
+        <div class="slider-row">
+          <span class="slider-min">15</span>
+          <input type="range" id="workDaysSlider" min="15" max="30" value="22" oninput="syncInput('workDaysSlider','workDays'); calculate()">
+          <span class="slider-max">30</span>
+        </div>
+      </div>
+    </div>
+    <div class="input-row">
+      <div class="input-box">
+        <label>Test Complexity</label>
+        <div class="hint">How complex are the pages being tested?</div>
+        <select id="complexity" onchange="calculate()">
+          <option value="simple">Simple — login, forms, basic pages</option>
+          <option value="medium" selected>Medium — dashboards, filters, tables</option>
+          <option value="complex">Complex — rich apps, 200+ elements, nested UIs</option>
+        </select>
+      </div>
+      <div class="input-box">
+        <label>Includes API Calls?</label>
+        <div class="hint">OAuth, REST APIs with JSON payloads</div>
+        <select id="hasApi" onchange="calculate()">
+          <option value="no">No — UI only</option>
+          <option value="light">Light — 1-2 API calls</option>
+          <option value="heavy" selected>Heavy — 3+ APIs with large JSON</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="display:flex; align-items:center; gap:12px; padding:12px 16px; background:#f8fafc; border-radius:10px; margin-top:4px;">
+      <span style="font-size:13px; color:#64748b;">Estimated tokens per test:</span>
+      <span id="tokens-per-test" style="font-size:18px; font-weight:800; color:#7c3aed;"></span>
+      <span style="font-size:13px; color:#64748b; margin-left:8px;">Tests per month:</span>
+      <span id="tests-per-month" style="font-size:18px; font-weight:800; color:#0f172a;"></span>
+    </div>
+  </div>
+
+  <!-- MODEL COMPARISON -->
+  <div class="model-grid" id="model-cards"></div>
+
+  <!-- BAR CHART -->
+  <div class="card">
+    <div class="card-title">Monthly Cost Comparison</div>
+    <div id="bar-chart"></div>
+  </div>
+
+  <!-- DETAILED TABLE -->
+  <div class="card">
+    <div class="card-title">Detailed Breakdown</div>
+    <table class="tbl" id="detail-table"></table>
+  </div>
+
+  <!-- MODEL SPECS -->
+  <div class="card">
+    <div class="card-title">Model Specifications</div>
+    <table class="tbl">
+      <thead>
+        <tr><th>Model</th><th>Provider</th><th>Context Window</th><th>Input Cost</th><th>Output Cost</th><th>Best For</th></tr>
+      </thead>
+      <tbody>
+        <tr><td style="font-weight:700; color:#7c3aed;">Claude Sonnet 4.5</td><td>Anthropic</td><td>200K tokens</td><td>$3.00 / MTok</td><td>$15.00 / MTok</td><td>Complex automation, multi-step reasoning</td></tr>
+        <tr><td style="font-weight:700; color:#6d28d9;">Claude Haiku 4.5</td><td>Anthropic</td><td>200K tokens</td><td>$1.00 / MTok</td><td>$5.00 / MTok</td><td>Smart retry, moderate complexity</td></tr>
+        <tr><td style="font-weight:700; color:#0d9488;">Claude Haiku 3</td><td>Anthropic</td><td>200K tokens</td><td>$0.25 / MTok</td><td>$1.25 / MTok</td><td>Simple analysis, cheapest Claude</td></tr>
+        <tr><td style="font-weight:700; color:#2563eb;">Amazon Nova Pro</td><td>Amazon</td><td>300K tokens</td><td>$0.80 / MTok</td><td>$3.20 / MTok</td><td>Balanced cost/performance</td></tr>
+        <tr><td style="font-weight:700; color:#16a34a;">Amazon Nova Lite</td><td>Amazon</td><td>300K tokens</td><td>$0.06 / MTok</td><td>$0.24 / MTok</td><td>Smoke tests, simple verification</td></tr>
+      </tbody>
+    </table>
+    <div style="margin-top:10px; font-size:11px; color:#94a3b8;">
+      Source: <a href="https://platform.claude.com/docs/en/about-claude/pricing" style="color:#6366f1;">Anthropic Pricing</a> &middot;
+      <a href="https://aws.amazon.com/bedrock/pricing/" style="color:#6366f1;">AWS Bedrock Pricing</a> &middot; 2026 on-demand rates.
+    </div>
+  </div>
+
+  <!-- TIPS -->
+  <div class="note">
+    <div class="note-title">How to Reduce Costs</div>
+    <p>
+      <strong>1. Use cheaper models for simple tests</strong> — Nova Lite for smoke tests, Haiku for retries.<br>
+      <strong>2. Batch API (50% off)</strong> — for non-urgent suite runs, use Bedrock batch processing.<br>
+      <strong>3. Prompt caching</strong> — system prompt + plan steps can be cached (90% cheaper on re-reads).<br>
+      <strong>4. Minimize DOM snapshots</strong> — only snapshot when verifying, not on every click.<br>
+      <strong>5. Headless replay mode</strong> — deterministic replay uses zero LLM tokens (just Playwright).
+    </p>
+  </div>
+
+  <div class="note" style="background:#faf5ff; border-color:#ddd6fe;">
+    <div class="note-title" style="color:#7c3aed;">Important: Replay Mode = $0 LLM Cost</div>
+    <p>
+      Once a test is automated and the replay script is saved, <strong>replaying it in QA/UAT/PROD costs zero LLM tokens</strong>.
+      Only the first automation in DEV uses the LLM. Promoted tests run as deterministic Playwright replay — no AI involved.
+    </p>
+  </div>
+
+  <div class="footer">
+    Bedrock LLM Cost Calculator &middot; Prompt2Test &middot;
+    <a href="https://platform.claude.com/docs/en/about-claude/pricing">Anthropic Pricing</a> &middot;
+    <a href="https://aws.amazon.com/bedrock/pricing/">AWS Bedrock Pricing</a>
+  </div>
+
+</div>
+
+<script>
+function syncSlider(inputId, sliderId) {
+  document.getElementById(sliderId).value = document.getElementById(inputId).value;
+}
+function syncInput(sliderId, inputId) {
+  document.getElementById(inputId).value = document.getElementById(sliderId).value;
+}
+
+const MODELS = [
+  { name: 'Claude Sonnet 4.5', provider: 'Anthropic', input: 3.00,  output: 15.00, color: '#7c3aed', bg: '#faf5ff', border: '#ddd6fe', ctx: '200K' },
+  { name: 'Claude Haiku 4.5',  provider: 'Anthropic', input: 1.00,  output: 5.00,  color: '#6d28d9', bg: '#faf5ff', border: '#ddd6fe', ctx: '200K' },
+  { name: 'Claude Haiku 3',    provider: 'Anthropic', input: 0.25,  output: 1.25,  color: '#0d9488', bg: '#f0fdfa', border: '#99f6e4', ctx: '200K' },
+  { name: 'Amazon Nova Pro',   provider: 'Amazon',    input: 0.80,  output: 3.20,  color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe', ctx: '300K' },
+  { name: 'Amazon Nova Lite',  provider: 'Amazon',    input: 0.06,  output: 0.24,  color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0', ctx: '300K' },
+];
+
+// Token profiles calibrated against real-world: 8-step medium test = ~130K tokens
+const PROFILES = {
+  simple:  { domSize: 1500, snapsPerStep: 1.5 },
+  medium:  { domSize: 3500, snapsPerStep: 2 },
+  complex: { domSize: 6000, snapsPerStep: 2.5 },
+};
+const API_PROFILES = {
+  no:    { apiSteps: 0, payloadTokens: 0 },
+  light: { apiSteps: 2, payloadTokens: 1600 },
+  heavy: { apiSteps: 4, payloadTokens: 4000 },
+};
+
+function calculate() {
+  const steps = +document.getElementById('steps').value || 8;
+  const testsPerDay = +document.getElementById('testsPerDay').value || 20;
+  const workDays = +document.getElementById('workDays').value || 22;
+  const complexity = document.getElementById('complexity').value;
+  const hasApi = document.getElementById('hasApi').value;
+
+  const profile = PROFILES[complexity];
+  const apiProfile = API_PROFILES[hasApi];
+  const testsPerMonth = testsPerDay * workDays;
+
+  // Token math (calibrated against real 130K observation)
+  const systemTokens = 1546;
+  const planTokens = steps * 90;
+  const domTokens = Math.ceil(steps * profile.snapsPerStep) * profile.domSize;
+  const apiTokens = apiProfile.apiSteps * apiProfile.payloadTokens;
+  const toolOverhead = steps * 80;
+  const avgTurnSize = (profile.domSize * profile.snapsPerStep) + 330;
+  const contextAccum = Math.floor(steps * (steps - 1) / 2 * avgTurnSize * 0.4);
+
+  const totalInput = systemTokens + planTokens + domTokens + apiTokens + toolOverhead + contextAccum;
+  const totalOutput = steps * 250;
+  const totalTokens = totalInput + totalOutput;
+
+  document.getElementById('tokens-per-test').textContent = Math.round(totalTokens / 1000) + 'K tokens';
+  document.getElementById('tests-per-month').textContent = testsPerMonth.toLocaleString();
+
+  // Calculate costs
+  const results = MODELS.map(m => {
+    const costPerTest = (totalInput / 1e6) * m.input + (totalOutput / 1e6) * m.output;
+    const monthly = costPerTest * testsPerMonth;
+    const yearly = monthly * 12;
+    return { ...m, costPerTest, monthly, yearly };
+  });
+
+  const cheapest = Math.min(...results.map(r => r.monthly));
+  const mostExpensive = Math.max(...results.map(r => r.monthly));
+
+  // Model cards
+  document.getElementById('model-cards').innerHTML = results.map(r => {
+    const isCheapest = r.monthly === cheapest;
+    return `<div class="model-card${isCheapest ? ' highlight' : ''}" style="background:${r.bg}; border-color:${isCheapest ? '#16a34a' : r.border};">
+      <div class="name" style="color:${r.color};">${r.name}</div>
+      <div class="provider">${r.provider}</div>
+      <div style="font-size:11px; font-weight:700; color:${r.color}; background:${r.bg}; border:1px solid ${r.border}; border-radius:6px; padding:2px 8px; display:inline-block; margin-bottom:6px;">${r.ctx} context</div>
+      <div class="price-test" style="color:${r.color};">$${r.costPerTest < 0.01 ? r.costPerTest.toFixed(3) : r.costPerTest.toFixed(2)}</div>
+      <div class="price-label">per test</div>
+      <div class="price-month" style="color:${r.color};">$${r.monthly < 1 ? r.monthly.toFixed(2) : r.monthly.toFixed(0)}</div>
+      <div class="month-label">/ month</div>
+      <div style="margin-top:6px; font-size:9px; color:#94a3b8;">$${r.input}/MTok in &middot; $${r.output}/MTok out</div>
+      ${isCheapest ? '<div style="margin-top:4px;"><span class="savings">Cheapest</span></div>' : ''}
+      ${r.monthly === mostExpensive && results.length > 1 ? `<div style="margin-top:4px; font-size:10px; color:#94a3b8;">${Math.round(mostExpensive / cheapest)}x more than cheapest</div>` : ''}
+    </div>`;
+  }).join('');
+
+  // Bar chart
+  const maxMonthly = mostExpensive;
+  document.getElementById('bar-chart').innerHTML = results.map(r => {
+    const pct = maxMonthly > 0 ? (r.monthly / maxMonthly) * 100 : 0;
+    return `<div class="bar-row">
+      <span class="bar-label">${r.name}</span>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${Math.max(pct, 4)}%; background:${r.color};"></div>
+      </div>
+      <span class="bar-amount" style="color:${r.color};">$${r.monthly < 1 ? r.monthly.toFixed(2) : r.monthly.toFixed(0)}/mo</span>
+    </div>`;
+  }).join('');
+
+  // Detail table
+  document.getElementById('detail-table').innerHTML = `
+    <thead>
+      <tr><th>Model</th><th>Cost / Test</th><th>Daily (${testsPerDay})</th><th>Monthly (${testsPerMonth})</th><th>Yearly</th><th>vs Sonnet Savings</th></tr>
+    </thead>
+    <tbody>
+      ${results.map((r, i) => `
+        <tr${r.monthly === cheapest ? ' style="background:#f0fdf4;"' : ''}>
+          <td style="font-weight:700; color:${r.color};">${r.name}</td>
+          <td>$${r.costPerTest < 0.01 ? r.costPerTest.toFixed(4) : r.costPerTest.toFixed(3)}</td>
+          <td>$${(r.costPerTest * testsPerDay).toFixed(2)}</td>
+          <td style="font-weight:700;">$${r.monthly.toFixed(2)}</td>
+          <td>$${r.yearly.toFixed(0)}</td>
+          <td>${i === 0 ? '—' : `<span class="savings">${Math.round((1 - r.monthly / results[0].monthly) * 100)}% cheaper</span>`}</td>
+        </tr>
+      `).join('')}
+    </tbody>
+  `;
+}
+
+calculate();
+</script>
+</body>
+</html>
