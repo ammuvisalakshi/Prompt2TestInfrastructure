@@ -20,32 +20,36 @@
   .input-box { flex: 1; min-width: 200px; }
   .input-box label { display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px; }
   .input-box .hint { font-size: 11px; color: #94a3b8; margin-bottom: 6px; }
-  .input-box input[type=number], .input-box select {
+  .input-box input[type=number] {
     width: 100%; padding: 10px 14px; background: #f8fafc; border: 1.5px solid #e2e8f0;
-    border-radius: 10px; font-size: 15px; font-weight: 600; color: #0f172a; outline: none; font-family: inherit;
+    border-radius: 10px; font-size: 16px; font-weight: 700; color: #0f172a; outline: none; font-family: inherit;
   }
-  .input-box input[type=number]:focus { border-color: #7c3aed; }
+  .input-box input:focus { border-color: #7c3aed; }
   .slider-row { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
   .slider-row input[type=range] { flex: 1; accent-color: #7c3aed; height: 6px; }
-  .slider-row .slider-min, .slider-row .slider-max { font-size: 10px; color: #94a3b8; }
+  .slider-row .s-label { font-size: 10px; color: #94a3b8; }
 
-  /* Model cards */
+  /* Presets */
+  .preset-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .preset-btn {
+    padding: 8px 16px; border-radius: 10px; font-size: 13px; font-weight: 600;
+    border: 1.5px solid #e2e8f0; background: #f8fafc; color: #475569; cursor: pointer; transition: all 0.15s;
+  }
+  .preset-btn:hover { border-color: #7c3aed; color: #7c3aed; background: #faf5ff; }
+  .preset-btn.active { border-color: #7c3aed; color: white; background: #7c3aed; }
+
+  /* Results */
   .model-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
-  .model-card { border-radius: 12px; padding: 18px 14px; text-align: center; border: 2px solid #e2e8f0; transition: all 0.2s; }
-  .model-card .name { font-size: 12px; font-weight: 700; margin-bottom: 2px; }
-  .model-card .provider { font-size: 10px; color: #94a3b8; margin-bottom: 8px; }
-  .model-card .price-test { font-size: 30px; font-weight: 900; margin-bottom: 2px; }
-  .model-card .price-label { font-size: 11px; color: #64748b; }
-  .model-card .price-month { font-size: 18px; font-weight: 800; margin-top: 8px; }
-  .model-card .month-label { font-size: 10px; color: #94a3b8; }
-  .model-card .context { font-size: 10px; color: #94a3b8; margin-top: 6px; }
+  .model-card { border-radius: 12px; padding: 18px 14px; text-align: center; border: 2px solid #e2e8f0; }
+  .model-card .name { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+  .model-card .sub { font-size: 10px; color: #94a3b8; margin-bottom: 10px; }
+  .model-card .big-price { font-size: 32px; font-weight: 900; margin-bottom: 2px; }
+  .model-card .big-label { font-size: 11px; color: #64748b; margin-bottom: 8px; }
+  .model-card .per-test { font-size: 14px; font-weight: 600; color: #475569; }
+  .model-card .pricing { font-size: 9px; color: #94a3b8; margin-top: 8px; }
 
-  /* Bar chart */
-  .bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
-  .bar-label { width: 130px; font-size: 12px; font-weight: 600; color: #475569; text-align: right; }
-  .bar-track { flex: 1; height: 30px; background: #f1f5f9; border-radius: 8px; overflow: hidden; }
-  .bar-fill { height: 100%; border-radius: 8px; display: flex; align-items: center; padding: 0 10px; font-size: 12px; font-weight: 700; color: white; transition: width 0.4s; }
-  .bar-amount { min-width: 80px; font-size: 13px; font-weight: 700; }
+  .highlight { background: #f0fdf4 !important; border: 2px solid #16a34a !important; }
+  .savings { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; background: #dcfce7; color: #15803d; }
 
   /* Table */
   .tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -53,13 +57,16 @@
   .tbl td { padding: 10px 14px; border-bottom: 1px solid #f1f5f9; }
   .tbl tr:last-child td { border-bottom: none; }
 
-  .highlight { background: #f0fdf4; border: 2px solid #16a34a; }
-  .savings { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; background: #dcfce7; color: #15803d; }
+  /* Bar */
+  .bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .bar-label { width: 130px; font-size: 12px; font-weight: 600; color: #475569; text-align: right; }
+  .bar-track { flex: 1; height: 28px; background: #f1f5f9; border-radius: 8px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 8px; display: flex; align-items: center; padding: 0 10px; font-size: 12px; font-weight: 700; color: white; transition: width 0.4s; }
+  .bar-amount { min-width: 80px; font-size: 13px; font-weight: 700; }
 
   .note { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 14px 18px; margin-top: 16px; }
   .note-title { font-size: 12px; font-weight: 700; color: #1d4ed8; margin-bottom: 4px; }
   .note p { font-size: 12px; color: #475569; line-height: 1.7; }
-
   .footer { text-align: center; font-size: 11px; color: #94a3b8; margin-top: 24px; }
   .footer a { color: #6366f1; }
 </style>
@@ -69,96 +76,110 @@
 
   <div class="hero">
     <h1>Bedrock LLM Cost Calculator</h1>
-    <p>How much does it cost to automate browser tests with AI? Enter your test volume below.</p>
+    <p>How much does it cost to automate browser tests with AI? Pick your test size and volume.</p>
   </div>
 
   <!-- INPUTS -->
   <div class="card">
-    <div class="card-title">Your Test Volume</div>
-    <div class="input-row">
-      <div class="input-box">
-        <label>Test Steps per Test Case</label>
-        <div class="hint">Login + navigate + search + verify = count each action</div>
-        <input type="number" id="steps" value="8" min="1" max="100" oninput="syncSlider('steps','stepsSlider'); calculate()">
-        <div class="slider-row">
-          <span class="slider-min">1</span>
-          <input type="range" id="stepsSlider" min="1" max="100" value="8" oninput="syncInput('stepsSlider','steps'); calculate()">
-          <span class="slider-max">100</span>
-        </div>
-      </div>
-      <div class="input-box">
-        <label>Number of Test Cases</label>
-        <div class="hint">Total test cases you plan to automate</div>
-        <input type="number" id="numTests" value="50" min="1" max="5000" oninput="syncSlider('numTests','numTestsSlider'); calculate()">
-        <div class="slider-row">
-          <span class="slider-min">1</span>
-          <input type="range" id="numTestsSlider" min="1" max="5000" value="50" oninput="syncInput('numTestsSlider','numTests'); calculate()">
-          <span class="slider-max">5000</span>
-        </div>
-      </div>
+    <div class="card-title">1. Tokens per test case</div>
+    <div class="hint" style="margin-bottom:12px;">Input tokens = what the LLM reads (DOM, plan, history). Output tokens = what the LLM writes (reasoning, tool calls). Check your Bedrock usage for actual numbers.</div>
+
+    <div class="preset-row">
+      <button class="preset-btn" onclick="setTokens(40000, 10000, this)">50K total<br><span style="font-size:10px; font-weight:400;">Simple: login + verify</span></button>
+      <button class="preset-btn active" onclick="setTokens(100000, 30000, this)">130K total<br><span style="font-size:10px; font-weight:400;">Medium: dashboard + filters</span></button>
+      <button class="preset-btn" onclick="setTokens(190000, 60000, this)">250K total<br><span style="font-size:10px; font-weight:400;">Complex: APIs + 10 screens</span></button>
+      <button class="preset-btn" onclick="setTokens(380000, 120000, this)">500K total<br><span style="font-size:10px; font-weight:400;">Very complex: full E2E</span></button>
     </div>
+
     <div class="input-row">
       <div class="input-box">
-        <label>Test Complexity</label>
-        <div class="hint">How complex are the pages being tested?</div>
-        <select id="complexity" onchange="calculate()">
-          <option value="simple">Simple — login, forms, basic pages</option>
-          <option value="medium" selected>Medium — dashboards, filters, tables</option>
-          <option value="complex">Complex — rich apps, 200+ elements, nested UIs</option>
-        </select>
+        <label>Input tokens per test</label>
+        <div class="hint">What the LLM reads (DOM snapshots, plan, conversation)</div>
+        <input type="number" id="inputTokens" value="100000" min="1000" max="1000000" step="1000" oninput="syncSlider('inputTokens','inputSlider'); clearPresets(); calculate()">
+        <div class="slider-row">
+          <span class="s-label">1K</span>
+          <input type="range" id="inputSlider" min="1000" max="1000000" step="1000" value="100000" oninput="syncInput('inputSlider','inputTokens'); clearPresets(); calculate()">
+          <span class="s-label">1M</span>
+        </div>
       </div>
       <div class="input-box">
-        <label>Includes API Calls?</label>
-        <div class="hint">OAuth, REST APIs with JSON payloads</div>
-        <select id="hasApi" onchange="calculate()">
-          <option value="no">No — UI only</option>
-          <option value="light">Light — 1-2 API calls</option>
-          <option value="heavy" selected>Heavy — 3+ APIs with large JSON</option>
-        </select>
+        <label>Output tokens per test</label>
+        <div class="hint">What the LLM writes (reasoning, tool calls, results)</div>
+        <input type="number" id="outputTokens" value="30000" min="500" max="200000" step="500" oninput="syncSlider('outputTokens','outputSlider'); clearPresets(); calculate()">
+        <div class="slider-row">
+          <span class="s-label">500</span>
+          <input type="range" id="outputSlider" min="500" max="200000" step="500" value="30000" oninput="syncInput('outputSlider','outputTokens'); clearPresets(); calculate()">
+          <span class="s-label">200K</span>
+        </div>
       </div>
     </div>
 
-    <div style="display:flex; align-items:center; gap:12px; padding:12px 16px; background:#f8fafc; border-radius:10px; margin-top:4px;">
-      <span style="font-size:13px; color:#64748b;">Estimated tokens per test:</span>
-      <span id="tokens-per-test" style="font-size:18px; font-weight:800; color:#7c3aed;"></span>
-      <span style="font-size:13px; color:#64748b; margin-left:8px;">Total test cases:</span>
-      <span id="tests-per-month" style="font-size:18px; font-weight:800; color:#0f172a;"></span>
+    <div style="height:1px; background:#e2e8f0; margin:16px 0;"></div>
+
+    <div class="card-title">2. How many test cases?</div>
+    <div class="input-row">
+      <div class="input-box" style="max-width:300px;">
+        <label>Number of test cases</label>
+        <input type="number" id="numTests" value="50" min="1" max="10000" oninput="syncSlider('numTests','numTestsSlider'); calculate()">
+        <div class="slider-row">
+          <span class="s-label">1</span>
+          <input type="range" id="numTestsSlider" min="1" max="5000" value="50" oninput="syncInput('numTestsSlider','numTests'); calculate()">
+          <span class="s-label">5000</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex; align-items:center; gap:16px; padding:14px 18px; background:#faf5ff; border:1px solid #ddd6fe; border-radius:10px; margin-top:8px;">
+      <div>
+        <div style="font-size:12px; color:#64748b;">Total tokens</div>
+        <div id="total-tokens" style="font-size:20px; font-weight:900; color:#7c3aed;"></div>
+      </div>
+      <div style="width:1px; height:30px; background:#e2e8f0;"></div>
+      <div>
+        <div style="font-size:12px; color:#64748b;">Per test (in + out)</div>
+        <div id="display-tokens-per-test" style="font-size:20px; font-weight:900; color:#0f172a;"></div>
+      </div>
+      <div style="width:1px; height:30px; background:#e2e8f0;"></div>
+      <div>
+        <div style="font-size:12px; color:#64748b;">Test cases</div>
+        <div id="display-num-tests" style="font-size:20px; font-weight:900; color:#0f172a;"></div>
+      </div>
     </div>
   </div>
 
-  <!-- MODEL COMPARISON -->
+  <!-- MODEL CARDS -->
   <div class="model-grid" id="model-cards"></div>
 
   <!-- BAR CHART -->
   <div class="card">
-    <div class="card-title">Total Cost Comparison (<span id="bar-chart-count"></span> test cases)</div>
+    <div class="card-title">Cost Comparison — <span id="bar-count"></span> test cases</div>
     <div id="bar-chart"></div>
   </div>
 
-  <!-- DETAILED TABLE -->
+  <!-- TABLE -->
   <div class="card">
-    <div class="card-title">Detailed Breakdown</div>
+    <div class="card-title">Cost at Different Volumes</div>
     <table class="tbl" id="detail-table"></table>
   </div>
 
   <!-- MODEL SPECS -->
   <div class="card">
-    <div class="card-title">Model Specifications</div>
+    <div class="card-title">Model Specifications &amp; Pricing</div>
     <table class="tbl">
       <thead>
-        <tr><th>Model</th><th>Provider</th><th>Context Window</th><th>Max Output</th><th>Input Cost</th><th>Output Cost</th><th>Best For</th></tr>
+        <tr><th>Model</th><th>Provider</th><th>Context Window</th><th>Max Output</th><th>Input</th><th>Output</th><th>Best For</th></tr>
       </thead>
       <tbody>
-        <tr style="background:#fef2f2;"><td colspan="7" style="font-weight:700; font-size:11px; color:#dc2626; text-transform:uppercase; letter-spacing:1px;">1M Context Window</td></tr>
-        <tr><td style="font-weight:700; color:#dc2626;">Claude Opus 4.6</td><td>Anthropic</td><td style="font-weight:700;">1M tokens</td><td>32K</td><td>$5.00 / MTok</td><td>$25.00 / MTok</td><td>Most capable, very long context tasks</td></tr>
-        <tr><td style="font-weight:700; color:#9333ea;">Claude Sonnet 4.6</td><td>Anthropic</td><td style="font-weight:700;">1M tokens</td><td>16K</td><td>$3.00 / MTok</td><td>$15.00 / MTok</td><td>Best balance of intelligence + cost at 1M</td></tr>
-        <tr style="background:#faf5ff;"><td colspan="7" style="font-weight:700; font-size:11px; color:#7c3aed; text-transform:uppercase; letter-spacing:1px;">200K Context Window</td></tr>
-        <tr><td style="font-weight:700; color:#7c3aed;">Claude Sonnet 4.5</td><td>Anthropic</td><td>200K tokens</td><td>8K</td><td>$3.00 / MTok</td><td>$15.00 / MTok</td><td>Complex automation, multi-step reasoning</td></tr>
-        <tr><td style="font-weight:700; color:#6d28d9;">Claude Haiku 4.5</td><td>Anthropic</td><td>200K tokens</td><td>8K</td><td>$1.00 / MTok</td><td>$5.00 / MTok</td><td>Smart retry, moderate complexity</td></tr>
-        <tr><td style="font-weight:700; color:#0d9488;">Claude Haiku 3</td><td>Anthropic</td><td>200K tokens</td><td>4K</td><td>$0.25 / MTok</td><td>$1.25 / MTok</td><td>Simple analysis, cheapest Claude</td></tr>
-        <tr style="background:#eff6ff;"><td colspan="7" style="font-weight:700; font-size:11px; color:#2563eb; text-transform:uppercase; letter-spacing:1px;">300K Context Window</td></tr>
-        <tr><td style="font-weight:700; color:#2563eb;">Amazon Nova Pro</td><td>Amazon</td><td>300K tokens</td><td>5K</td><td>$0.80 / MTok</td><td>$3.20 / MTok</td><td>Balanced cost/performance</td></tr>
-        <tr><td style="font-weight:700; color:#16a34a;">Amazon Nova Lite</td><td>Amazon</td><td>300K tokens</td><td>5K</td><td>$0.06 / MTok</td><td>$0.24 / MTok</td><td>Smoke tests, simple verification</td></tr>
+        <tr style="background:#fef2f2;"><td colspan="7" style="font-weight:700; font-size:11px; color:#dc2626; letter-spacing:1px;">1M CONTEXT WINDOW</td></tr>
+        <tr><td style="font-weight:700; color:#dc2626;">Claude Opus 4.6</td><td>Anthropic</td><td><strong>1M</strong></td><td>32K</td><td>$5.00/MTok</td><td>$25.00/MTok</td><td>Most capable, very long context</td></tr>
+        <tr><td style="font-weight:700; color:#9333ea;">Claude Sonnet 4.6</td><td>Anthropic</td><td><strong>1M</strong></td><td>16K</td><td>$3.00/MTok</td><td>$15.00/MTok</td><td>Best value at 1M context</td></tr>
+        <tr style="background:#faf5ff;"><td colspan="7" style="font-weight:700; font-size:11px; color:#7c3aed; letter-spacing:1px;">200K CONTEXT WINDOW</td></tr>
+        <tr><td style="font-weight:700; color:#7c3aed;">Claude Sonnet 4.5</td><td>Anthropic</td><td>200K</td><td>8K</td><td>$3.00/MTok</td><td>$15.00/MTok</td><td>Complex multi-step automation</td></tr>
+        <tr><td style="font-weight:700; color:#6d28d9;">Claude Haiku 4.5</td><td>Anthropic</td><td>200K</td><td>8K</td><td>$1.00/MTok</td><td>$5.00/MTok</td><td>Smart retry, moderate complexity</td></tr>
+        <tr><td style="font-weight:700; color:#0d9488;">Claude Haiku 3</td><td>Anthropic</td><td>200K</td><td>4K</td><td>$0.25/MTok</td><td>$1.25/MTok</td><td>Cheapest Claude</td></tr>
+        <tr style="background:#eff6ff;"><td colspan="7" style="font-weight:700; font-size:11px; color:#2563eb; letter-spacing:1px;">300K CONTEXT WINDOW</td></tr>
+        <tr><td style="font-weight:700; color:#2563eb;">Amazon Nova Pro</td><td>Amazon</td><td>300K</td><td>5K</td><td>$0.80/MTok</td><td>$3.20/MTok</td><td>Balanced cost/performance</td></tr>
+        <tr><td style="font-weight:700; color:#16a34a;">Amazon Nova Lite</td><td>Amazon</td><td>300K</td><td>5K</td><td>$0.06/MTok</td><td>$0.24/MTok</td><td>Smoke tests, simple checks</td></tr>
       </tbody>
     </table>
     <div style="margin-top:10px; font-size:11px; color:#94a3b8;">
@@ -167,32 +188,30 @@
     </div>
   </div>
 
-  <!-- TIPS -->
-  <div class="note">
-    <div class="note-title">How to Reduce Costs</div>
+  <!-- NOTES -->
+  <div class="note" style="background:#faf5ff; border-color:#ddd6fe;">
+    <div class="note-title" style="color:#7c3aed;">Replay Mode = $0 LLM Cost</div>
     <p>
-      <strong>1. Use cheaper models for simple tests</strong> — Nova Lite for smoke tests, Haiku for retries.<br>
-      <strong>2. Batch API (50% off)</strong> — for non-urgent suite runs, use Bedrock batch processing.<br>
-      <strong>3. Prompt caching</strong> — system prompt + plan steps can be cached (90% cheaper on re-reads).<br>
-      <strong>4. Minimize DOM snapshots</strong> — only snapshot when verifying, not on every click.<br>
-      <strong>5. Headless replay mode</strong> — deterministic replay uses zero LLM tokens (just Playwright).
+      Once a test is automated and the replay script is saved, <strong>replaying it costs zero LLM tokens</strong>.
+      Only the first automation uses the LLM. Promoted tests run as deterministic Playwright replay — no AI.
     </p>
   </div>
 
-  <div class="note" style="background:#faf5ff; border-color:#ddd6fe;">
-    <div class="note-title" style="color:#7c3aed;">Important: Replay Mode = $0 LLM Cost</div>
+  <div class="note">
+    <div class="note-title">How to Reduce Costs</div>
     <p>
-      Once a test is automated and the replay script is saved, <strong>replaying it in QA/UAT/PROD costs zero LLM tokens</strong>.
-      Only the first automation in DEV uses the LLM. Promoted tests run as deterministic Playwright replay — no AI involved.
+      <strong>1. Cheaper models for simple tests</strong> — Nova Lite for smoke, Haiku for retries.<br>
+      <strong>2. Batch API = 50% off</strong> — for non-urgent suite runs.<br>
+      <strong>3. Prompt caching = 90% off</strong> — cached system prompts on repeat calls.<br>
+      <strong>4. Headless replay = $0</strong> — deterministic replay uses zero LLM tokens.
     </p>
   </div>
 
   <div class="footer">
     Bedrock LLM Cost Calculator &middot; Prompt2Test &middot;
-    <a href="https://platform.claude.com/docs/en/about-claude/pricing">Anthropic Pricing</a> &middot;
-    <a href="https://aws.amazon.com/bedrock/pricing/">AWS Bedrock Pricing</a>
+    <a href="https://platform.claude.com/docs/en/about-claude/pricing">Anthropic</a> &middot;
+    <a href="https://aws.amazon.com/bedrock/pricing/">AWS Bedrock</a>
   </div>
-
 </div>
 
 <script>
@@ -202,60 +221,45 @@ function syncSlider(inputId, sliderId) {
 function syncInput(sliderId, inputId) {
   document.getElementById(inputId).value = document.getElementById(sliderId).value;
 }
+function setTokens(input, output, btn) {
+  document.getElementById('inputTokens').value = input;
+  document.getElementById('inputSlider').value = input;
+  document.getElementById('outputTokens').value = output;
+  document.getElementById('outputSlider').value = output;
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  calculate();
+}
+function clearPresets() {
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+}
 
 const MODELS = [
-  // 1M Context Window models
-  { name: 'Claude Opus 4.6',   provider: 'Anthropic', input: 5.00,  output: 25.00, color: '#dc2626', bg: '#fef2f2', border: '#fecaca', ctx: '1M',   maxOut: '32K',  tier: '1M' },
-  { name: 'Claude Sonnet 4.6', provider: 'Anthropic', input: 3.00,  output: 15.00, color: '#9333ea', bg: '#faf5ff', border: '#d8b4fe', ctx: '1M',   maxOut: '16K',  tier: '1M' },
-  // 200K Context Window models
-  { name: 'Claude Sonnet 4.5', provider: 'Anthropic', input: 3.00,  output: 15.00, color: '#7c3aed', bg: '#faf5ff', border: '#ddd6fe', ctx: '200K', maxOut: '8K',   tier: '200K' },
-  { name: 'Claude Haiku 4.5',  provider: 'Anthropic', input: 1.00,  output: 5.00,  color: '#6d28d9', bg: '#faf5ff', border: '#ddd6fe', ctx: '200K', maxOut: '8K',   tier: '200K' },
-  { name: 'Claude Haiku 3',    provider: 'Anthropic', input: 0.25,  output: 1.25,  color: '#0d9488', bg: '#f0fdfa', border: '#99f6e4', ctx: '200K', maxOut: '4K',   tier: '200K' },
-  // 300K Context Window models
-  { name: 'Amazon Nova Pro',   provider: 'Amazon',    input: 0.80,  output: 3.20,  color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe', ctx: '300K', maxOut: '5K',   tier: '300K' },
-  { name: 'Amazon Nova Lite',  provider: 'Amazon',    input: 0.06,  output: 0.24,  color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0', ctx: '300K', maxOut: '5K',   tier: '300K' },
+  { name: 'Claude Opus 4.6',   provider: 'Anthropic', input: 5.00,  output: 25.00, color: '#dc2626', bg: '#fef2f2', border: '#fecaca', ctx: '1M',   maxOut: '32K' },
+  { name: 'Claude Sonnet 4.6', provider: 'Anthropic', input: 3.00,  output: 15.00, color: '#9333ea', bg: '#faf5ff', border: '#d8b4fe', ctx: '1M',   maxOut: '16K' },
+  { name: 'Claude Sonnet 4.5', provider: 'Anthropic', input: 3.00,  output: 15.00, color: '#7c3aed', bg: '#faf5ff', border: '#ddd6fe', ctx: '200K', maxOut: '8K' },
+  { name: 'Claude Haiku 4.5',  provider: 'Anthropic', input: 1.00,  output: 5.00,  color: '#6d28d9', bg: '#faf5ff', border: '#ddd6fe', ctx: '200K', maxOut: '8K' },
+  { name: 'Claude Haiku 3',    provider: 'Anthropic', input: 0.25,  output: 1.25,  color: '#0d9488', bg: '#f0fdfa', border: '#99f6e4', ctx: '200K', maxOut: '4K' },
+  { name: 'Amazon Nova Pro',   provider: 'Amazon',    input: 0.80,  output: 3.20,  color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe', ctx: '300K', maxOut: '5K' },
+  { name: 'Amazon Nova Lite',  provider: 'Amazon',    input: 0.06,  output: 0.24,  color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0', ctx: '300K', maxOut: '5K' },
 ];
 
-// Token profiles calibrated against real-world: 8-step medium test = ~130K tokens
-const PROFILES = {
-  simple:  { domSize: 1500, snapsPerStep: 1.5 },
-  medium:  { domSize: 3500, snapsPerStep: 2 },
-  complex: { domSize: 6000, snapsPerStep: 2.5 },
-};
-const API_PROFILES = {
-  no:    { apiSteps: 0, payloadTokens: 0 },
-  light: { apiSteps: 2, payloadTokens: 1600 },
-  heavy: { apiSteps: 4, payloadTokens: 4000 },
-};
-
 function calculate() {
-  const steps = +document.getElementById('steps').value || 8;
+  const inputTokens = +document.getElementById('inputTokens').value || 100000;
+  const outputTokens = +document.getElementById('outputTokens').value || 30000;
   const numTests = +document.getElementById('numTests').value || 50;
-  const complexity = document.getElementById('complexity').value;
-  const hasApi = document.getElementById('hasApi').value;
+  const tokensPerTest = inputTokens + outputTokens;
+  const totalTokens = tokensPerTest * numTests;
 
-  const profile = PROFILES[complexity];
-  const apiProfile = API_PROFILES[hasApi];
+  // Display
+  document.getElementById('total-tokens').textContent = (totalTokens / 1e6).toFixed(1) + 'M tokens';
+  document.getElementById('display-tokens-per-test').textContent = (inputTokens / 1000).toFixed(0) + 'K in + ' + (outputTokens / 1000).toFixed(0) + 'K out';
+  document.getElementById('display-num-tests').textContent = numTests.toLocaleString();
+  document.getElementById('bar-count').textContent = numTests;
 
-  // Token math (calibrated against real 130K observation)
-  const systemTokens = 1546;
-  const planTokens = steps * 90;
-  const domTokens = Math.ceil(steps * profile.snapsPerStep) * profile.domSize;
-  const apiTokens = apiProfile.apiSteps * apiProfile.payloadTokens;
-  const toolOverhead = steps * 80;
-  const avgTurnSize = (profile.domSize * profile.snapsPerStep) + 330;
-  const contextAccum = Math.floor(steps * (steps - 1) / 2 * avgTurnSize * 0.4);
-
-  const totalInput = systemTokens + planTokens + domTokens + apiTokens + toolOverhead + contextAccum;
-  const totalOutput = steps * 250;
-  const totalTokens = totalInput + totalOutput;
-
-  document.getElementById('tokens-per-test').textContent = Math.round(totalTokens / 1000) + 'K tokens';
-  document.getElementById('tests-per-month').textContent = numTests.toLocaleString();
-
-  // Calculate costs
+  // Calculate per model
   const results = MODELS.map(m => {
-    const costPerTest = (totalInput / 1e6) * m.input + (totalOutput / 1e6) * m.output;
+    const costPerTest = (inputTokens / 1e6) * m.input + (outputTokens / 1e6) * m.output;
     const totalCost = costPerTest * numTests;
     return { ...m, costPerTest, totalCost };
   });
@@ -268,21 +272,17 @@ function calculate() {
     const isCheapest = r.totalCost === cheapest;
     return `<div class="model-card${isCheapest ? ' highlight' : ''}" style="background:${r.bg}; border-color:${isCheapest ? '#16a34a' : r.border};">
       <div class="name" style="color:${r.color};">${r.name}</div>
-      <div class="provider">${r.provider}</div>
-      <div style="font-size:11px; font-weight:700; color:${r.color}; background:${r.bg}; border:1px solid ${r.border}; border-radius:6px; padding:2px 8px; display:inline-block; margin-bottom:4px;">${r.ctx} context</div>
-      <div style="font-size:9px; color:#94a3b8;">Max output: ${r.maxOut}</div>
-      <div class="price-test" style="color:${r.color};">$${r.costPerTest < 0.01 ? r.costPerTest.toFixed(3) : r.costPerTest.toFixed(2)}</div>
-      <div class="price-label">per test case</div>
-      <div class="price-month" style="color:${r.color}; margin-top:8px;">$${r.totalCost < 1 ? r.totalCost.toFixed(2) : r.totalCost.toFixed(0)}</div>
-      <div class="month-label">for ${numTests} test cases</div>
-      <div style="margin-top:6px; font-size:9px; color:#94a3b8;">$${r.input}/MTok in &middot; $${r.output}/MTok out</div>
-      ${isCheapest ? '<div style="margin-top:4px;"><span class="savings">Cheapest</span></div>' : ''}
-      ${r.totalCost === mostExpensive && results.length > 1 ? `<div style="margin-top:4px; font-size:10px; color:#94a3b8;">${Math.round(mostExpensive / cheapest)}x more than cheapest</div>` : ''}
+      <div class="sub">${r.provider} &middot; ${r.ctx} context &middot; ${r.maxOut} output</div>
+      <div class="per-test">$${r.costPerTest < 0.01 ? r.costPerTest.toFixed(4) : r.costPerTest.toFixed(3)} <span style="font-size:11px; color:#94a3b8;">per test</span></div>
+      <div class="big-price" style="color:${r.color};">$${r.totalCost < 1 ? r.totalCost.toFixed(2) : r.totalCost.toFixed(0)}</div>
+      <div class="big-label">for ${numTests} tests</div>
+      <div class="pricing">$${r.input}/MTok in &middot; $${r.output}/MTok out</div>
+      ${isCheapest ? '<div style="margin-top:6px;"><span class="savings">Cheapest</span></div>' : ''}
+      ${r.totalCost === mostExpensive ? `<div style="margin-top:4px; font-size:10px; color:#94a3b8;">${Math.round(mostExpensive / cheapest)}x vs cheapest</div>` : ''}
     </div>`;
   }).join('');
 
   // Bar chart
-  document.getElementById('bar-chart-count').textContent = numTests;
   document.getElementById('bar-chart').innerHTML = results.map(r => {
     const pct = mostExpensive > 0 ? (r.totalCost / mostExpensive) * 100 : 0;
     return `<div class="bar-row">
@@ -297,23 +297,21 @@ function calculate() {
   // Detail table
   document.getElementById('detail-table').innerHTML = `
     <thead>
-      <tr><th>Model</th><th>Context</th><th>Cost per Test</th><th>10 Tests</th><th>50 Tests</th><th>100 Tests</th><th>${numTests} Tests</th><th>vs Most Expensive</th></tr>
+      <tr><th>Model</th><th>Context</th><th>1 Test</th><th>10 Tests</th><th>50 Tests</th><th>100 Tests</th><th>500 Tests</th><th>1000 Tests</th></tr>
     </thead>
     <tbody>
-      ${results.map((r, i) => {
-        const savingsVsTop = results[0].totalCost > 0 ? Math.round((1 - r.totalCost / results[0].totalCost) * 100) : 0;
-        return `
+      ${results.map(r => `
         <tr${r.totalCost === cheapest ? ' style="background:#f0fdf4;"' : ''}>
           <td style="font-weight:700; color:${r.color};">${r.name}</td>
           <td style="font-size:11px;">${r.ctx}</td>
-          <td>$${r.costPerTest < 0.01 ? r.costPerTest.toFixed(4) : r.costPerTest.toFixed(3)}</td>
+          <td>$${r.costPerTest.toFixed(3)}</td>
           <td>$${(r.costPerTest * 10).toFixed(2)}</td>
           <td>$${(r.costPerTest * 50).toFixed(2)}</td>
-          <td>$${(r.costPerTest * 100).toFixed(2)}</td>
-          <td style="font-weight:700; color:${r.color};">$${r.totalCost.toFixed(2)}</td>
-          <td>${i === 0 ? '<span style="font-size:11px;color:#94a3b8;">most expensive</span>' : savingsVsTop > 0 ? `<span class="savings">${savingsVsTop}% cheaper</span>` : '—'}</td>
-        </tr>`;
-      }).join('')}
+          <td>$${(r.costPerTest * 100).toFixed(0)}</td>
+          <td>$${(r.costPerTest * 500).toFixed(0)}</td>
+          <td>$${(r.costPerTest * 1000).toFixed(0)}</td>
+        </tr>
+      `).join('')}
     </tbody>
   `;
 }
