@@ -243,25 +243,6 @@ const M = [
   { name:'Amazon Nova Pro',     prov:'Amazon',    ctx:300000,  maxOut:5120,   inP:0.80,  outP:3.20,  section:'AMAZON', color:'#2563eb' },
   { name:'Amazon Nova Lite',    prov:'Amazon',    ctx:300000,  maxOut:5120,   inP:0.06,  outP:0.24,  color:'#2563eb' },
   { name:'Amazon Nova Micro',   prov:'Amazon',    ctx:128000,  maxOut:5120,   inP:0.035, outP:0.14,  color:'#2563eb' },
-  // Meta
-  { name:'Llama 3.1 405B',      prov:'Meta',      ctx:128000,  maxOut:4096,   inP:5.32,  outP:16.00, section:'META', color:'#ea580c' },
-  { name:'Llama 3.1 70B',       prov:'Meta',      ctx:128000,  maxOut:4096,   inP:2.65,  outP:3.50,  color:'#ea580c' },
-  { name:'Llama 3.1 8B',        prov:'Meta',      ctx:128000,  maxOut:4096,   inP:0.30,  outP:0.60,  color:'#ea580c' },
-  { name:'Llama 3.2 90B',       prov:'Meta',      ctx:128000,  maxOut:4096,   inP:2.00,  outP:2.00,  color:'#ea580c' },
-  { name:'Llama 3.2 11B',       prov:'Meta',      ctx:128000,  maxOut:4096,   inP:0.35,  outP:0.35,  color:'#ea580c' },
-  { name:'Llama 3.2 1B',        prov:'Meta',      ctx:128000,  maxOut:4096,   inP:0.10,  outP:0.10,  color:'#ea580c' },
-  // Mistral
-  { name:'Mistral Large',       prov:'Mistral',   ctx:128000,  maxOut:8192,   inP:2.00,  outP:6.00,  section:'MISTRAL', color:'#dc2626' },
-  { name:'Mistral Small',       prov:'Mistral',   ctx:128000,  maxOut:8192,   inP:0.10,  outP:0.30,  color:'#dc2626' },
-  { name:'Pixtral Large',       prov:'Mistral',   ctx:128000,  maxOut:8192,   inP:2.00,  outP:6.00,  color:'#dc2626' },
-  // DeepSeek
-  { name:'DeepSeek R1',          prov:'DeepSeek',  ctx:128000,  maxOut:8192,   inP:1.35,  outP:5.40,  section:'DEEPSEEK', color:'#0d9488' },
-  // Cohere
-  { name:'Command R+',           prov:'Cohere',    ctx:128000,  maxOut:4096,   inP:2.50,  outP:10.00, section:'COHERE', color:'#a16207' },
-  { name:'Command R',            prov:'Cohere',    ctx:128000,  maxOut:4096,   inP:0.50,  outP:1.50,  color:'#a16207' },
-  // AI21
-  { name:'Jamba 1.5 Large',      prov:'AI21',      ctx:256000,  maxOut:4096,   inP:2.00,  outP:8.00,  section:'AI21 LABS', color:'#475569' },
-  { name:'Jamba 1.5 Mini',       prov:'AI21',      ctx:256000,  maxOut:4096,   inP:0.20,  outP:0.40,  color:'#475569' },
 ];
 
 function fk(n) { return n>=1000000?(n/1e6)+'M':(n/1000)+'K'; }
