@@ -98,14 +98,127 @@
     <div class="result-box" id="result-box"></div>
   </div>
 
+  <!-- SMART REPLAY COST -->
+  <div class="card">
+    <div class="card-title">Smart Replay Cost — LLM-Assisted Retry on Failure</div>
+    <p style="font-size:12px; color:#64748b; margin-bottom:12px;">
+      Deterministic replay costs $0 LLM tokens when all steps pass. Smart retry only calls the LLM when a step <strong>fails</strong>.
+      The LLM adapts HOW to interact (wait, new selector) but never changes WHAT is tested.
+    </p>
+
+    <!-- Retry tiers explanation -->
+    <table>
+      <thead>
+        <tr><th>Retry Tier</th><th>Context Sent to LLM</th><th>Avg Input</th><th>Avg Output</th><th>Total Tokens</th><th>Accuracy</th></tr>
+      </thead>
+      <tbody>
+        <tr style="background:#f0fdf4;">
+          <td style="font-weight:700; color:#16a34a;">Retry 1</td>
+          <td>Screenshot + error + failed step</td>
+          <td class="r">2,500</td><td class="r">300</td><td class="r bold">2,800</td>
+          <td><span style="color:#16a34a; font-weight:700;">~85% fix rate</span></td>
+        </tr>
+        <tr style="background:#eff6ff;">
+          <td style="font-weight:700; color:#2563eb;">Retry 2</td>
+          <td>Screenshot + DOM + error + previous 3 steps + Retry 1 analysis</td>
+          <td class="r">6,700</td><td class="r">400</td><td class="r bold">7,100</td>
+          <td><span style="color:#2563eb; font-weight:700;">~95% fix rate</span></td>
+        </tr>
+        <tr style="background:#fef2f2;">
+          <td style="font-weight:700; color:#dc2626;">Final Fail</td>
+          <td>Both retries failed → generate failure report + notification</td>
+          <td class="r">10,200</td><td class="r">1,200</td><td class="r bold">11,400</td>
+          <td><span style="color:#dc2626; font-weight:700;">Real bug → alert</span></td>
+        </tr>
+        <tr style="background:#faf5ff;">
+          <td style="font-weight:700; color:#7c3aed;">Weighted Average</td>
+          <td>60% fix on R1, 25% fix on R2, 15% real bug</td>
+          <td class="r bold">5,300</td><td class="r bold">535</td><td class="r bold" style="color:#7c3aed;">~5,900</td>
+          <td></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Smart replay calculator -->
+    <div style="height:1px; background:#e2e8f0; margin:20px 0;"></div>
+    <div class="card-title">Smart Replay Calculator</div>
+
+    <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:flex-end;">
+      <div>
+        <label style="display:block; font-size:13px; font-weight:600; margin-bottom:6px;">Model</label>
+        <select id="replayModel" onchange="calcReplay()" style="width:320px;"></select>
+      </div>
+      <div>
+        <label style="display:block; font-size:13px; font-weight:600; margin-bottom:6px;">Total Test Cases</label>
+        <input type="number" id="replayTests" value="50" min="1" max="100000" onchange="calcReplay()" oninput="calcReplay()" style="width:120px;">
+      </div>
+      <div>
+        <label style="display:block; font-size:13px; font-weight:600; margin-bottom:6px;">Failure Rate (%)</label>
+        <input type="number" id="failRate" value="5" min="0" max="100" step="1" onchange="calcReplay()" oninput="calcReplay()" style="width:100px;">
+      </div>
+    </div>
+
+    <div class="result-box" id="replay-result"></div>
+
+    <!-- Per-model smart replay cost table -->
+    <div style="margin-top:20px;">
+      <div class="card-title">Smart Replay Cost — All Models</div>
+      <p style="font-size:12px; color:#64748b; margin-bottom:10px;">Cost per failure (avg ~5,300 input + ~535 output tokens) across all models.</p>
+      <table id="replay-table">
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th class="r">Cost / Failure</th>
+            <th class="r">10 failures</th>
+            <th class="r">50 failures</th>
+            <th class="r">100 failures</th>
+            <th class="r">500 failures</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- COST COMPARISON: Automate vs Replay vs Smart Replay -->
+  <div class="card">
+    <div class="card-title">Cost Comparison — Three Modes</div>
+    <table>
+      <thead>
+        <tr><th>Mode</th><th>When Used</th><th>LLM Tokens</th><th>LLM Cost</th><th>ECS Cost</th></tr>
+      </thead>
+      <tbody>
+        <tr style="background:#fef2f2;">
+          <td style="font-weight:700; color:#dc2626;">Automate (first time)</td>
+          <td>DEV — AI generates + executes test</td>
+          <td>Full context (~50K-1M per test)</td>
+          <td style="font-weight:700;">$$$ (varies by model)</td>
+          <td>~$0.05</td>
+        </tr>
+        <tr style="background:#f0fdf4;">
+          <td style="font-weight:700; color:#16a34a;">Replay (deterministic)</td>
+          <td>QA/UAT/PROD — all steps pass</td>
+          <td style="font-weight:700; color:#16a34a;">0 tokens</td>
+          <td style="font-weight:700; color:#16a34a;">$0.00</td>
+          <td>~$0.05</td>
+        </tr>
+        <tr style="background:#eff6ff;">
+          <td style="font-weight:700; color:#2563eb;">Smart Replay (on failure)</td>
+          <td>Any env — LLM called only when a step fails</td>
+          <td>~5,900 tokens per failure</td>
+          <td style="font-weight:700;">$0.02-0.06 per failure</td>
+          <td>~$0.05</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
   <!-- NOTES -->
   <div class="note">
     <p>
       <strong>How it works:</strong> Each test case runs as an agent loop — multiple LLM calls that accumulate context.
       The total input tokens is the sum across all calls, which can approach the context window limit for complex tests.
-      Output tokens are always much smaller. <strong>You pay only for tokens consumed, not time.</strong><br><br>
-      <strong>Replay mode = $0 LLM cost.</strong> Once automated, replaying a test in QA/UAT/PROD uses zero LLM tokens.
-      Only the first automation in DEV costs money.
+      Output tokens are always much smaller. <strong>You pay only for tokens consumed, not time.</strong>
     </p>
   </div>
 
@@ -237,9 +350,98 @@ function calc() {
   `;
 }
 
+// Smart Replay
+const RETRY_INPUT = 5300;
+const RETRY_OUTPUT = 535;
+
+function buildReplaySelect() {
+  const sel = document.getElementById('replayModel');
+  sel.innerHTML = M.map((m,i) => {
+    const costPerFail = (RETRY_INPUT / 1e6) * m.inP + (RETRY_OUTPUT / 1e6) * m.outP;
+    return `<option value="${i}">${m.name} — $${$(costPerFail)}/failure</option>`;
+  }).join('');
+  sel.value = '2';
+}
+
+function buildReplayTable() {
+  const tbody = document.querySelector('#replay-table tbody');
+  let html = '';
+  M.forEach(m => {
+    if (m.section) {
+      const bgMap = {ANTHROPIC:'#faf5ff',AMAZON:'#eff6ff',META:'#fff7ed',MISTRAL:'#fef2f2',DEEPSEEK:'#f0fdfa',COHERE:'#fefce8','AI21 LABS':'#f1f5f9'};
+      html += `<tr class="section-row"><td colspan="6" style="background:${bgMap[m.section]||'#f8fafc'}; color:${m.color};">${m.section}</td></tr>`;
+    }
+    const cpf = (RETRY_INPUT / 1e6) * m.inP + (RETRY_OUTPUT / 1e6) * m.outP;
+    html += `<tr>
+      <td style="font-weight:600; color:${m.color};">${m.name}</td>
+      <td class="r bold" style="color:${m.color};">$${$(cpf)}</td>
+      <td class="r">$${$(cpf * 10)}</td>
+      <td class="r">$${$(cpf * 50)}</td>
+      <td class="r">$${$(cpf * 100)}</td>
+      <td class="r">$${$(cpf * 500)}</td>
+    </tr>`;
+  });
+  tbody.innerHTML = html;
+}
+
+function calcReplay() {
+  const m = M[+document.getElementById('replayModel').value];
+  const tests = +document.getElementById('replayTests').value || 50;
+  const failPct = +document.getElementById('failRate').value || 5;
+
+  const failures = Math.ceil(tests * failPct / 100);
+  const fixedR1 = Math.round(failures * 0.60);
+  const fixedR2 = Math.round(failures * 0.25);
+  const realBugs = failures - fixedR1 - fixedR2;
+
+  const costPerFail = (RETRY_INPUT / 1e6) * m.inP + (RETRY_OUTPUT / 1e6) * m.outP;
+  const totalLLMCost = failures * costPerFail;
+  const ecsCost = tests * 0.05;
+  const totalCost = totalLLMCost + ecsCost;
+
+  document.getElementById('replay-result').innerHTML = `
+    <div class="result-item">
+      <div class="label">Model</div>
+      <div class="value" style="font-size:14px; color:${m.color};">${m.name}</div>
+    </div>
+    <div class="divider"></div>
+    <div class="result-item">
+      <div class="label">${tests} tests × ${failPct}% fail</div>
+      <div class="value" style="font-size:18px;">${failures} failures</div>
+    </div>
+    <div class="divider"></div>
+    <div class="result-item">
+      <div class="label">Breakdown</div>
+      <div style="font-size:12px; color:#475569; text-align:left;">
+        <span style="color:#16a34a;">&#9679;</span> ${fixedR1} fixed on Retry 1<br>
+        <span style="color:#2563eb;">&#9679;</span> ${fixedR2} fixed on Retry 2<br>
+        <span style="color:#dc2626;">&#9679;</span> ${realBugs} real bugs → alert
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="result-item">
+      <div class="label">LLM cost (${failures} failures × $${$(costPerFail)})</div>
+      <div class="value" style="color:${m.color};">$${$(totalLLMCost)}</div>
+    </div>
+    <div class="divider"></div>
+    <div class="result-item">
+      <div class="label">ECS cost (${tests} tests × $0.05)</div>
+      <div class="value">$${$(ecsCost)}</div>
+    </div>
+    <div class="divider"></div>
+    <div class="result-item">
+      <div class="label">Total</div>
+      <div class="value" style="font-size:26px; color:${m.color};">$${$(totalCost)}</div>
+    </div>
+  `;
+}
+
 buildTable();
 buildSelect();
 calc();
+buildReplaySelect();
+buildReplayTable();
+calcReplay();
 </script>
 </body>
 </html>
