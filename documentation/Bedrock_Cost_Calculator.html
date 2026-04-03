@@ -30,7 +30,7 @@
   .slider-row .slider-min, .slider-row .slider-max { font-size: 10px; color: #94a3b8; }
 
   /* Model cards */
-  .model-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 20px; }
+  .model-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
   .model-card { border-radius: 12px; padding: 18px 14px; text-align: center; border: 2px solid #e2e8f0; transition: all 0.2s; }
   .model-card .name { font-size: 12px; font-weight: 700; margin-bottom: 2px; }
   .model-card .provider { font-size: 10px; color: #94a3b8; margin-bottom: 8px; }
@@ -156,14 +156,19 @@
     <div class="card-title">Model Specifications</div>
     <table class="tbl">
       <thead>
-        <tr><th>Model</th><th>Provider</th><th>Context Window</th><th>Input Cost</th><th>Output Cost</th><th>Best For</th></tr>
+        <tr><th>Model</th><th>Provider</th><th>Context Window</th><th>Max Output</th><th>Input Cost</th><th>Output Cost</th><th>Best For</th></tr>
       </thead>
       <tbody>
-        <tr><td style="font-weight:700; color:#7c3aed;">Claude Sonnet 4.5</td><td>Anthropic</td><td>200K tokens</td><td>$3.00 / MTok</td><td>$15.00 / MTok</td><td>Complex automation, multi-step reasoning</td></tr>
-        <tr><td style="font-weight:700; color:#6d28d9;">Claude Haiku 4.5</td><td>Anthropic</td><td>200K tokens</td><td>$1.00 / MTok</td><td>$5.00 / MTok</td><td>Smart retry, moderate complexity</td></tr>
-        <tr><td style="font-weight:700; color:#0d9488;">Claude Haiku 3</td><td>Anthropic</td><td>200K tokens</td><td>$0.25 / MTok</td><td>$1.25 / MTok</td><td>Simple analysis, cheapest Claude</td></tr>
-        <tr><td style="font-weight:700; color:#2563eb;">Amazon Nova Pro</td><td>Amazon</td><td>300K tokens</td><td>$0.80 / MTok</td><td>$3.20 / MTok</td><td>Balanced cost/performance</td></tr>
-        <tr><td style="font-weight:700; color:#16a34a;">Amazon Nova Lite</td><td>Amazon</td><td>300K tokens</td><td>$0.06 / MTok</td><td>$0.24 / MTok</td><td>Smoke tests, simple verification</td></tr>
+        <tr style="background:#fef2f2;"><td colspan="7" style="font-weight:700; font-size:11px; color:#dc2626; text-transform:uppercase; letter-spacing:1px;">1M Context Window</td></tr>
+        <tr><td style="font-weight:700; color:#dc2626;">Claude Opus 4.6</td><td>Anthropic</td><td style="font-weight:700;">1M tokens</td><td>32K</td><td>$5.00 / MTok</td><td>$25.00 / MTok</td><td>Most capable, very long context tasks</td></tr>
+        <tr><td style="font-weight:700; color:#9333ea;">Claude Sonnet 4.6</td><td>Anthropic</td><td style="font-weight:700;">1M tokens</td><td>16K</td><td>$3.00 / MTok</td><td>$15.00 / MTok</td><td>Best balance of intelligence + cost at 1M</td></tr>
+        <tr style="background:#faf5ff;"><td colspan="7" style="font-weight:700; font-size:11px; color:#7c3aed; text-transform:uppercase; letter-spacing:1px;">200K Context Window</td></tr>
+        <tr><td style="font-weight:700; color:#7c3aed;">Claude Sonnet 4.5</td><td>Anthropic</td><td>200K tokens</td><td>8K</td><td>$3.00 / MTok</td><td>$15.00 / MTok</td><td>Complex automation, multi-step reasoning</td></tr>
+        <tr><td style="font-weight:700; color:#6d28d9;">Claude Haiku 4.5</td><td>Anthropic</td><td>200K tokens</td><td>8K</td><td>$1.00 / MTok</td><td>$5.00 / MTok</td><td>Smart retry, moderate complexity</td></tr>
+        <tr><td style="font-weight:700; color:#0d9488;">Claude Haiku 3</td><td>Anthropic</td><td>200K tokens</td><td>4K</td><td>$0.25 / MTok</td><td>$1.25 / MTok</td><td>Simple analysis, cheapest Claude</td></tr>
+        <tr style="background:#eff6ff;"><td colspan="7" style="font-weight:700; font-size:11px; color:#2563eb; text-transform:uppercase; letter-spacing:1px;">300K Context Window</td></tr>
+        <tr><td style="font-weight:700; color:#2563eb;">Amazon Nova Pro</td><td>Amazon</td><td>300K tokens</td><td>5K</td><td>$0.80 / MTok</td><td>$3.20 / MTok</td><td>Balanced cost/performance</td></tr>
+        <tr><td style="font-weight:700; color:#16a34a;">Amazon Nova Lite</td><td>Amazon</td><td>300K tokens</td><td>5K</td><td>$0.06 / MTok</td><td>$0.24 / MTok</td><td>Smoke tests, simple verification</td></tr>
       </tbody>
     </table>
     <div style="margin-top:10px; font-size:11px; color:#94a3b8;">
@@ -209,11 +214,16 @@ function syncInput(sliderId, inputId) {
 }
 
 const MODELS = [
-  { name: 'Claude Sonnet 4.5', provider: 'Anthropic', input: 3.00,  output: 15.00, color: '#7c3aed', bg: '#faf5ff', border: '#ddd6fe', ctx: '200K' },
-  { name: 'Claude Haiku 4.5',  provider: 'Anthropic', input: 1.00,  output: 5.00,  color: '#6d28d9', bg: '#faf5ff', border: '#ddd6fe', ctx: '200K' },
-  { name: 'Claude Haiku 3',    provider: 'Anthropic', input: 0.25,  output: 1.25,  color: '#0d9488', bg: '#f0fdfa', border: '#99f6e4', ctx: '200K' },
-  { name: 'Amazon Nova Pro',   provider: 'Amazon',    input: 0.80,  output: 3.20,  color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe', ctx: '300K' },
-  { name: 'Amazon Nova Lite',  provider: 'Amazon',    input: 0.06,  output: 0.24,  color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0', ctx: '300K' },
+  // 1M Context Window models
+  { name: 'Claude Opus 4.6',   provider: 'Anthropic', input: 5.00,  output: 25.00, color: '#dc2626', bg: '#fef2f2', border: '#fecaca', ctx: '1M',   maxOut: '32K',  tier: '1M' },
+  { name: 'Claude Sonnet 4.6', provider: 'Anthropic', input: 3.00,  output: 15.00, color: '#9333ea', bg: '#faf5ff', border: '#d8b4fe', ctx: '1M',   maxOut: '16K',  tier: '1M' },
+  // 200K Context Window models
+  { name: 'Claude Sonnet 4.5', provider: 'Anthropic', input: 3.00,  output: 15.00, color: '#7c3aed', bg: '#faf5ff', border: '#ddd6fe', ctx: '200K', maxOut: '8K',   tier: '200K' },
+  { name: 'Claude Haiku 4.5',  provider: 'Anthropic', input: 1.00,  output: 5.00,  color: '#6d28d9', bg: '#faf5ff', border: '#ddd6fe', ctx: '200K', maxOut: '8K',   tier: '200K' },
+  { name: 'Claude Haiku 3',    provider: 'Anthropic', input: 0.25,  output: 1.25,  color: '#0d9488', bg: '#f0fdfa', border: '#99f6e4', ctx: '200K', maxOut: '4K',   tier: '200K' },
+  // 300K Context Window models
+  { name: 'Amazon Nova Pro',   provider: 'Amazon',    input: 0.80,  output: 3.20,  color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe', ctx: '300K', maxOut: '5K',   tier: '300K' },
+  { name: 'Amazon Nova Lite',  provider: 'Amazon',    input: 0.06,  output: 0.24,  color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0', ctx: '300K', maxOut: '5K',   tier: '300K' },
 ];
 
 // Token profiles calibrated against real-world: 8-step medium test = ~130K tokens
@@ -272,9 +282,12 @@ function calculate() {
     return `<div class="model-card${isCheapest ? ' highlight' : ''}" style="background:${r.bg}; border-color:${isCheapest ? '#16a34a' : r.border};">
       <div class="name" style="color:${r.color};">${r.name}</div>
       <div class="provider">${r.provider}</div>
-      <div style="font-size:11px; font-weight:700; color:${r.color}; background:${r.bg}; border:1px solid ${r.border}; border-radius:6px; padding:2px 8px; display:inline-block; margin-bottom:6px;">${r.ctx} context</div>
+      <div style="font-size:11px; font-weight:700; color:${r.color}; background:${r.bg}; border:1px solid ${r.border}; border-radius:6px; padding:2px 8px; display:inline-block; margin-bottom:4px;">${r.ctx} context</div>
+      <div style="font-size:9px; color:#94a3b8;">Max output: ${r.maxOut}</div>
       <div class="price-test" style="color:${r.color};">$${r.costPerTest < 0.01 ? r.costPerTest.toFixed(3) : r.costPerTest.toFixed(2)}</div>
       <div class="price-label">per test</div>
+      <div style="margin-top:6px; font-size:12px; color:#475569;">$${(r.costPerTest * testsPerDay).toFixed(2)}<span style="font-size:10px; color:#94a3b8;"> /day</span></div>
+      <div style="font-size:12px; color:#475569;">$${(r.costPerTest * testsPerDay * 5).toFixed(2)}<span style="font-size:10px; color:#94a3b8;"> /week</span></div>
       <div class="price-month" style="color:${r.color};">$${r.monthly < 1 ? r.monthly.toFixed(2) : r.monthly.toFixed(0)}</div>
       <div class="month-label">/ month</div>
       <div style="margin-top:6px; font-size:9px; color:#94a3b8;">$${r.input}/MTok in &middot; $${r.output}/MTok out</div>
@@ -296,22 +309,29 @@ function calculate() {
     </div>`;
   }).join('');
 
-  // Detail table
+  // Detail table with daily, weekly, monthly
+  const weekly = (r) => r.costPerTest * testsPerDay * 5;
   document.getElementById('detail-table').innerHTML = `
     <thead>
-      <tr><th>Model</th><th>Cost / Test</th><th>Daily (${testsPerDay})</th><th>Monthly (${testsPerMonth})</th><th>Yearly</th><th>vs Sonnet Savings</th></tr>
+      <tr><th>Model</th><th>Context</th><th>Per Test</th><th>Per Day</th><th>Per Week</th><th>Per Month</th><th>Per Year</th><th>vs Most Expensive</th></tr>
     </thead>
     <tbody>
-      ${results.map((r, i) => `
+      ${results.map((r, i) => {
+        const daily = r.costPerTest * testsPerDay;
+        const week = daily * 5;
+        const savingsVsTop = results[0].monthly > 0 ? Math.round((1 - r.monthly / results[0].monthly) * 100) : 0;
+        return `
         <tr${r.monthly === cheapest ? ' style="background:#f0fdf4;"' : ''}>
           <td style="font-weight:700; color:${r.color};">${r.name}</td>
+          <td style="font-size:11px;">${r.ctx}</td>
           <td>$${r.costPerTest < 0.01 ? r.costPerTest.toFixed(4) : r.costPerTest.toFixed(3)}</td>
-          <td>$${(r.costPerTest * testsPerDay).toFixed(2)}</td>
+          <td>$${daily.toFixed(2)}</td>
+          <td>$${week.toFixed(2)}</td>
           <td style="font-weight:700;">$${r.monthly.toFixed(2)}</td>
           <td>$${r.yearly.toFixed(0)}</td>
-          <td>${i === 0 ? '—' : `<span class="savings">${Math.round((1 - r.monthly / results[0].monthly) * 100)}% cheaper</span>`}</td>
-        </tr>
-      `).join('')}
+          <td>${i === 0 ? '<span style="font-size:11px;color:#94a3b8;">baseline</span>' : savingsVsTop > 0 ? `<span class="savings">${savingsVsTop}% cheaper</span>` : '—'}</td>
+        </tr>`;
+      }).join('')}
     </tbody>
   `;
 }
