@@ -70,35 +70,44 @@
 
   <!-- INPUTS -->
   <div class="card">
-    <div class="card-title">1. Tokens per test case</div>
-    <div class="hint" style="margin-bottom:12px;">Input tokens = what the LLM reads (DOM, plan, history). Output tokens = what the LLM writes (reasoning, tool calls). Check your Bedrock usage for actual numbers.</div>
+    <div class="card-title">1. Select Model &amp; Token Usage</div>
+    <div class="hint" style="margin-bottom:12px;">Pick a model, set input/output tokens. Cost = tokens &times; price. No time-based charges — you pay only for tokens.</div>
 
-    <div class="preset-row">
-      <button class="preset-btn" onclick="setTokens(40000, 10000, this)">50K total<br><span style="font-size:10px; font-weight:400;">Simple: login + verify</span></button>
-      <button class="preset-btn active" onclick="setTokens(100000, 30000, this)">130K total<br><span style="font-size:10px; font-weight:400;">Medium: dashboard + filters</span></button>
-      <button class="preset-btn" onclick="setTokens(190000, 60000, this)">250K total<br><span style="font-size:10px; font-weight:400;">Complex: APIs + 10 screens</span></button>
-      <button class="preset-btn" onclick="setTokens(380000, 120000, this)">500K total<br><span style="font-size:10px; font-weight:400;">Very complex: full E2E</span></button>
+    <div class="input-row">
+      <div class="input-box" style="min-width:300px;">
+        <label>Model</label>
+        <select id="modelSelect" onchange="onModelChange()" style="width:100%; padding:10px 14px; background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:10px; font-size:14px; font-weight:600; color:#0f172a; outline:none;">
+        </select>
+        <div id="modelInfo" style="margin-top:6px; font-size:12px; color:#64748b;"></div>
+      </div>
+    </div>
+
+    <div class="preset-row" style="margin-top:8px;">
+      <button class="preset-btn" onclick="setTokens(40000, 10000, this)">50K total<br><span style="font-size:10px; font-weight:400;">Simple test</span></button>
+      <button class="preset-btn active" onclick="setTokens(100000, 30000, this)">130K total<br><span style="font-size:10px; font-weight:400;">Medium test</span></button>
+      <button class="preset-btn" onclick="setTokens(190000, 60000, this)">250K total<br><span style="font-size:10px; font-weight:400;">Complex test</span></button>
+      <button class="preset-btn" onclick="setMaxTokens(this)">MAX<br><span style="font-size:10px; font-weight:400;">Full context</span></button>
     </div>
 
     <div class="input-row">
       <div class="input-box">
-        <label>Input tokens per test</label>
-        <div class="hint">What the LLM reads (DOM snapshots, plan, conversation)</div>
+        <label>Input tokens</label>
+        <div class="hint">What the LLM reads (DOM, plan, history)</div>
         <input type="number" id="inputTokens" value="100000" min="1000" max="1000000" step="1000" oninput="syncSlider('inputTokens','inputSlider'); clearPresets(); calculate()">
         <div class="slider-row">
           <span class="s-label">1K</span>
           <input type="range" id="inputSlider" min="1000" max="1000000" step="1000" value="100000" oninput="syncInput('inputSlider','inputTokens'); clearPresets(); calculate()">
-          <span class="s-label">1M</span>
+          <span class="s-label" id="inputMaxLabel">1M</span>
         </div>
       </div>
       <div class="input-box">
-        <label>Output tokens per test</label>
-        <div class="hint">What the LLM writes (reasoning, tool calls, results)</div>
+        <label>Output tokens</label>
+        <div class="hint">What the LLM writes (reasoning, tool calls)</div>
         <input type="number" id="outputTokens" value="30000" min="500" max="200000" step="500" oninput="syncSlider('outputTokens','outputSlider'); clearPresets(); calculate()">
         <div class="slider-row">
           <span class="s-label">500</span>
           <input type="range" id="outputSlider" min="500" max="200000" step="500" value="30000" oninput="syncInput('outputSlider','outputTokens'); clearPresets(); calculate()">
-          <span class="s-label">200K</span>
+          <span class="s-label" id="outputMaxLabel">200K</span>
         </div>
       </div>
     </div>
@@ -118,20 +127,25 @@
       </div>
     </div>
 
-    <div style="display:flex; align-items:center; gap:16px; padding:14px 18px; background:#faf5ff; border:1px solid #ddd6fe; border-radius:10px; margin-top:8px;">
+    <div style="display:flex; align-items:center; gap:16px; padding:14px 18px; background:#faf5ff; border:1px solid #ddd6fe; border-radius:10px; margin-top:8px; flex-wrap:wrap;">
       <div>
-        <div style="font-size:12px; color:#64748b;">Total tokens</div>
-        <div id="total-tokens" style="font-size:20px; font-weight:900; color:#7c3aed;"></div>
+        <div style="font-size:12px; color:#64748b;">Tokens per test</div>
+        <div id="display-tokens-per-test" style="font-size:18px; font-weight:900; color:#0f172a;"></div>
       </div>
-      <div style="width:1px; height:30px; background:#e2e8f0;"></div>
-      <div>
-        <div style="font-size:12px; color:#64748b;">Per test (in + out)</div>
-        <div id="display-tokens-per-test" style="font-size:20px; font-weight:900; color:#0f172a;"></div>
-      </div>
-      <div style="width:1px; height:30px; background:#e2e8f0;"></div>
+      <div style="width:1px; height:36px; background:#e2e8f0;"></div>
       <div>
         <div style="font-size:12px; color:#64748b;">Test cases</div>
-        <div id="display-num-tests" style="font-size:20px; font-weight:900; color:#0f172a;"></div>
+        <div id="display-num-tests" style="font-size:18px; font-weight:900; color:#0f172a;"></div>
+      </div>
+      <div style="width:1px; height:36px; background:#e2e8f0;"></div>
+      <div>
+        <div style="font-size:12px; color:#64748b;">Total tokens</div>
+        <div id="total-tokens" style="font-size:18px; font-weight:900; color:#7c3aed;"></div>
+      </div>
+      <div style="width:1px; height:36px; background:#e2e8f0;"></div>
+      <div>
+        <div style="font-size:12px; color:#64748b;" id="selected-model-label">Cost (selected model)</div>
+        <div id="selected-model-cost" style="font-size:24px; font-weight:900;"></div>
       </div>
     </div>
   </div>
@@ -316,14 +330,66 @@ function clearPresets() {
 }
 
 const MODELS = [
-  { name: 'Claude Opus 4.6',   provider: 'Anthropic', input: 5.00,  output: 25.00, color: '#dc2626', bg: '#fef2f2', border: '#fecaca', ctx: '1M',   maxOut: '32K' },
-  { name: 'Claude Sonnet 4.6', provider: 'Anthropic', input: 3.00,  output: 15.00, color: '#9333ea', bg: '#faf5ff', border: '#d8b4fe', ctx: '1M',   maxOut: '16K' },
-  { name: 'Claude Sonnet 4.5', provider: 'Anthropic', input: 3.00,  output: 15.00, color: '#7c3aed', bg: '#faf5ff', border: '#ddd6fe', ctx: '200K', maxOut: '8K' },
-  { name: 'Claude Haiku 4.5',  provider: 'Anthropic', input: 1.00,  output: 5.00,  color: '#6d28d9', bg: '#faf5ff', border: '#ddd6fe', ctx: '200K', maxOut: '8K' },
-  { name: 'Claude Haiku 3',    provider: 'Anthropic', input: 0.25,  output: 1.25,  color: '#0d9488', bg: '#f0fdfa', border: '#99f6e4', ctx: '200K', maxOut: '4K' },
-  { name: 'Amazon Nova Pro',   provider: 'Amazon',    input: 0.80,  output: 3.20,  color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe', ctx: '300K', maxOut: '5K' },
-  { name: 'Amazon Nova Lite',  provider: 'Amazon',    input: 0.06,  output: 0.24,  color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0', ctx: '300K', maxOut: '5K' },
+  { name: 'Claude Opus 4.6',   provider: 'Anthropic', input: 5.00,  output: 25.00, color: '#dc2626', bg: '#fef2f2', border: '#fecaca', ctx: 1000000, maxOut: 32768 },
+  { name: 'Claude Sonnet 4.6', provider: 'Anthropic', input: 3.00,  output: 15.00, color: '#9333ea', bg: '#faf5ff', border: '#d8b4fe', ctx: 1000000, maxOut: 16384 },
+  { name: 'Claude Sonnet 4.5', provider: 'Anthropic', input: 3.00,  output: 15.00, color: '#7c3aed', bg: '#faf5ff', border: '#ddd6fe', ctx: 200000,  maxOut: 8192 },
+  { name: 'Claude Haiku 4.5',  provider: 'Anthropic', input: 1.00,  output: 5.00,  color: '#6d28d9', bg: '#faf5ff', border: '#ddd6fe', ctx: 200000,  maxOut: 8192 },
+  { name: 'Claude Haiku 3',    provider: 'Anthropic', input: 0.25,  output: 1.25,  color: '#0d9488', bg: '#f0fdfa', border: '#99f6e4', ctx: 200000,  maxOut: 4096 },
+  { name: 'Amazon Nova Pro',   provider: 'Amazon',    input: 0.80,  output: 3.20,  color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe', ctx: 300000,  maxOut: 5120 },
+  { name: 'Amazon Nova Lite',  provider: 'Amazon',    input: 0.06,  output: 0.24,  color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0', ctx: 300000,  maxOut: 5120 },
 ];
+
+function fmtK(n) { return n >= 1000000 ? (n/1000000).toFixed(0) + 'M' : (n/1000).toFixed(0) + 'K'; }
+
+// Populate model dropdown
+function initModelSelect() {
+  const sel = document.getElementById('modelSelect');
+  sel.innerHTML = MODELS.map((m, i) =>
+    `<option value="${i}" style="color:${m.color};">${m.name} — ${m.provider} — ${fmtK(m.ctx)} context</option>`
+  ).join('');
+  sel.value = '2'; // default: Sonnet 4.5
+  onModelChange();
+}
+
+function getSelectedModel() {
+  return MODELS[+document.getElementById('modelSelect').value];
+}
+
+function onModelChange() {
+  const m = getSelectedModel();
+  const maxInput = m.ctx - m.maxOut;
+  // Update slider limits
+  document.getElementById('inputSlider').max = maxInput;
+  document.getElementById('inputTokens').max = maxInput;
+  document.getElementById('inputMaxLabel').textContent = fmtK(maxInput);
+  document.getElementById('outputSlider').max = m.maxOut;
+  document.getElementById('outputTokens').max = m.maxOut;
+  document.getElementById('outputMaxLabel').textContent = fmtK(m.maxOut);
+  // Clamp current values
+  const curInput = +document.getElementById('inputTokens').value;
+  const curOutput = +document.getElementById('outputTokens').value;
+  if (curInput > maxInput) { document.getElementById('inputTokens').value = maxInput; document.getElementById('inputSlider').value = maxInput; }
+  if (curOutput > m.maxOut) { document.getElementById('outputTokens').value = m.maxOut; document.getElementById('outputSlider').value = m.maxOut; }
+  // Model info
+  document.getElementById('modelInfo').innerHTML =
+    `<span style="color:${m.color}; font-weight:700;">${m.name}</span> — ` +
+    `Context: <strong>${fmtK(m.ctx)}</strong> &middot; Max output: <strong>${fmtK(m.maxOut)}</strong> &middot; ` +
+    `Input: <strong>$${m.input}/MTok</strong> &middot; Output: <strong>$${m.output}/MTok</strong>`;
+  clearPresets();
+  calculate();
+}
+
+function setMaxTokens(btn) {
+  const m = getSelectedModel();
+  const maxInput = m.ctx - m.maxOut;
+  document.getElementById('inputTokens').value = maxInput;
+  document.getElementById('inputSlider').value = maxInput;
+  document.getElementById('outputTokens').value = m.maxOut;
+  document.getElementById('outputSlider').value = m.maxOut;
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  calculate();
+}
 
 function calculate() {
   const inputTokens = +document.getElementById('inputTokens').value || 100000;
@@ -333,9 +399,15 @@ function calculate() {
   const totalTokens = tokensPerTest * numTests;
 
   // Display
+  const sel = getSelectedModel();
+  const selectedCostPerTest = (inputTokens / 1e6) * sel.input + (outputTokens / 1e6) * sel.output;
+  const selectedTotal = selectedCostPerTest * numTests;
+
   document.getElementById('total-tokens').textContent = (totalTokens / 1e6).toFixed(1) + 'M tokens';
-  document.getElementById('display-tokens-per-test').textContent = (inputTokens / 1000).toFixed(0) + 'K in + ' + (outputTokens / 1000).toFixed(0) + 'K out';
+  document.getElementById('display-tokens-per-test').textContent = fmtK(inputTokens) + ' in + ' + fmtK(outputTokens) + ' out';
   document.getElementById('display-num-tests').textContent = numTests.toLocaleString();
+  document.getElementById('selected-model-label').textContent = sel.name;
+  document.getElementById('selected-model-cost').innerHTML = `<span style="color:${sel.color};">$${selectedTotal < 1 ? selectedTotal.toFixed(3) : selectedTotal.toFixed(2)}</span> <span style="font-size:12px; color:#94a3b8; font-weight:400;">($${selectedCostPerTest < 0.01 ? selectedCostPerTest.toFixed(4) : selectedCostPerTest.toFixed(3)}/test)</span>`;
   document.getElementById('bar-count').textContent = numTests;
 
   // Calculate per model
@@ -370,7 +442,7 @@ function calculate() {
         return `
         <tr style="${isCheapest ? 'background:#f0fdf4;' : ''}">
           <td style="font-weight:700; color:${r.color};">${r.name}<br><span style="font-size:10px; font-weight:400; color:#94a3b8;">${r.provider}</span></td>
-          <td><span style="font-size:12px; font-weight:600;">${r.ctx}</span></td>
+          <td><span style="font-size:12px; font-weight:600;">${fmtK(r.ctx)}</span></td>
           <td style="text-align:center;">$${r.input.toFixed(2)}</td>
           <td style="text-align:center;">$${r.output.toFixed(2)}</td>
           <td style="text-align:right; font-weight:700; font-size:15px; color:${r.color};">$${fmt(r.costPerTest)}</td>
@@ -394,7 +466,7 @@ function calculate() {
   }).join('');
 }
 
-calculate();
+initModelSelect();
 </script>
 </body>
 </html>
