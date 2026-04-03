@@ -3,60 +3,45 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bedrock Cost Calculator — Prompt2Test</title>
+<title>Bedrock Cost Calculator</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Segoe UI', -apple-system, sans-serif; background: #f1f5f9; color: #1e293b; font-size: 14px; }
-  .page { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+  .page { max-width: 1200px; margin: 0 auto; padding: 40px 24px; }
 
-  .hero { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%); border-radius: 16px; padding: 36px 40px; margin-bottom: 28px; }
-  .hero h1 { font-size: 26px; font-weight: 900; color: #fff; margin-bottom: 6px; }
-  .hero p { font-size: 14px; color: #94a3b8; line-height: 1.6; }
+  .hero { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%); border-radius: 16px; padding: 32px 36px; margin-bottom: 24px; }
+  .hero h1 { font-size: 24px; font-weight: 900; color: #fff; margin-bottom: 4px; }
+  .hero p { font-size: 13px; color: #94a3b8; }
 
   .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 24px; margin-bottom: 20px; }
-  .card-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #64748b; margin-bottom: 16px; }
+  .card-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #64748b; margin-bottom: 14px; }
 
-  .input-row { display: flex; gap: 20px; margin-bottom: 16px; flex-wrap: wrap; }
-  .input-box { flex: 1; min-width: 200px; }
-  .input-box label { display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px; }
-  .input-box .hint { font-size: 11px; color: #94a3b8; margin-bottom: 6px; }
-  .input-box input[type=number] {
-    width: 100%; padding: 10px 14px; background: #f8fafc; border: 1.5px solid #e2e8f0;
-    border-radius: 10px; font-size: 16px; font-weight: 700; color: #0f172a; outline: none; font-family: inherit;
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: #f8fafc; font-weight: 700; color: #475569; text-align: left; padding: 10px 12px; border-bottom: 2px solid #e2e8f0; }
+  td { padding: 9px 12px; border-bottom: 1px solid #f1f5f9; }
+  tr:hover td { background: #fafbff; }
+  .section-row td { font-weight: 700; font-size: 11px; letter-spacing: 1px; padding: 8px 12px; }
+  .r { text-align: right; }
+  .bold { font-weight: 700; }
+
+  select, input[type=number] {
+    padding: 10px 14px; background: #f8fafc; border: 1.5px solid #e2e8f0;
+    border-radius: 10px; font-size: 15px; font-weight: 600; color: #0f172a; outline: none; font-family: inherit;
   }
-  .input-box input:focus { border-color: #7c3aed; }
-  .slider-row { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
-  .slider-row input[type=range] { flex: 1; accent-color: #7c3aed; height: 6px; }
-  .slider-row .s-label { font-size: 10px; color: #94a3b8; }
+  select:focus, input:focus { border-color: #7c3aed; }
 
-  /* Presets */
-  .preset-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
-  .preset-btn {
-    padding: 8px 16px; border-radius: 10px; font-size: 13px; font-weight: 600;
-    border: 1.5px solid #e2e8f0; background: #f8fafc; color: #475569; cursor: pointer; transition: all 0.15s;
+  .result-box {
+    display: flex; align-items: center; gap: 20px; padding: 18px 24px;
+    background: #faf5ff; border: 2px solid #ddd6fe; border-radius: 12px; margin-top: 16px; flex-wrap: wrap;
   }
-  .preset-btn:hover { border-color: #7c3aed; color: #7c3aed; background: #faf5ff; }
-  .preset-btn.active { border-color: #7c3aed; color: white; background: #7c3aed; }
-
-  .savings { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; background: #dcfce7; color: #15803d; }
-
-  /* Table */
-  .tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
-  .tbl th { background: #f8fafc; font-weight: 700; color: #475569; text-align: left; padding: 10px 14px; border-bottom: 2px solid #e2e8f0; }
-  .tbl td { padding: 10px 14px; border-bottom: 1px solid #f1f5f9; }
-  .tbl tr:last-child td { border-bottom: none; }
-
-  /* Bar */
-  .bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
-  .bar-label { width: 130px; font-size: 12px; font-weight: 600; color: #475569; text-align: right; }
-  .bar-track { flex: 1; height: 28px; background: #f1f5f9; border-radius: 8px; overflow: hidden; }
-  .bar-fill { height: 100%; border-radius: 8px; display: flex; align-items: center; padding: 0 10px; font-size: 12px; font-weight: 700; color: white; transition: width 0.4s; }
-  .bar-amount { min-width: 80px; font-size: 13px; font-weight: 700; }
+  .result-item { text-align: center; }
+  .result-item .label { font-size: 11px; color: #64748b; margin-bottom: 2px; }
+  .result-item .value { font-size: 22px; font-weight: 900; }
+  .divider { width: 1px; height: 40px; background: #e2e8f0; }
 
   .note { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 14px 18px; margin-top: 16px; }
-  .note-title { font-size: 12px; font-weight: 700; color: #1d4ed8; margin-bottom: 4px; }
   .note p { font-size: 12px; color: #475569; line-height: 1.7; }
-  .footer { text-align: center; font-size: 11px; color: #94a3b8; margin-top: 24px; }
+  .footer { text-align: center; font-size: 11px; color: #94a3b8; margin-top: 20px; }
   .footer a { color: #6366f1; }
 </style>
 </head>
@@ -64,409 +49,197 @@
 <div class="page">
 
   <div class="hero">
-    <h1>Bedrock LLM Cost Calculator</h1>
-    <p>How much does it cost to automate browser tests with AI? Pick your test size and volume.</p>
+    <h1>Bedrock Cost Calculator</h1>
+    <p>Max token usage cost per model + simple calculator. You pay per token, not per minute.</p>
   </div>
 
-  <!-- INPUTS -->
+  <!-- TABLE: Max usage cost per model -->
   <div class="card">
-    <div class="card-title">1. Select Model &amp; Token Usage</div>
-    <div class="hint" style="margin-bottom:12px;">Pick a model, set input/output tokens. Cost = tokens &times; price. No time-based charges — you pay only for tokens.</div>
-
-    <div class="input-row">
-      <div class="input-box" style="min-width:300px;">
-        <label>Model</label>
-        <select id="modelSelect" onchange="onModelChange()" style="width:100%; padding:10px 14px; background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:10px; font-size:14px; font-weight:600; color:#0f172a; outline:none;">
-        </select>
-        <div id="modelInfo" style="margin-top:6px; font-size:12px; color:#64748b;"></div>
-      </div>
-    </div>
-
-    <div class="preset-row" style="margin-top:8px;">
-      <button class="preset-btn" onclick="setTokens(40000, 10000, this)">50K total<br><span style="font-size:10px; font-weight:400;">Simple test</span></button>
-      <button class="preset-btn active" onclick="setTokens(100000, 30000, this)">130K total<br><span style="font-size:10px; font-weight:400;">Medium test</span></button>
-      <button class="preset-btn" onclick="setTokens(190000, 60000, this)">250K total<br><span style="font-size:10px; font-weight:400;">Complex test</span></button>
-      <button class="preset-btn" onclick="setMaxTokens(this)">MAX<br><span style="font-size:10px; font-weight:400;">Full context</span></button>
-    </div>
-
-    <div class="input-row">
-      <div class="input-box">
-        <label>Input tokens</label>
-        <div class="hint">What the LLM reads (DOM, plan, history)</div>
-        <input type="number" id="inputTokens" value="100000" min="1000" max="1000000" step="1000" oninput="syncSlider('inputTokens','inputSlider'); clearPresets(); calculate()">
-        <div class="slider-row">
-          <span class="s-label">1K</span>
-          <input type="range" id="inputSlider" min="1000" max="1000000" step="1000" value="100000" oninput="syncInput('inputSlider','inputTokens'); clearPresets(); calculate()">
-          <span class="s-label" id="inputMaxLabel">1M</span>
-        </div>
-      </div>
-      <div class="input-box">
-        <label>Output tokens</label>
-        <div class="hint">What the LLM writes (reasoning, tool calls)</div>
-        <input type="number" id="outputTokens" value="30000" min="500" max="200000" step="500" oninput="syncSlider('outputTokens','outputSlider'); clearPresets(); calculate()">
-        <div class="slider-row">
-          <span class="s-label">500</span>
-          <input type="range" id="outputSlider" min="500" max="200000" step="500" value="30000" oninput="syncInput('outputSlider','outputTokens'); clearPresets(); calculate()">
-          <span class="s-label" id="outputMaxLabel">200K</span>
-        </div>
-      </div>
-    </div>
-
-    <div style="height:1px; background:#e2e8f0; margin:16px 0;"></div>
-
-    <div class="card-title">2. How many test cases?</div>
-    <div class="input-row">
-      <div class="input-box" style="max-width:300px;">
-        <label>Number of test cases</label>
-        <input type="number" id="numTests" value="50" min="1" max="10000" oninput="syncSlider('numTests','numTestsSlider'); calculate()">
-        <div class="slider-row">
-          <span class="s-label">1</span>
-          <input type="range" id="numTestsSlider" min="1" max="5000" value="50" oninput="syncInput('numTestsSlider','numTests'); calculate()">
-          <span class="s-label">5000</span>
-        </div>
-      </div>
-    </div>
-
-    <div style="display:flex; align-items:center; gap:16px; padding:14px 18px; background:#faf5ff; border:1px solid #ddd6fe; border-radius:10px; margin-top:8px; flex-wrap:wrap;">
-      <div>
-        <div style="font-size:12px; color:#64748b;">Tokens per test</div>
-        <div id="display-tokens-per-test" style="font-size:18px; font-weight:900; color:#0f172a;"></div>
-      </div>
-      <div style="width:1px; height:36px; background:#e2e8f0;"></div>
-      <div>
-        <div style="font-size:12px; color:#64748b;">Test cases</div>
-        <div id="display-num-tests" style="font-size:18px; font-weight:900; color:#0f172a;"></div>
-      </div>
-      <div style="width:1px; height:36px; background:#e2e8f0;"></div>
-      <div>
-        <div style="font-size:12px; color:#64748b;">Total tokens</div>
-        <div id="total-tokens" style="font-size:18px; font-weight:900; color:#7c3aed;"></div>
-      </div>
-      <div style="width:1px; height:36px; background:#e2e8f0;"></div>
-      <div>
-        <div style="font-size:12px; color:#64748b;" id="selected-model-label">Cost (selected model)</div>
-        <div id="selected-model-cost" style="font-size:24px; font-weight:900;"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- MAIN RESULTS TABLE + BAR -->
-  <div class="card">
-    <div class="card-title">Cost per Model</div>
-    <table class="tbl" id="main-table"></table>
-  </div>
-
-  <!-- BAR CHART -->
-  <div class="card">
-    <div class="card-title">Visual Comparison — <span id="bar-count"></span> test cases</div>
-    <div id="bar-chart"></div>
-  </div>
-
-  <!-- MODEL SPECS -->
-  <div class="card">
-    <div class="card-title">All Amazon Bedrock Models &amp; Pricing</div>
-    <table class="tbl">
-      <thead>
-        <tr><th>Model</th><th>Provider</th><th>Context</th><th>Max Output</th><th>Input $/MTok</th><th>Output $/MTok</th><th>Notes</th></tr>
-      </thead>
-      <tbody>
-        <!-- Anthropic -->
-        <tr style="background:#faf5ff;"><td colspan="7" style="font-weight:700; font-size:11px; color:#7c3aed; letter-spacing:1px;">ANTHROPIC — CLAUDE</td></tr>
-        <tr><td style="font-weight:700; color:#dc2626;">Claude Opus 4.6</td><td>Anthropic</td><td><strong>1M</strong></td><td>32K</td><td>$5.00</td><td>$25.00</td><td>Most capable model</td></tr>
-        <tr><td style="font-weight:700; color:#9333ea;">Claude Sonnet 4.6</td><td>Anthropic</td><td><strong>1M</strong></td><td>16K</td><td>$3.00</td><td>$15.00</td><td>Best value at 1M context</td></tr>
-        <tr><td style="font-weight:700; color:#7c3aed;">Claude Sonnet 4.5</td><td>Anthropic</td><td>200K</td><td>8K</td><td>$3.00</td><td>$15.00</td><td>Complex automation, tool use</td></tr>
-        <tr><td style="font-weight:700; color:#7c3aed;">Claude Sonnet 4</td><td>Anthropic</td><td>200K</td><td>8K</td><td>$3.00</td><td>$15.00</td><td>Previous gen, same price</td></tr>
-        <tr><td style="font-weight:700; color:#6d28d9;">Claude Haiku 4.5</td><td>Anthropic</td><td>200K</td><td>8K</td><td>$1.00</td><td>$5.00</td><td>Fast, moderate tasks</td></tr>
-        <tr><td style="font-weight:700; color:#0d9488;">Claude Haiku 3.5</td><td>Anthropic</td><td>200K</td><td>8K</td><td>$0.80</td><td>$4.00</td><td>Previous gen Haiku</td></tr>
-        <tr><td style="font-weight:700; color:#0d9488;">Claude Haiku 3</td><td>Anthropic</td><td>200K</td><td>4K</td><td>$0.25</td><td>$1.25</td><td>Cheapest Claude</td></tr>
-
-        <!-- Amazon -->
-        <tr style="background:#eff6ff;"><td colspan="7" style="font-weight:700; font-size:11px; color:#2563eb; letter-spacing:1px;">AMAZON — NOVA &amp; TITAN</td></tr>
-        <tr><td style="font-weight:700; color:#2563eb;">Amazon Nova Pro</td><td>Amazon</td><td>300K</td><td>5K</td><td>$0.80</td><td>$3.20</td><td>Balanced cost/performance</td></tr>
-        <tr><td style="font-weight:700; color:#2563eb;">Amazon Nova Lite</td><td>Amazon</td><td>300K</td><td>5K</td><td>$0.06</td><td>$0.24</td><td>Fast, very cheap</td></tr>
-        <tr><td style="font-weight:700; color:#2563eb;">Amazon Nova Micro</td><td>Amazon</td><td>128K</td><td>5K</td><td>$0.035</td><td>$0.14</td><td>Cheapest on Bedrock</td></tr>
-        <tr><td style="color:#475569;">Amazon Titan Text Express</td><td>Amazon</td><td>8K</td><td>4K</td><td>$0.80</td><td>$1.60</td><td>Legacy text model</td></tr>
-        <tr><td style="color:#475569;">Amazon Titan Embed v2</td><td>Amazon</td><td>8K</td><td>—</td><td>$0.02</td><td>—</td><td>Embeddings only</td></tr>
-
-        <!-- Meta -->
-        <tr style="background:#fff7ed;"><td colspan="7" style="font-weight:700; font-size:11px; color:#ea580c; letter-spacing:1px;">META — LLAMA</td></tr>
-        <tr><td style="font-weight:700; color:#ea580c;">Llama 3.1 405B</td><td>Meta</td><td>128K</td><td>4K</td><td>$5.32</td><td>$16.00</td><td>Largest open-source model</td></tr>
-        <tr><td style="font-weight:700; color:#ea580c;">Llama 3.1 70B</td><td>Meta</td><td>128K</td><td>4K</td><td>$2.65</td><td>$3.50</td><td>Strong performance, good value</td></tr>
-        <tr><td style="color:#ea580c;">Llama 3.1 8B</td><td>Meta</td><td>128K</td><td>4K</td><td>$0.30</td><td>$0.60</td><td>Small, fast, cheap</td></tr>
-        <tr><td style="color:#ea580c;">Llama 3.2 90B</td><td>Meta</td><td>128K</td><td>4K</td><td>$2.00</td><td>$2.00</td><td>Multimodal (vision)</td></tr>
-        <tr><td style="color:#ea580c;">Llama 3.2 11B</td><td>Meta</td><td>128K</td><td>4K</td><td>$0.35</td><td>$0.35</td><td>Multimodal, lightweight</td></tr>
-        <tr><td style="color:#ea580c;">Llama 3.2 1B</td><td>Meta</td><td>128K</td><td>4K</td><td>$0.10</td><td>$0.10</td><td>Tiny, edge use cases</td></tr>
-
-        <!-- Mistral -->
-        <tr style="background:#fef2f2;"><td colspan="7" style="font-weight:700; font-size:11px; color:#dc2626; letter-spacing:1px;">MISTRAL AI</td></tr>
-        <tr><td style="font-weight:700; color:#dc2626;">Mistral Large (24.11)</td><td>Mistral</td><td>128K</td><td>8K</td><td>$2.00</td><td>$6.00</td><td>Best Mistral model</td></tr>
-        <tr><td style="color:#dc2626;">Mistral Small (24.09)</td><td>Mistral</td><td>128K</td><td>8K</td><td>$0.10</td><td>$0.30</td><td>Fast and affordable</td></tr>
-        <tr><td style="color:#dc2626;">Pixtral Large</td><td>Mistral</td><td>128K</td><td>8K</td><td>$2.00</td><td>$6.00</td><td>Multimodal (vision)</td></tr>
-
-        <!-- DeepSeek -->
-        <tr style="background:#f0fdfa;"><td colspan="7" style="font-weight:700; font-size:11px; color:#0d9488; letter-spacing:1px;">DEEPSEEK</td></tr>
-        <tr><td style="font-weight:700; color:#0d9488;">DeepSeek R1</td><td>DeepSeek</td><td>128K</td><td>8K</td><td>$1.35</td><td>$5.40</td><td>Reasoning model</td></tr>
-
-        <!-- Cohere -->
-        <tr style="background:#fefce8;"><td colspan="7" style="font-weight:700; font-size:11px; color:#a16207; letter-spacing:1px;">COHERE</td></tr>
-        <tr><td style="font-weight:700; color:#a16207;">Command R+</td><td>Cohere</td><td>128K</td><td>4K</td><td>$2.50</td><td>$10.00</td><td>RAG optimized</td></tr>
-        <tr><td style="color:#a16207;">Command R</td><td>Cohere</td><td>128K</td><td>4K</td><td>$0.50</td><td>$1.50</td><td>Efficient retrieval</td></tr>
-        <tr><td style="color:#a16207;">Cohere Embed v3</td><td>Cohere</td><td>512</td><td>—</td><td>$0.10</td><td>—</td><td>Embeddings only</td></tr>
-
-        <!-- AI21 -->
-        <tr style="background:#f1f5f9;"><td colspan="7" style="font-weight:700; font-size:11px; color:#475569; letter-spacing:1px;">AI21 LABS</td></tr>
-        <tr><td style="color:#475569;">Jamba 1.5 Large</td><td>AI21</td><td>256K</td><td>4K</td><td>$2.00</td><td>$8.00</td><td>Long context, SSM architecture</td></tr>
-        <tr><td style="color:#475569;">Jamba 1.5 Mini</td><td>AI21</td><td>256K</td><td>4K</td><td>$0.20</td><td>$0.40</td><td>Efficient long context</td></tr>
-      </tbody>
-    </table>
-    <div style="margin-top:10px; font-size:11px; color:#94a3b8;">
-      Source: <a href="https://aws.amazon.com/bedrock/pricing/" style="color:#6366f1;">AWS Bedrock Pricing</a> &middot;
-      <a href="https://platform.claude.com/docs/en/about-claude/pricing" style="color:#6366f1;">Anthropic Pricing</a> &middot;
-      <a href="https://pecollective.com/tools/aws-bedrock-pricing/" style="color:#6366f1;">PE Collective</a> &middot;
-      2026 on-demand rates, us-east-1. Prices may vary by region. Batch API = 50% discount.
-    </div>
-  </div>
-
-  <!-- MAX USAGE COST TABLE -->
-  <div class="card">
-    <div class="card-title">Max Token Usage &amp; Cost per Single Request</div>
-    <div style="font-size:12px; color:#64748b; margin-bottom:12px;">What does it cost if you use the full context window as input + full max output in a single request?</div>
-    <table class="tbl">
+    <div class="card-title">Cost at Maximum Token Usage — Per Single Test Case</div>
+    <p style="font-size:12px; color:#64748b; margin-bottom:12px;">If one test case uses the full context window as input + full max output, what's the cost?</p>
+    <table id="max-table">
       <thead>
         <tr>
           <th>Model</th>
-          <th style="text-align:right;">Max Input</th>
-          <th style="text-align:right;">Input Cost</th>
-          <th style="text-align:right;">Max Output</th>
-          <th style="text-align:right;">Output Cost</th>
-          <th style="text-align:right; font-weight:800;">Total Cost</th>
+          <th>Provider</th>
+          <th class="r">Context</th>
+          <th class="r">Max Input</th>
+          <th class="r">Max Output</th>
+          <th class="r">Input $/MTok</th>
+          <th class="r">Output $/MTok</th>
+          <th class="r">Input Cost</th>
+          <th class="r">Output Cost</th>
+          <th class="r bold">Total / Test</th>
         </tr>
       </thead>
-      <tbody>
-        <tr style="background:#faf5ff;"><td colspan="6" style="font-weight:700; font-size:11px; color:#7c3aed; letter-spacing:1px;">ANTHROPIC — CLAUDE</td></tr>
-        <tr><td style="font-weight:700; color:#dc2626;">Claude Opus 4.6</td><td style="text-align:right;">968K</td><td style="text-align:right;">$4.84</td><td style="text-align:right;">32K</td><td style="text-align:right;">$0.80</td><td style="text-align:right; font-weight:800; color:#dc2626;">$5.64</td></tr>
-        <tr><td style="font-weight:700; color:#9333ea;">Claude Sonnet 4.6</td><td style="text-align:right;">984K</td><td style="text-align:right;">$2.95</td><td style="text-align:right;">16K</td><td style="text-align:right;">$0.24</td><td style="text-align:right; font-weight:800; color:#9333ea;">$3.19</td></tr>
-        <tr><td style="font-weight:700; color:#7c3aed;">Claude Sonnet 4.5</td><td style="text-align:right;">192K</td><td style="text-align:right;">$0.58</td><td style="text-align:right;">8K</td><td style="text-align:right;">$0.12</td><td style="text-align:right; font-weight:800; color:#7c3aed;">$0.70</td></tr>
-        <tr><td style="font-weight:700; color:#7c3aed;">Claude Sonnet 4</td><td style="text-align:right;">192K</td><td style="text-align:right;">$0.58</td><td style="text-align:right;">8K</td><td style="text-align:right;">$0.12</td><td style="text-align:right; font-weight:800; color:#7c3aed;">$0.70</td></tr>
-        <tr><td style="font-weight:700; color:#6d28d9;">Claude Haiku 4.5</td><td style="text-align:right;">192K</td><td style="text-align:right;">$0.19</td><td style="text-align:right;">8K</td><td style="text-align:right;">$0.04</td><td style="text-align:right; font-weight:800; color:#6d28d9;">$0.23</td></tr>
-        <tr><td style="font-weight:700; color:#0d9488;">Claude Haiku 3.5</td><td style="text-align:right;">192K</td><td style="text-align:right;">$0.15</td><td style="text-align:right;">8K</td><td style="text-align:right;">$0.03</td><td style="text-align:right; font-weight:800; color:#0d9488;">$0.18</td></tr>
-        <tr><td style="font-weight:700; color:#0d9488;">Claude Haiku 3</td><td style="text-align:right;">196K</td><td style="text-align:right;">$0.05</td><td style="text-align:right;">4K</td><td style="text-align:right;">$0.01</td><td style="text-align:right; font-weight:800; color:#0d9488;">$0.06</td></tr>
-
-        <tr style="background:#eff6ff;"><td colspan="6" style="font-weight:700; font-size:11px; color:#2563eb; letter-spacing:1px;">AMAZON — NOVA &amp; TITAN</td></tr>
-        <tr><td style="font-weight:700; color:#2563eb;">Amazon Nova Pro</td><td style="text-align:right;">295K</td><td style="text-align:right;">$0.24</td><td style="text-align:right;">5K</td><td style="text-align:right;">$0.02</td><td style="text-align:right; font-weight:800; color:#2563eb;">$0.26</td></tr>
-        <tr><td style="font-weight:700; color:#2563eb;">Amazon Nova Lite</td><td style="text-align:right;">295K</td><td style="text-align:right;">$0.02</td><td style="text-align:right;">5K</td><td style="text-align:right;">$0.001</td><td style="text-align:right; font-weight:800; color:#2563eb;">$0.02</td></tr>
-        <tr><td style="font-weight:700; color:#2563eb;">Amazon Nova Micro</td><td style="text-align:right;">123K</td><td style="text-align:right;">$0.004</td><td style="text-align:right;">5K</td><td style="text-align:right;">$0.001</td><td style="text-align:right; font-weight:800; color:#2563eb;">$0.005</td></tr>
-
-        <tr style="background:#fff7ed;"><td colspan="6" style="font-weight:700; font-size:11px; color:#ea580c; letter-spacing:1px;">META — LLAMA</td></tr>
-        <tr><td style="font-weight:700; color:#ea580c;">Llama 3.1 405B</td><td style="text-align:right;">124K</td><td style="text-align:right;">$0.66</td><td style="text-align:right;">4K</td><td style="text-align:right;">$0.06</td><td style="text-align:right; font-weight:800; color:#ea580c;">$0.72</td></tr>
-        <tr><td style="font-weight:700; color:#ea580c;">Llama 3.1 70B</td><td style="text-align:right;">124K</td><td style="text-align:right;">$0.33</td><td style="text-align:right;">4K</td><td style="text-align:right;">$0.01</td><td style="text-align:right; font-weight:800; color:#ea580c;">$0.34</td></tr>
-        <tr><td style="color:#ea580c;">Llama 3.1 8B</td><td style="text-align:right;">124K</td><td style="text-align:right;">$0.04</td><td style="text-align:right;">4K</td><td style="text-align:right;">$0.002</td><td style="text-align:right; font-weight:800;">$0.04</td></tr>
-
-        <tr style="background:#fef2f2;"><td colspan="6" style="font-weight:700; font-size:11px; color:#dc2626; letter-spacing:1px;">MISTRAL AI</td></tr>
-        <tr><td style="font-weight:700; color:#dc2626;">Mistral Large</td><td style="text-align:right;">120K</td><td style="text-align:right;">$0.24</td><td style="text-align:right;">8K</td><td style="text-align:right;">$0.05</td><td style="text-align:right; font-weight:800; color:#dc2626;">$0.29</td></tr>
-        <tr><td style="color:#dc2626;">Mistral Small</td><td style="text-align:right;">120K</td><td style="text-align:right;">$0.01</td><td style="text-align:right;">8K</td><td style="text-align:right;">$0.002</td><td style="text-align:right; font-weight:800;">$0.01</td></tr>
-
-        <tr style="background:#f0fdfa;"><td colspan="6" style="font-weight:700; font-size:11px; color:#0d9488; letter-spacing:1px;">DEEPSEEK</td></tr>
-        <tr><td style="font-weight:700; color:#0d9488;">DeepSeek R1</td><td style="text-align:right;">120K</td><td style="text-align:right;">$0.16</td><td style="text-align:right;">8K</td><td style="text-align:right;">$0.04</td><td style="text-align:right; font-weight:800; color:#0d9488;">$0.20</td></tr>
-
-        <tr style="background:#fefce8;"><td colspan="6" style="font-weight:700; font-size:11px; color:#a16207; letter-spacing:1px;">COHERE</td></tr>
-        <tr><td style="font-weight:700; color:#a16207;">Command R+</td><td style="text-align:right;">124K</td><td style="text-align:right;">$0.31</td><td style="text-align:right;">4K</td><td style="text-align:right;">$0.04</td><td style="text-align:right; font-weight:800; color:#a16207;">$0.35</td></tr>
-        <tr><td style="color:#a16207;">Command R</td><td style="text-align:right;">124K</td><td style="text-align:right;">$0.06</td><td style="text-align:right;">4K</td><td style="text-align:right;">$0.006</td><td style="text-align:right; font-weight:800;">$0.07</td></tr>
-
-        <tr style="background:#f1f5f9;"><td colspan="6" style="font-weight:700; font-size:11px; color:#475569; letter-spacing:1px;">AI21 LABS</td></tr>
-        <tr><td style="color:#475569;">Jamba 1.5 Large</td><td style="text-align:right;">252K</td><td style="text-align:right;">$0.50</td><td style="text-align:right;">4K</td><td style="text-align:right;">$0.03</td><td style="text-align:right; font-weight:800;">$0.53</td></tr>
-        <tr><td style="color:#475569;">Jamba 1.5 Mini</td><td style="text-align:right;">252K</td><td style="text-align:right;">$0.05</td><td style="text-align:right;">4K</td><td style="text-align:right;">$0.002</td><td style="text-align:right; font-weight:800;">$0.05</td></tr>
-      </tbody>
+      <tbody></tbody>
     </table>
     <div style="margin-top:10px; font-size:11px; color:#94a3b8;">
-      Max Input = Context Window - Max Output. Total Cost = (Max Input &times; Input Price) + (Max Output &times; Output Price). This is the theoretical maximum cost per single API request.
+      Max Input = Context Window - Max Output. Total = (Max Input &times; Input Price) + (Max Output &times; Output Price).
+      Source: <a href="https://aws.amazon.com/bedrock/pricing/" style="color:#6366f1;">AWS Bedrock</a> &middot;
+      <a href="https://platform.claude.com/docs/en/about-claude/pricing" style="color:#6366f1;">Anthropic</a> &middot; 2026 on-demand, us-east-1.
     </div>
   </div>
 
-  <!-- NOTES -->
-  <div class="note" style="background:#faf5ff; border-color:#ddd6fe;">
-    <div class="note-title" style="color:#7c3aed;">Replay Mode = $0 LLM Cost</div>
-    <p>
-      Once a test is automated and the replay script is saved, <strong>replaying it costs zero LLM tokens</strong>.
-      Only the first automation uses the LLM. Promoted tests run as deterministic Playwright replay — no AI.
-    </p>
+  <!-- CALCULATOR -->
+  <div class="card">
+    <div class="card-title">Calculator</div>
+    <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:flex-end;">
+      <div>
+        <label style="display:block; font-size:13px; font-weight:600; margin-bottom:6px;">Model</label>
+        <select id="model" onchange="calc()" style="width:320px;"></select>
+      </div>
+      <div>
+        <label style="display:block; font-size:13px; font-weight:600; margin-bottom:6px;">Number of Test Cases</label>
+        <input type="number" id="numTests" value="50" min="1" max="100000" onchange="calc()" oninput="calc()" style="width:140px;">
+      </div>
+    </div>
+
+    <div class="result-box" id="result-box"></div>
   </div>
 
+  <!-- NOTES -->
   <div class="note">
-    <div class="note-title">How to Reduce Costs</div>
     <p>
-      <strong>1. Cheaper models for simple tests</strong> — Nova Lite for smoke, Haiku for retries.<br>
-      <strong>2. Batch API = 50% off</strong> — for non-urgent suite runs.<br>
-      <strong>3. Prompt caching = 90% off</strong> — cached system prompts on repeat calls.<br>
-      <strong>4. Headless replay = $0</strong> — deterministic replay uses zero LLM tokens.
+      <strong>How it works:</strong> Each test case runs as an agent loop — multiple LLM calls that accumulate context.
+      The total input tokens is the sum across all calls, which can approach the context window limit for complex tests.
+      Output tokens are always much smaller. <strong>You pay only for tokens consumed, not time.</strong><br><br>
+      <strong>Replay mode = $0 LLM cost.</strong> Once automated, replaying a test in QA/UAT/PROD uses zero LLM tokens.
+      Only the first automation in DEV costs money.
     </p>
   </div>
 
   <div class="footer">
-    Bedrock LLM Cost Calculator &middot; Prompt2Test &middot;
-    <a href="https://platform.claude.com/docs/en/about-claude/pricing">Anthropic</a> &middot;
-    <a href="https://aws.amazon.com/bedrock/pricing/">AWS Bedrock</a>
+    Bedrock Cost Calculator &middot;
+    <a href="https://aws.amazon.com/bedrock/pricing/">AWS Bedrock Pricing</a> &middot;
+    <a href="https://platform.claude.com/docs/en/about-claude/pricing">Anthropic Pricing</a>
   </div>
 </div>
 
 <script>
-function syncSlider(inputId, sliderId) {
-  document.getElementById(sliderId).value = document.getElementById(inputId).value;
-}
-function syncInput(sliderId, inputId) {
-  document.getElementById(inputId).value = document.getElementById(sliderId).value;
-}
-function setTokens(input, output, btn) {
-  document.getElementById('inputTokens').value = input;
-  document.getElementById('inputSlider').value = input;
-  document.getElementById('outputTokens').value = output;
-  document.getElementById('outputSlider').value = output;
-  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  calculate();
-}
-function clearPresets() {
-  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
-}
-
-const MODELS = [
-  { name: 'Claude Opus 4.6',   provider: 'Anthropic', input: 5.00,  output: 25.00, color: '#dc2626', bg: '#fef2f2', border: '#fecaca', ctx: 1000000, maxOut: 32768 },
-  { name: 'Claude Sonnet 4.6', provider: 'Anthropic', input: 3.00,  output: 15.00, color: '#9333ea', bg: '#faf5ff', border: '#d8b4fe', ctx: 1000000, maxOut: 16384 },
-  { name: 'Claude Sonnet 4.5', provider: 'Anthropic', input: 3.00,  output: 15.00, color: '#7c3aed', bg: '#faf5ff', border: '#ddd6fe', ctx: 200000,  maxOut: 8192 },
-  { name: 'Claude Haiku 4.5',  provider: 'Anthropic', input: 1.00,  output: 5.00,  color: '#6d28d9', bg: '#faf5ff', border: '#ddd6fe', ctx: 200000,  maxOut: 8192 },
-  { name: 'Claude Haiku 3',    provider: 'Anthropic', input: 0.25,  output: 1.25,  color: '#0d9488', bg: '#f0fdfa', border: '#99f6e4', ctx: 200000,  maxOut: 4096 },
-  { name: 'Amazon Nova Pro',   provider: 'Amazon',    input: 0.80,  output: 3.20,  color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe', ctx: 300000,  maxOut: 5120 },
-  { name: 'Amazon Nova Lite',  provider: 'Amazon',    input: 0.06,  output: 0.24,  color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0', ctx: 300000,  maxOut: 5120 },
+const M = [
+  // Anthropic
+  { name:'Claude Opus 4.6',     prov:'Anthropic', ctx:1000000, maxOut:32768,  inP:5.00,  outP:25.00, section:'ANTHROPIC', color:'#dc2626' },
+  { name:'Claude Sonnet 4.6',   prov:'Anthropic', ctx:1000000, maxOut:16384,  inP:3.00,  outP:15.00, color:'#9333ea' },
+  { name:'Claude Sonnet 4.5',   prov:'Anthropic', ctx:200000,  maxOut:8192,   inP:3.00,  outP:15.00, color:'#7c3aed' },
+  { name:'Claude Sonnet 4',     prov:'Anthropic', ctx:200000,  maxOut:8192,   inP:3.00,  outP:15.00, color:'#7c3aed' },
+  { name:'Claude Haiku 4.5',    prov:'Anthropic', ctx:200000,  maxOut:8192,   inP:1.00,  outP:5.00,  color:'#6d28d9' },
+  { name:'Claude Haiku 3.5',    prov:'Anthropic', ctx:200000,  maxOut:8192,   inP:0.80,  outP:4.00,  color:'#0d9488' },
+  { name:'Claude Haiku 3',      prov:'Anthropic', ctx:200000,  maxOut:4096,   inP:0.25,  outP:1.25,  color:'#0d9488' },
+  // Amazon
+  { name:'Amazon Nova Pro',     prov:'Amazon',    ctx:300000,  maxOut:5120,   inP:0.80,  outP:3.20,  section:'AMAZON', color:'#2563eb' },
+  { name:'Amazon Nova Lite',    prov:'Amazon',    ctx:300000,  maxOut:5120,   inP:0.06,  outP:0.24,  color:'#2563eb' },
+  { name:'Amazon Nova Micro',   prov:'Amazon',    ctx:128000,  maxOut:5120,   inP:0.035, outP:0.14,  color:'#2563eb' },
+  // Meta
+  { name:'Llama 3.1 405B',      prov:'Meta',      ctx:128000,  maxOut:4096,   inP:5.32,  outP:16.00, section:'META', color:'#ea580c' },
+  { name:'Llama 3.1 70B',       prov:'Meta',      ctx:128000,  maxOut:4096,   inP:2.65,  outP:3.50,  color:'#ea580c' },
+  { name:'Llama 3.1 8B',        prov:'Meta',      ctx:128000,  maxOut:4096,   inP:0.30,  outP:0.60,  color:'#ea580c' },
+  { name:'Llama 3.2 90B',       prov:'Meta',      ctx:128000,  maxOut:4096,   inP:2.00,  outP:2.00,  color:'#ea580c' },
+  { name:'Llama 3.2 11B',       prov:'Meta',      ctx:128000,  maxOut:4096,   inP:0.35,  outP:0.35,  color:'#ea580c' },
+  { name:'Llama 3.2 1B',        prov:'Meta',      ctx:128000,  maxOut:4096,   inP:0.10,  outP:0.10,  color:'#ea580c' },
+  // Mistral
+  { name:'Mistral Large',       prov:'Mistral',   ctx:128000,  maxOut:8192,   inP:2.00,  outP:6.00,  section:'MISTRAL', color:'#dc2626' },
+  { name:'Mistral Small',       prov:'Mistral',   ctx:128000,  maxOut:8192,   inP:0.10,  outP:0.30,  color:'#dc2626' },
+  { name:'Pixtral Large',       prov:'Mistral',   ctx:128000,  maxOut:8192,   inP:2.00,  outP:6.00,  color:'#dc2626' },
+  // DeepSeek
+  { name:'DeepSeek R1',          prov:'DeepSeek',  ctx:128000,  maxOut:8192,   inP:1.35,  outP:5.40,  section:'DEEPSEEK', color:'#0d9488' },
+  // Cohere
+  { name:'Command R+',           prov:'Cohere',    ctx:128000,  maxOut:4096,   inP:2.50,  outP:10.00, section:'COHERE', color:'#a16207' },
+  { name:'Command R',            prov:'Cohere',    ctx:128000,  maxOut:4096,   inP:0.50,  outP:1.50,  color:'#a16207' },
+  // AI21
+  { name:'Jamba 1.5 Large',      prov:'AI21',      ctx:256000,  maxOut:4096,   inP:2.00,  outP:8.00,  section:'AI21 LABS', color:'#475569' },
+  { name:'Jamba 1.5 Mini',       prov:'AI21',      ctx:256000,  maxOut:4096,   inP:0.20,  outP:0.40,  color:'#475569' },
 ];
 
-function fmtK(n) { return n >= 1000000 ? (n/1000000).toFixed(0) + 'M' : (n/1000).toFixed(0) + 'K'; }
+function fk(n) { return n>=1000000?(n/1e6)+'M':(n/1000)+'K'; }
+function $(v) { return v<0.001?v.toFixed(4):v<0.01?v.toFixed(3):v<1?v.toFixed(2):v.toFixed(2); }
 
-// Populate model dropdown
-function initModelSelect() {
-  const sel = document.getElementById('modelSelect');
-  sel.innerHTML = MODELS.map((m, i) =>
-    `<option value="${i}" style="color:${m.color};">${m.name} — ${m.provider} — ${fmtK(m.ctx)} context</option>`
-  ).join('');
-  sel.value = '2'; // default: Sonnet 4.5
-  onModelChange();
-}
-
-function getSelectedModel() {
-  return MODELS[+document.getElementById('modelSelect').value];
-}
-
-function onModelChange() {
-  const m = getSelectedModel();
-  const maxInput = m.ctx - m.maxOut;
-  // Update slider limits
-  document.getElementById('inputSlider').max = maxInput;
-  document.getElementById('inputTokens').max = maxInput;
-  document.getElementById('inputMaxLabel').textContent = fmtK(maxInput);
-  document.getElementById('outputSlider').max = m.maxOut;
-  document.getElementById('outputTokens').max = m.maxOut;
-  document.getElementById('outputMaxLabel').textContent = fmtK(m.maxOut);
-  // Clamp current values
-  const curInput = +document.getElementById('inputTokens').value;
-  const curOutput = +document.getElementById('outputTokens').value;
-  if (curInput > maxInput) { document.getElementById('inputTokens').value = maxInput; document.getElementById('inputSlider').value = maxInput; }
-  if (curOutput > m.maxOut) { document.getElementById('outputTokens').value = m.maxOut; document.getElementById('outputSlider').value = m.maxOut; }
-  // Model info
-  document.getElementById('modelInfo').innerHTML =
-    `<span style="color:${m.color}; font-weight:700;">${m.name}</span> — ` +
-    `Context: <strong>${fmtK(m.ctx)}</strong> &middot; Max output: <strong>${fmtK(m.maxOut)}</strong> &middot; ` +
-    `Input: <strong>$${m.input}/MTok</strong> &middot; Output: <strong>$${m.output}/MTok</strong>`;
-  clearPresets();
-  calculate();
-}
-
-function setMaxTokens(btn) {
-  const m = getSelectedModel();
-  const maxInput = m.ctx - m.maxOut;
-  document.getElementById('inputTokens').value = maxInput;
-  document.getElementById('inputSlider').value = maxInput;
-  document.getElementById('outputTokens').value = m.maxOut;
-  document.getElementById('outputSlider').value = m.maxOut;
-  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  calculate();
-}
-
-function calculate() {
-  const inputTokens = +document.getElementById('inputTokens').value || 100000;
-  const outputTokens = +document.getElementById('outputTokens').value || 30000;
-  const numTests = +document.getElementById('numTests').value || 50;
-  const tokensPerTest = inputTokens + outputTokens;
-  const totalTokens = tokensPerTest * numTests;
-
-  // Display
-  const sel = getSelectedModel();
-  const selectedCostPerTest = (inputTokens / 1e6) * sel.input + (outputTokens / 1e6) * sel.output;
-  const selectedTotal = selectedCostPerTest * numTests;
-
-  document.getElementById('total-tokens').textContent = (totalTokens / 1e6).toFixed(1) + 'M tokens';
-  document.getElementById('display-tokens-per-test').textContent = fmtK(inputTokens) + ' in + ' + fmtK(outputTokens) + ' out';
-  document.getElementById('display-num-tests').textContent = numTests.toLocaleString();
-  document.getElementById('selected-model-label').textContent = sel.name;
-  document.getElementById('selected-model-cost').innerHTML = `<span style="color:${sel.color};">$${selectedTotal < 1 ? selectedTotal.toFixed(3) : selectedTotal.toFixed(2)}</span> <span style="font-size:12px; color:#94a3b8; font-weight:400;">($${selectedCostPerTest < 0.01 ? selectedCostPerTest.toFixed(4) : selectedCostPerTest.toFixed(3)}/test)</span>`;
-  document.getElementById('bar-count').textContent = numTests;
-
-  // Calculate per model
-  const results = MODELS.map(m => {
-    const costPerTest = (inputTokens / 1e6) * m.input + (outputTokens / 1e6) * m.output;
-    const totalCost = costPerTest * numTests;
-    return { ...m, costPerTest, totalCost };
+// Build max usage table
+function buildTable() {
+  const tbody = document.querySelector('#max-table tbody');
+  let html = '';
+  M.forEach(m => {
+    if (m.section) {
+      const bgMap = {ANTHROPIC:'#faf5ff',AMAZON:'#eff6ff',META:'#fff7ed',MISTRAL:'#fef2f2',DEEPSEEK:'#f0fdfa',COHERE:'#fefce8','AI21 LABS':'#f1f5f9'};
+      html += `<tr class="section-row"><td colspan="10" style="background:${bgMap[m.section]||'#f8fafc'}; color:${m.color};">${m.section}</td></tr>`;
+    }
+    const maxIn = m.ctx - m.maxOut;
+    const inCost = (maxIn / 1e6) * m.inP;
+    const outCost = (m.maxOut / 1e6) * m.outP;
+    const total = inCost + outCost;
+    html += `<tr>
+      <td style="font-weight:600; color:${m.color};">${m.name}</td>
+      <td>${m.prov}</td>
+      <td class="r">${fk(m.ctx)}</td>
+      <td class="r">${fk(maxIn)}</td>
+      <td class="r">${fk(m.maxOut)}</td>
+      <td class="r">$${m.inP}</td>
+      <td class="r">$${m.outP}</td>
+      <td class="r">$${$(inCost)}</td>
+      <td class="r">$${$(outCost)}</td>
+      <td class="r bold" style="color:${m.color}; font-size:14px;">$${$(total)}</td>
+    </tr>`;
   });
-
-  const cheapest = Math.min(...results.map(r => r.totalCost));
-  const mostExpensive = Math.max(...results.map(r => r.totalCost));
-
-  // Single main table
-  const fmt = (v) => v < 0.01 ? v.toFixed(4) : v < 1 ? v.toFixed(3) : v < 10 ? v.toFixed(2) : v.toFixed(0);
-  document.getElementById('main-table').innerHTML = `
-    <thead>
-      <tr>
-        <th>Model</th>
-        <th>Context</th>
-        <th style="text-align:center;">Input $/MTok</th>
-        <th style="text-align:center;">Output $/MTok</th>
-        <th style="text-align:right;">Cost / Test</th>
-        <th style="text-align:right;">x ${numTests} Tests</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      ${results.map(r => {
-        const isCheapest = r.totalCost === cheapest;
-        const isMostExpensive = r.totalCost === mostExpensive;
-        const savingsPct = mostExpensive > 0 ? Math.round((1 - r.totalCost / mostExpensive) * 100) : 0;
-        return `
-        <tr style="${isCheapest ? 'background:#f0fdf4;' : ''}">
-          <td style="font-weight:700; color:${r.color};">${r.name}<br><span style="font-size:10px; font-weight:400; color:#94a3b8;">${r.provider}</span></td>
-          <td><span style="font-size:12px; font-weight:600;">${fmtK(r.ctx)}</span></td>
-          <td style="text-align:center;">$${r.input.toFixed(2)}</td>
-          <td style="text-align:center;">$${r.output.toFixed(2)}</td>
-          <td style="text-align:right; font-weight:700; font-size:15px; color:${r.color};">$${fmt(r.costPerTest)}</td>
-          <td style="text-align:right; font-weight:800; font-size:16px; color:${r.color};">$${fmt(r.totalCost)}</td>
-          <td>${isCheapest ? '<span class="savings">Cheapest</span>' : isMostExpensive ? '<span style="font-size:10px; color:#94a3b8;">baseline</span>' : `<span class="savings">${savingsPct}% less</span>`}</td>
-        </tr>`;
-      }).join('')}
-    </tbody>
-  `;
-
-  // Bar chart
-  document.getElementById('bar-chart').innerHTML = results.map(r => {
-    const pct = mostExpensive > 0 ? (r.totalCost / mostExpensive) * 100 : 0;
-    return `<div class="bar-row">
-      <span class="bar-label">${r.name}</span>
-      <div class="bar-track">
-        <div class="bar-fill" style="width:${Math.max(pct, 4)}%; background:${r.color};"></div>
-      </div>
-      <span class="bar-amount" style="color:${r.color};">$${fmt(r.totalCost)}</span>
-    </div>`;
-  }).join('');
+  tbody.innerHTML = html;
 }
 
-initModelSelect();
+// Build model dropdown
+function buildSelect() {
+  const sel = document.getElementById('model');
+  sel.innerHTML = M.map((m,i) =>
+    `<option value="${i}">${m.name} — ${fk(m.ctx)} ctx — $${$(((m.ctx-m.maxOut)/1e6)*m.inP + (m.maxOut/1e6)*m.outP)}/test max</option>`
+  ).join('');
+  sel.value = '2';
+}
+
+// Calculator
+function calc() {
+  const m = M[+document.getElementById('model').value];
+  const n = +document.getElementById('numTests').value || 1;
+  const maxIn = m.ctx - m.maxOut;
+  const inCost = (maxIn / 1e6) * m.inP;
+  const outCost = (m.maxOut / 1e6) * m.outP;
+  const perTest = inCost + outCost;
+  const total = perTest * n;
+
+  document.getElementById('result-box').innerHTML = `
+    <div class="result-item">
+      <div class="label">Model</div>
+      <div class="value" style="font-size:16px; color:${m.color};">${m.name}</div>
+    </div>
+    <div class="divider"></div>
+    <div class="result-item">
+      <div class="label">Max Input</div>
+      <div class="value" style="font-size:16px;">${fk(maxIn)}</div>
+    </div>
+    <div class="result-item">
+      <div class="label">Max Output</div>
+      <div class="value" style="font-size:16px;">${fk(m.maxOut)}</div>
+    </div>
+    <div class="divider"></div>
+    <div class="result-item">
+      <div class="label">Cost / Test (max usage)</div>
+      <div class="value" style="color:${m.color};">$${$(perTest)}</div>
+    </div>
+    <div class="divider"></div>
+    <div class="result-item">
+      <div class="label">&times; ${n} tests</div>
+      <div class="value" style="color:${m.color}; font-size:28px;">$${total < 1 ? total.toFixed(3) : total.toFixed(2)}</div>
+    </div>
+    <div class="divider"></div>
+    <div class="result-item">
+      <div class="label">Breakdown</div>
+      <div style="font-size:12px; color:#475569; text-align:left;">
+        Input: ${fk(maxIn)} &times; $${m.inP}/MTok = <strong>$${$(inCost)}</strong><br>
+        Output: ${fk(m.maxOut)} &times; $${m.outP}/MTok = <strong>$${$(outCost)}</strong>
+      </div>
+    </div>
+  `;
+}
+
+buildTable();
+buildSelect();
+calc();
 </script>
 </body>
 </html>
