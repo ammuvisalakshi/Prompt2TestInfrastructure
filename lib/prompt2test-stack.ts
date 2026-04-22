@@ -211,6 +211,8 @@ STATEMENTS = [
     promoted_from_env TEXT,
     promoted_to       TEXT[] DEFAULT '{}',
     promoted_by       TEXT DEFAULT '',
+    promoted_at       TIMESTAMPTZ,
+    replay_script     TEXT DEFAULT '[]',
     embedding         vector(1024)
   )""",
   """CREATE TABLE IF NOT EXISTS run_records (
