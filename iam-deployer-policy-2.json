@@ -1,0 +1,96 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "SecretsManager",
+      "Effect": "Allow",
+      "Action": [
+        "secretsmanager:CreateSecret", "secretsmanager:DeleteSecret",
+        "secretsmanager:DescribeSecret", "secretsmanager:GetSecretValue",
+        "secretsmanager:PutSecretValue", "secretsmanager:TagResource"
+      ],
+      "Resource": "arn:aws:secretsmanager:*:*:secret:prompt2test/*"
+    },
+    {
+      "Sid": "Lambda",
+      "Effect": "Allow",
+      "Action": [
+        "lambda:CreateFunction", "lambda:DeleteFunction", "lambda:GetFunction",
+        "lambda:GetFunctionConfiguration", "lambda:UpdateFunctionCode",
+        "lambda:UpdateFunctionConfiguration", "lambda:AddPermission",
+        "lambda:RemovePermission", "lambda:TagResource", "lambda:ListTags",
+        "lambda:InvokeFunction"
+      ],
+      "Resource": "arn:aws:lambda:*:*:function:p2t-*"
+    },
+    {
+      "Sid": "ECR",
+      "Effect": "Allow",
+      "Action": [
+        "ecr:CreateRepository", "ecr:DeleteRepository", "ecr:DescribeRepositories",
+        "ecr:GetAuthorizationToken", "ecr:PutLifecyclePolicy",
+        "ecr:GetLifecyclePolicy", "ecr:SetRepositoryPolicy", "ecr:TagResource"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ECS",
+      "Effect": "Allow",
+      "Action": [
+        "ecs:CreateCluster", "ecs:DeleteCluster", "ecs:DescribeClusters",
+        "ecs:RegisterTaskDefinition", "ecs:DeregisterTaskDefinition",
+        "ecs:DescribeTaskDefinition", "ecs:RunTask", "ecs:StopTask",
+        "ecs:DescribeTasks", "ecs:ListTasks", "ecs:ListTaskDefinitions", "ecs:TagResource"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "SSM",
+      "Effect": "Allow",
+      "Action": [
+        "ssm:PutParameter", "ssm:GetParameter", "ssm:GetParametersByPath",
+        "ssm:DeleteParameter", "ssm:DescribeParameters", "ssm:AddTagsToResource"
+      ],
+      "Resource": "arn:aws:ssm:*:*:parameter/prompt2test/*"
+    },
+    {
+      "Sid": "DynamoDB",
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:CreateTable", "dynamodb:DeleteTable", "dynamodb:DescribeTable",
+        "dynamodb:UpdateTable", "dynamodb:TagResource",
+        "dynamodb:Query", "dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:DeleteItem"
+      ],
+      "Resource": "arn:aws:dynamodb:*:*:table/prompt2test-*"
+    },
+    {
+      "Sid": "CICD",
+      "Effect": "Allow",
+      "Action": [
+        "codebuild:CreateProject", "codebuild:DeleteProject", "codebuild:UpdateProject",
+        "codebuild:BatchGetProjects", "codebuild:StartBuild", "codebuild:BatchGetBuilds",
+        "codepipeline:CreatePipeline", "codepipeline:DeletePipeline", "codepipeline:GetPipeline",
+        "codepipeline:GetPipelineState", "codepipeline:UpdatePipeline",
+        "codepipeline:StartPipelineExecution", "codepipeline:ListPipelineExecutions",
+        "codestar-connections:*", "codeconnections:*"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "LogsAmplifyBedrockKMS",
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup", "logs:DeleteLogGroup", "logs:DescribeLogGroups",
+        "logs:PutRetentionPolicy", "logs:CreateLogStream", "logs:PutLogEvents", "logs:TagResource",
+        "amplify:*",
+        "bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream",
+        "bedrock:ConverseStream", "bedrock:ListFoundationModels", "bedrock:GetFoundationModel",
+        "bedrock-agentcore:*",
+        "kms:CreateKey", "kms:CreateAlias", "kms:DescribeKey",
+        "kms:Encrypt", "kms:Decrypt", "kms:GenerateDataKey",
+        "sts:GetCallerIdentity", "sts:AssumeRole"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
