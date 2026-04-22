@@ -192,17 +192,24 @@ DB      = 'prompt2test'
 STATEMENTS = [
   "CREATE EXTENSION IF NOT EXISTS vector",
   """CREATE TABLE IF NOT EXISTS test_cases (
-    id           TEXT PRIMARY KEY,
-    env          TEXT NOT NULL,
-    service      TEXT DEFAULT '',
-    description  TEXT NOT NULL,
-    steps        JSONB DEFAULT '[]',
-    tags         TEXT[] DEFAULT '{}',
-    created_by   TEXT DEFAULT '',
-    created_at   TIMESTAMPTZ DEFAULT NOW(),
-    last_result  TEXT,
-    last_run_at  TIMESTAMPTZ,
-    embedding    vector(1024)
+    id                TEXT PRIMARY KEY,
+    env               TEXT NOT NULL,
+    service           TEXT DEFAULT '',
+    title             TEXT DEFAULT '',
+    description       TEXT NOT NULL,
+    scenario          TEXT DEFAULT '',
+    steps             JSONB DEFAULT '[]',
+    plan_steps        TEXT DEFAULT '[]',
+    tags              TEXT[] DEFAULT '{}',
+    created_by        TEXT DEFAULT '',
+    created_at        TIMESTAMPTZ DEFAULT NOW(),
+    last_result       TEXT,
+    last_run_at       TIMESTAMPTZ,
+    team              TEXT DEFAULT '',
+    promoted_from_id  TEXT,
+    promoted_from_env TEXT,
+    promoted_to       TEXT[] DEFAULT '{}',
+    embedding         vector(1024)
   )""",
   """CREATE TABLE IF NOT EXISTS run_records (
     id           TEXT PRIMARY KEY,
@@ -211,7 +218,8 @@ STATEMENTS = [
     result       TEXT NOT NULL,
     summary      TEXT DEFAULT '',
     run_by       TEXT DEFAULT '',
-    run_at       TIMESTAMPTZ DEFAULT NOW()
+    run_at       TIMESTAMPTZ DEFAULT NOW(),
+    team         TEXT DEFAULT ''
   )""",
   "CREATE INDEX IF NOT EXISTS idx_tc_env   ON test_cases(env)",
   "CREATE INDEX IF NOT EXISTS idx_tc_svc   ON test_cases(service)",
