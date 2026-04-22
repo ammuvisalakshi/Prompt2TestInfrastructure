@@ -86,6 +86,8 @@
         "bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream",
         "bedrock:ConverseStream", "bedrock:ListFoundationModels", "bedrock:GetFoundationModel",
         "bedrock-agentcore:*",
+        "aws-marketplace:ViewSubscriptions", "aws-marketplace:Subscribe",
+        "bedrock:ListFoundationModelAgreementOffers", "bedrock:PutFoundationModelEntitlement",
         "kms:CreateKey", "kms:CreateAlias", "kms:DescribeKey",
         "kms:Encrypt", "kms:Decrypt", "kms:GenerateDataKey",
         "sts:GetCallerIdentity", "sts:AssumeRole",

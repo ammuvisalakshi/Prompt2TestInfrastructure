@@ -644,6 +644,11 @@ def handler(event, context):
               `arn:aws:bedrock:*:${this.account}:inference-profile/us.anthropic.claude*`,
             ],
           }),
+          new iam.PolicyStatement({
+            sid: 'AllowMarketplaceForBedrock',
+            actions: ['aws-marketplace:ViewSubscriptions', 'aws-marketplace:Subscribe'],
+            resources: ['*'],
+          }),
         ]}),
         EcrAccess: new iam.PolicyDocument({ statements: [
           new iam.PolicyStatement({
