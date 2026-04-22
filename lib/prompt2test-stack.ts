@@ -799,10 +799,21 @@ def handler(event, context):
     // ══════════════════════════════════════════════════════════════════════
     // 12. AMPLIFY HOSTING — React UI (auto-deploy from GitHub)
     // ══════════════════════════════════════════════════════════════════════
+    // Amplify service role — created by CDK so the deployer doesn't need
+    // to create it manually in the console. Just select it when connecting the branch.
+    const amplifyServiceRole = new iam.Role(this, 'AmplifyServiceRole', {
+      roleName: 'prompt2test-amplify-service-role',
+      assumedBy: new iam.ServicePrincipal('amplify.amazonaws.com'),
+      managedPolicies: [
+        iam.ManagedPolicy.fromAwsManagedPolicyName('AdministratorAccess-Amplify'),
+      ],
+    })
+
     // CDK creates the Amplify app shell with env vars pre-set.
     // GitHub repo connection is done manually in Phase 6 of deploy.sh
     // because Amplify requires browser-based GitHub OAuth authorization.
     const amplifyApp = new amplify.CfnApp(this, 'AmplifyApp', {
+      iamServiceRole: amplifyServiceRole.roleArn,
       name: 'Prompt2TestUI',
       buildSpec: [
         'version: 1',

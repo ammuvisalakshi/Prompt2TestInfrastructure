@@ -289,9 +289,11 @@ manual "$(cat <<MSG
    Open: AWS Console -> AWS Amplify -> Prompt2TestUI  (App ID: $AMPLIFY_APP_ID)
    1. Click "Connect branch"
    2. Select GitHub -> Prompt2TestUI repo -> branch: master
-   3. Environment variables are already set (VITE_AGENT_RUNTIME_ARN was just set for you)
-   4. Click "Save and deploy"
-   5. Wait for all build stages to complete
+   3. Service role: select "prompt2test-amplify-service-role" (already created by CDK)
+   4. Build output directory: web/dist
+   5. Environment variables are already set (VITE_AGENT_RUNTIME_ARN was just set for you)
+   6. Click "Save and deploy"
+   7. Wait for all build stages to complete
 MSG
 )"
 pause_for_user
