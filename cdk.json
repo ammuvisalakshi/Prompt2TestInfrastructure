@@ -1,12 +1,25 @@
 {
   "app": "npx ts-node --prefer-ts-exts bin/infrastructure.ts",
   "watch": {
-    "include": ["**"],
-    "exclude": ["README.md", "cdk*.json", "**/*.d.ts", "**/*.js", "tsconfig.json", "package*.json", "yarn.lock", "node_modules", "dist", "cdk.out"]
+    "include": [
+      "**"
+    ],
+    "exclude": [
+      "README.md",
+      "cdk*.json",
+      "**/*.d.ts",
+      "**/*.js",
+      "tsconfig.json",
+      "package*.json",
+      "yarn.lock",
+      "node_modules",
+      "dist",
+      "cdk.out"
+    ]
   },
   "context": {
     "githubOwner": "ammuvisalakshi",
-    "githubConnectionArn": "arn:aws:codeconnections:us-east-1:590183962483:connection/b49882b2-aec0-4020-a219-fc3978a8cb89",
+    "githubConnectionArn": "arn:aws:codeconnections:us-east-1:857281493393:connection/a0b2932e-e8f8-475f-9fc6-37ac635729de",
     "@aws-cdk/aws-lambda:recognizeLayerVersion": true,
     "@aws-cdk/core:stackRelativeExports": true,
     "@aws-cdk/aws-rds:databaseClusterSnapshotRestoreProps": true

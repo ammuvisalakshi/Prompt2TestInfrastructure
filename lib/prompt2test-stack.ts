@@ -43,7 +43,7 @@ export class Prompt2TestStack extends cdk.Stack {
     // Aurora security group — allow RDS Data API (no inbound needed, Data API is HTTPS)
     const dbSg = new ec2.SecurityGroup(this, 'DbSg', {
       vpc,
-      description: 'Aurora PostgreSQL — no inbound required (Data API only)',
+      description: 'Aurora PostgreSQL - no inbound required (Data API only)',
       allowAllOutbound: false,
     })
 
@@ -117,7 +117,7 @@ export class Prompt2TestStack extends cdk.Stack {
     const auroraCluster = new rds.DatabaseCluster(this, 'AuroraCluster', {
       clusterIdentifier: 'prompt2test-vectors',
       engine: rds.DatabaseClusterEngine.auroraPostgres({
-        version: rds.AuroraPostgresEngineVersion.VER_15_4,
+        version: rds.AuroraPostgresEngineVersion.VER_16_4,
       }),
       serverlessV2MinCapacity: 0,   // 0 = auto-pause when idle (~zero cost at rest)
       serverlessV2MaxCapacity: 4,
@@ -487,7 +487,7 @@ def handler(event, context):
         connectionArn: props.githubConnectionArn,
         owner:         props.githubOwner,
         repo:          'Prompt2TestLambda',
-        branch:        'main',
+        branch:        'master',
         output:        lambdaArtifact,
       })],
     })
@@ -547,7 +547,7 @@ def handler(event, context):
         connectionArn: props.githubConnectionArn,
         owner:         props.githubOwner,
         repo:          'Prompt2TestPlaywrightMCP',
-        branch:        'main',
+        branch:        'master',
         output:        playwrightArtifact,
       })],
     })
@@ -607,7 +607,7 @@ def handler(event, context):
         connectionArn: props.githubConnectionArn,
         owner:         props.githubOwner,
         repo:          'Prompt2TestAgent',
-        branch:        'main',
+        branch:        'master',
         output:        agentArtifact,
       })],
     })
@@ -799,12 +799,11 @@ def handler(event, context):
     // ══════════════════════════════════════════════════════════════════════
     // 12. AMPLIFY HOSTING — React UI (auto-deploy from GitHub)
     // ══════════════════════════════════════════════════════════════════════
+    // CDK creates the Amplify app shell with env vars pre-set.
+    // GitHub repo connection is done manually in Phase 6 of deploy.sh
+    // because Amplify requires browser-based GitHub OAuth authorization.
     const amplifyApp = new amplify.CfnApp(this, 'AmplifyApp', {
       name: 'Prompt2TestUI',
-      repository: `https://github.com/${props.githubOwner}/Prompt2TestUI`,
-      // GitHub connection via CodeStar — same connection used by pipelines
-      // Note: Amplify needs the connection ARN in the IAM role, not directly here.
-      // See README for GitHub OAuth token setup.
       buildSpec: [
         'version: 1',
         'frontend:',
@@ -828,15 +827,8 @@ def handler(event, context):
         { name: 'VITE_USER_POOL_ID',         value: userPool.userPoolId },
         { name: 'VITE_USER_POOL_CLIENT_ID',  value: userPoolClient.userPoolClientId },
         { name: 'VITE_IDENTITY_POOL_ID',     value: identityPool.ref },
-        // Set VITE_AGENT_RUNTIME_ARN after creating AgentCore runtime (post-deploy step)
         { name: 'VITE_AGENT_RUNTIME_ARN',    value: 'REPLACE_AFTER_AGENTCORE_DEPLOY' },
       ],
-    })
-
-    new amplify.CfnBranch(this, 'AmplifyMasterBranch', {
-      appId:      amplifyApp.attrAppId,
-      branchName: 'master',
-      enableAutoBuild: true,
     })
 
 

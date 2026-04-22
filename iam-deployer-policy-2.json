@@ -88,7 +88,8 @@
         "bedrock-agentcore:*",
         "kms:CreateKey", "kms:CreateAlias", "kms:DescribeKey",
         "kms:Encrypt", "kms:Decrypt", "kms:GenerateDataKey",
-        "sts:GetCallerIdentity", "sts:AssumeRole"
+        "sts:GetCallerIdentity", "sts:AssumeRole",
+        "iam:CreateServiceLinkedRole"
       ],
       "Resource": "*"
     }
