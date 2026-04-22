@@ -824,7 +824,7 @@ def handler(event, context):
         '        - cd web && npm ci',
         '    build:',
         '      commands:',
-        '        - npm run build',
+        '        - cd web && npm run build',
         '  artifacts:',
         '    baseDirectory: web/dist',
         '    files:',
