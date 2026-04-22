@@ -229,6 +229,23 @@ for P in prompt2test-lambda prompt2test-playwright-mcp prompt2test-agent; do
 done
 
 # ════════════════════════════════════════════════════════════════════════════
+#  PHASE 4b — MARKETPLACE SUBSCRIPTION (one-time, requires root/admin)
+# ════════════════════════════════════════════════════════════════════════════
+step "11b" "Anthropic Marketplace Subscription"
+manual "$(cat <<'MSG'
+   Anthropic Claude models require a one-time Marketplace subscription.
+   As ROOT or admin user (not the deployer):
+   1. Open: AWS Console -> Amazon Bedrock -> Model catalog
+   2. Search for "Claude Sonnet" -> click on Claude Sonnet 4.5
+   3. Click "Subscribe" or "Accept terms" (may redirect to Marketplace)
+   4. Accept the pricing terms and wait for "Active" status
+
+   Skip this step if already done on this account.
+MSG
+)"
+pause_for_user
+
+# ════════════════════════════════════════════════════════════════════════════
 #  PHASE 5 — AGENTCORE RUNTIME
 # ════════════════════════════════════════════════════════════════════════════
 phase "PHASE 5 - Create Bedrock AgentCore Runtime"
