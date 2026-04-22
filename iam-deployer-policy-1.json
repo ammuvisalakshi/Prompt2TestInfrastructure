@@ -11,6 +11,15 @@
       ]
     },
     {
+      "Sid": "CloudFormationGlobal",
+      "Effect": "Allow",
+      "Action": [
+        "cloudformation:ListStacks", "cloudformation:DescribeStackEvents",
+        "cloudformation:GetTemplate", "cloudformation:ValidateTemplate"
+      ],
+      "Resource": "*"
+    },
+    {
       "Sid": "CDKBootstrap",
       "Effect": "Allow",
       "Action": [
