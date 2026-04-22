@@ -14,10 +14,12 @@
       "Sid": "CDKBootstrap",
       "Effect": "Allow",
       "Action": [
-        "s3:CreateBucket", "s3:PutBucketPolicy", "s3:PutBucketVersioning",
-        "s3:PutEncryptionConfiguration", "s3:PutLifecycleConfiguration",
-        "s3:PutBucketPublicAccessBlock", "s3:GetBucketLocation",
-        "s3:GetObject", "s3:PutObject", "s3:DeleteObject", "s3:ListBucket",
+        "s3:CreateBucket", "s3:DeleteBucket", "s3:PutBucketPolicy", "s3:DeleteBucketPolicy",
+        "s3:PutBucketVersioning", "s3:PutEncryptionConfiguration",
+        "s3:PutLifecycleConfiguration", "s3:PutBucketPublicAccessBlock",
+        "s3:GetBucketLocation", "s3:GetObject", "s3:PutObject",
+        "s3:DeleteObject", "s3:ListBucket", "s3:ListBucketVersions",
+        "s3:GetBucketVersioning", "s3:DeleteObjectVersion",
         "ssm:GetParameter", "ssm:PutParameter", "ssm:DeleteParameter",
         "ecr:CreateRepository", "ecr:DescribeRepositories",
         "ecr:SetRepositoryPolicy", "ecr:GetLifecyclePolicy", "ecr:PutLifecyclePolicy"
