@@ -638,7 +638,7 @@ def handler(event, context):
         BedrockModels: new iam.PolicyDocument({ statements: [
           new iam.PolicyStatement({
             sid: 'AllowBedrockInvoke',
-            actions: ['bedrock:InvokeModel', 'bedrock:InvokeModelWithResponseStream', 'bedrock:ConverseStream'],
+            actions: ['bedrock:InvokeModel', 'bedrock:InvokeModelWithResponseStream'],
             resources: [
               'arn:aws:bedrock:*::foundation-model/anthropic.claude*',
               `arn:aws:bedrock:*:${this.account}:inference-profile/us.anthropic.claude*`,

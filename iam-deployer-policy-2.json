@@ -84,7 +84,7 @@
         "logs:PutRetentionPolicy", "logs:CreateLogStream", "logs:PutLogEvents", "logs:TagResource",
         "amplify:*",
         "bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream",
-        "bedrock:ConverseStream", "bedrock:ListFoundationModels", "bedrock:GetFoundationModel",
+        "bedrock:ListFoundationModels", "bedrock:GetFoundationModel",
         "bedrock-agentcore:*",
         "aws-marketplace:ViewSubscriptions", "aws-marketplace:Subscribe",
         "bedrock:ListFoundationModelAgreementOffers", "bedrock:PutFoundationModelEntitlement",
