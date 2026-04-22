@@ -783,6 +783,7 @@ def handler(event, context):
               'cognito-idp:AdminAddUserToGroup',
               'cognito-idp:AdminRemoveUserFromGroup',
               'cognito-idp:AdminListGroupsForUser',
+              'cognito-idp:ListUsersInGroup',
             ],
             resources: [userPool.userPoolArn],
           }),
