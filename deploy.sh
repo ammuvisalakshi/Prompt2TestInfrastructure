@@ -302,32 +302,47 @@ done
 # ════════════════════════════════════════════════════════════════════════════
 phase "PHASE 6 - Connect Amplify to GitHub (browser required)"
 
-step "13a" "Set VITE_AGENT_RUNTIME_ARN on Amplify app"
-EXISTING_ENV=$(aws amplify get-app --app-id "$AMPLIFY_APP_ID" \
-  --query 'app.environmentVariables' --output json 2>/dev/null || echo '{}')
-UPDATED_ENV=$(node -e "
-const env = JSON.parse(process.argv[1]);
-env['VITE_AGENT_RUNTIME_ARN'] = process.argv[2];
-process.stdout.write(JSON.stringify(env));
-" "$EXISTING_ENV" "$AGENT_RUNTIME_ARN")
-aws amplify update-app \
-  --app-id "$AMPLIFY_APP_ID" \
-  --environment-variables "$UPDATED_ENV" > /dev/null
-ok "VITE_AGENT_RUNTIME_ARN set on Amplify app"
-
-step "13b" "Connect Amplify branch to GitHub (browser)"
+step "13a" "Connect Amplify branch to GitHub (browser)"
 manual "$(cat <<MSG
    Open: AWS Console -> AWS Amplify -> Prompt2TestUI  (App ID: $AMPLIFY_APP_ID)
    1. Click "Connect branch"
    2. Select GitHub -> Prompt2TestUI repo -> branch: master
    3. Service role: select "prompt2test-amplify-service-role" (already created by CDK)
-   4. Build output directory: web/dist
-   5. Environment variables are already set (VITE_AGENT_RUNTIME_ARN was just set for you)
-   6. Click "Save and deploy"
-   7. Wait for all build stages to complete
+   4. Click "Save and deploy"
+   5. Wait for the build to start (it may fail - that's OK, we set env vars next)
 MSG
 )"
 pause_for_user
+
+step "13b" "Set Amplify environment variables"
+info "Setting all VITE_ env vars on Amplify app..."
+aws amplify update-app \
+  --app-id "$AMPLIFY_APP_ID" \
+  --environment-variables "{
+    \"VITE_AWS_REGION\": \"us-east-1\",
+    \"VITE_USER_POOL_ID\": \"$USER_POOL_ID\",
+    \"VITE_USER_POOL_CLIENT_ID\": \"$USER_POOL_CLIENT_ID\",
+    \"VITE_IDENTITY_POOL_ID\": \"$IDENTITY_POOL_ID\",
+    \"VITE_AGENT_RUNTIME_ARN\": \"$AGENT_RUNTIME_ARN\"
+  }" > /dev/null
+ok "All VITE_ env vars set on Amplify"
+
+step "13c" "Trigger Amplify rebuild with env vars"
+aws amplify start-job --app-id "$AMPLIFY_APP_ID" --branch-name master --job-type RELEASE > /dev/null 2>&1
+info "Rebuild triggered - waiting for completion..."
+ATTEMPTS=0
+while true; do
+  STATUS=$(aws amplify list-jobs --app-id "$AMPLIFY_APP_ID" --branch-name master --max-items 1 \
+    --query 'jobSummaries[0].status' --output text 2>/dev/null || echo "Unknown")
+  case "$STATUS" in
+    SUCCEED) ok "Amplify build succeeded"; break ;;
+    FAILED)  warn "Amplify build failed. Check console for details."; break ;;
+    *)       printf "."
+             ATTEMPTS=$((ATTEMPTS + 1))
+             if [[ $ATTEMPTS -ge 40 ]]; then warn "Timed out. Check Amplify console."; break; fi
+             sleep 15 ;;
+  esac
+done
 
 # ════════════════════════════════════════════════════════════════════════════
 #  PHASE 7 — ADMIN USER SETUP
