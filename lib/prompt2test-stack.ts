@@ -759,7 +759,7 @@ def handler(event, context):
         BedrockAgent: new iam.PolicyDocument({ statements: [
           new iam.PolicyStatement({
             sid: 'InvokeAgentRuntime',
-            actions: ['bedrock:InvokeAgentRuntime'],
+            actions: ['bedrock-agentcore:InvokeAgentRuntime'],
             resources: ['*'],
           }),
         ]}),
