@@ -239,8 +239,8 @@ else
     --role-arn "$AGENTCORE_ROLE_ARN" \
     --network-configuration '{"networkMode":"PUBLIC"}')
 
-  AGENT_RUNTIME_ARN=$(echo "$AGENTCORE_JSON" | node -e "process.stdout.write(JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).agentRuntimeArn)")
-  AGENT_RUNTIME_ID=$(echo "$AGENTCORE_JSON" | node -e "process.stdout.write(JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).agentRuntimeId)")
+  AGENT_RUNTIME_ARN=$(node -e "process.stdout.write(JSON.parse(process.argv[1]).agentRuntimeArn)" "$AGENTCORE_JSON")
+  AGENT_RUNTIME_ID=$(node -e "process.stdout.write(JSON.parse(process.argv[1]).agentRuntimeId)" "$AGENTCORE_JSON")
 fi
 
 info "AgentCore ARN: $AGENT_RUNTIME_ARN"

@@ -39,7 +39,8 @@
         "arn:aws:iam::*:role/prompt2test-*",
         "arn:aws:iam::*:role/p2t-*",
         "arn:aws:iam::*:role/Prompt2Test*",
-        "arn:aws:iam::*:role/cdk-*"
+        "arn:aws:iam::*:role/cdk-*",
+        "arn:aws:iam::*:role/amplifyconsole-*"
       ]
     },
     {
