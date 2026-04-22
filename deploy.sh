@@ -5,12 +5,14 @@
 #  Automates all CLI steps. Pauses for the 3 steps that require a browser.
 #
 #  Usage:
-#    bash deploy.sh                     (uses default AWS_PROFILE)
-#    bash deploy.sh my-sso-profile      (uses specified profile)
+#    bash deploy.sh <profile> <github-connection-arn> <github-owner>
+#    bash deploy.sh p2t-deployer arn:aws:codeconnections:us-east-1:123:connection/uuid ammuvisalakshi
+#    bash deploy.sh p2t-deployer   (prompts for GitHub details)
+#    bash deploy.sh                (prompts for everything)
 # ═══════════════════════════════════════════════════════════════════════════
 set -euo pipefail
 
-# ── AWS Profile: use argument, or prompt user to pick ────────────────────────
+# ── Arguments: profile, github ARN, github owner ────────────────────────────
 if [[ -n "${1:-}" ]]; then
   export AWS_PROFILE="$1"
 elif [[ -z "${AWS_PROFILE:-}" ]]; then
@@ -20,6 +22,9 @@ elif [[ -z "${AWS_PROFILE:-}" ]]; then
   read -r AWS_PROFILE
   export AWS_PROFILE
 fi
+
+ARG_GITHUB_CONN_ARN="${2:-}"
+ARG_GITHUB_OWNER="${3:-}"
 
 # ── Colours ─────────────────────────────────────────────────────────────────
 G='\033[0;32m'; Y='\033[1;33m'; B='\033[0;34m'
@@ -98,9 +103,17 @@ info "Running cdk bootstrap for account $ACCOUNT_ID in us-east-1..."
 npx cdk bootstrap "aws://$ACCOUNT_ID/us-east-1" || err "CDK bootstrap failed. Check IAM permissions."
 ok "CDK bootstrapped"
 
-# ── Step 7: GitHub CodeStar Connection ──────────────────────────────────────
-step 7 "Create GitHub CodeStar Connection (browser)"
-manual "$(cat <<'MSG'
+# ── Step 6: GitHub CodeStar Connection ──────────────────────────────────────
+step 6 "GitHub CodeStar Connection"
+
+if [[ -n "$ARG_GITHUB_CONN_ARN" && -n "$ARG_GITHUB_OWNER" ]]; then
+  GITHUB_CONN_ARN="$ARG_GITHUB_CONN_ARN"
+  GITHUB_OWNER="$ARG_GITHUB_OWNER"
+  info "Using GitHub connection from arguments"
+  info "ARN:   $GITHUB_CONN_ARN"
+  info "Owner: $GITHUB_OWNER"
+else
+  manual "$(cat <<'MSG'
    Open: AWS Console -> Developer Tools -> Settings -> Connections
    1. Click "Create connection" -> select GitHub
    2. Name it:  Prompt2TestGitHub
@@ -109,11 +122,12 @@ manual "$(cat <<'MSG'
    5. Copy the Connection ARN from the connection details page
       It looks like: arn:aws:codeconnections:us-east-1:ACCOUNT:connection/UUID
 MSG
-)"
-pause_for_user
+  )"
+  pause_for_user
 
-ask "Paste your GitHub Connection ARN:" GITHUB_CONN_ARN
-ask "Your GitHub username (e.g. ammuvisalakshi):" GITHUB_OWNER
+  ask "Paste your GitHub Connection ARN:" GITHUB_CONN_ARN
+  ask "Your GitHub username (e.g. ammuvisalakshi):" GITHUB_OWNER
+fi
 
 # Sanity-check the ARN
 if [[ "$GITHUB_CONN_ARN" != arn:aws:*connection* ]]; then
