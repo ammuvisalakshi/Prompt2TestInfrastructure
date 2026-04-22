@@ -53,7 +53,8 @@ export class Prompt2TestStack extends cdk.Stack {
       description: 'Playwright MCP Fargate tasks',
       allowAllOutbound: true,
     })
-    ecsSg.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(443),  'Caddy reverse proxy - VPN-friendly entry point for noVNC + MCP')
+    ecsSg.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(80),   'Let Encrypt cert verification for sslip.io')
+    ecsSg.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(443),  'Caddy HTTPS - noVNC + MCP via sslip.io')
     ecsSg.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(3000), 'MCP server')
     ecsSg.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(6080), 'noVNC')
     ecsSg.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(8080), 'Health check')
@@ -379,6 +380,7 @@ def handler(event, context):
       image: ecs.ContainerImage.fromEcrRepository(playwrightRepo, 'latest'),
       environment: { BROWSER_MODE: 'headed' },
       portMappings: [
+        { containerPort: 80,   name: 'http'   },
         { containerPort: 443,  name: 'caddy'  },
         { containerPort: 3000, name: 'mcp'    },
         { containerPort: 6080, name: 'novnc'  },
