@@ -25,12 +25,11 @@ C='\033[0;36m'; W='\033[1m'; N='\033[0m'
 ok()   { echo -e "${G}   [OK]  $1${N}"; }
 info() { echo -e "   ${C}[i]  $1${N}"; }
 warn() { echo -e "${Y}   [!]  $1${N}"; }
-err()  { echo -e "${R}   [X]  $1${N}"; }
 step() { echo -e "\n${W}-- $1${N}"; }
 
 # ── Confirm ──────────────────────────────────────────────────────────────────
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text 2>/dev/null) \
-  || { err "AWS CLI not configured"; exit 1; }
+  || { echo "AWS CLI not configured"; exit 1; }
 
 echo -e "${W}"
 echo "  +========================================================+"
@@ -56,7 +55,7 @@ if [[ -n "$RUNTIME_ID" && "$RUNTIME_ID" != "None" ]]; then
   ok "Deleted AgentCore runtime: $RUNTIME_ID"
   sleep 10
 else
-  info "No AgentCore runtime found (already deleted)"
+  info "No AgentCore runtime found"
 fi
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -70,18 +69,27 @@ if echo "$STACK_EXISTS" | grep -q "does not exist\|DOES_NOT_EXIST"; then
 else
   aws cloudformation delete-stack --stack-name Prompt2TestStack
   info "Stack deletion initiated - waiting (Aurora takes ~5 min)..."
+  ATTEMPTS=0
   while true; do
     STATUS=$(aws cloudformation describe-stacks --stack-name Prompt2TestStack \
       --query "Stacks[0].StackStatus" --output text 2>&1)
     if echo "$STATUS" | grep -q "does not exist"; then
+      echo ""
       ok "Stack deleted"
       break
     elif echo "$STATUS" | grep -q "FAILED"; then
+      echo ""
       warn "Stack delete failed: $STATUS"
       break
     else
       printf "."
-      sleep 30
+      ATTEMPTS=$((ATTEMPTS + 1))
+      if [[ $ATTEMPTS -ge 40 ]]; then
+        echo ""
+        warn "Timed out waiting for stack deletion. Continuing with cleanup..."
+        break
+      fi
+      sleep 15
     fi
   done
 fi
@@ -89,7 +97,7 @@ fi
 # ═══════════════════════════════════════════════════════════════════════════
 #  Step 3: Clean up retained resources (CDK RETAIN policy)
 # ═══════════════════════════════════════════════════════════════════════════
-step "3. Retained Resources (ECR, DynamoDB, Cognito)"
+step "3. Retained Resources (ECR, DynamoDB, Cognito, Logs)"
 
 # ECR repos
 for REPO in prompt2test-agent prompt2test-playwright-mcp; do
@@ -104,24 +112,32 @@ aws dynamodb delete-table --table-name prompt2test-config > /dev/null 2>&1 \
   || info "DynamoDB already deleted"
 
 # Cognito user pools
-for POOL_ID in $(aws cognito-idp list-user-pools --max-results 20 \
-  --query "UserPools[?Name=='prompt2test-users'].Id" --output text 2>/dev/null); do
-  aws cognito-idp delete-user-pool --user-pool-id "$POOL_ID" 2>/dev/null \
-    && ok "Deleted Cognito pool: $POOL_ID"
-done
+POOL_IDS=$(aws cognito-idp list-user-pools --max-results 20 \
+  --query "UserPools[?Name=='prompt2test-users'].Id" --output text 2>/dev/null || echo "")
+if [[ -n "$POOL_IDS" ]]; then
+  for POOL_ID in $POOL_IDS; do
+    aws cognito-idp delete-user-pool --user-pool-id "$POOL_ID" 2>/dev/null \
+      && ok "Deleted Cognito pool: $POOL_ID"
+  done
+else
+  info "No Cognito pools to delete"
+fi
 
 # CloudWatch log groups
-for LG in $(MSYS_NO_PATHCONV=1 aws logs describe-log-groups \
+LOG_GROUPS=$(MSYS_NO_PATHCONV=1 aws logs describe-log-groups \
   --query "logGroups[?contains(logGroupName,'prompt2test') || contains(logGroupName,'p2t-')].logGroupName" \
-  --output text 2>/dev/null || echo ""); do
-  if [[ -n "$LG" ]]; then
+  --output text 2>/dev/null || echo "")
+if [[ -n "$LOG_GROUPS" ]]; then
+  for LG in $LOG_GROUPS; do
     MSYS_NO_PATHCONV=1 aws logs delete-log-group --log-group-name "$LG" 2>/dev/null \
       && ok "Deleted log group: $LG"
-  fi
-done
+  done
+else
+  info "No log groups to delete"
+fi
 
 # ═══════════════════════════════════════════════════════════════════════════
-#  Step 4: Delete CDK Bootstrap (optional)
+#  Step 4: Delete CDK Bootstrap
 # ═══════════════════════════════════════════════════════════════════════════
 step "4. CDK Bootstrap"
 CDK_EXISTS=$(aws cloudformation describe-stacks --stack-name CDKToolkit \
@@ -129,46 +145,95 @@ CDK_EXISTS=$(aws cloudformation describe-stacks --stack-name CDKToolkit \
 if echo "$CDK_EXISTS" | grep -q "does not exist\|DOES_NOT_EXIST"; then
   info "CDK Bootstrap already deleted"
 else
-  # Empty the S3 bucket first
-  BUCKET=$(aws cloudformation describe-stack-resources --stack-name CDKToolkit \
-    --query "StackResources[?LogicalResourceId=='StagingBucket'].PhysicalResourceId" \
-    --output text 2>/dev/null || echo "")
-  if [[ -n "$BUCKET" ]]; then
-    info "Emptying CDK bucket: $BUCKET"
-    aws s3 rm "s3://$BUCKET" --recursive > /dev/null 2>&1 || true
-    # Also delete versioned objects
-    aws s3api list-object-versions --bucket "$BUCKET" \
-      --query '{Objects: Versions[].{Key:Key,VersionId:VersionId}}' \
-      --output json 2>/dev/null | \
-      aws s3api delete-objects --bucket "$BUCKET" --delete file:///dev/stdin > /dev/null 2>&1 || true
+  # Empty the S3 bucket (including versioned objects)
+  BUCKET="cdk-hnb659fds-assets-${ACCOUNT_ID}-us-east-1"
+  info "Emptying CDK bucket: $BUCKET"
+  aws s3 rm "s3://$BUCKET" --recursive > /dev/null 2>&1 || true
+
+  # Delete all object versions
+  VERSIONS=$(aws s3api list-object-versions --bucket "$BUCKET" \
+    --query '{Objects: Versions[].{Key:Key,VersionId:VersionId}}' --output json 2>/dev/null || echo '{"Objects":null}')
+  if echo "$VERSIONS" | grep -q '"Key"'; then
+    aws s3api delete-objects --bucket "$BUCKET" --delete "$VERSIONS" > /dev/null 2>&1 || true
   fi
+
+  # Delete all delete markers
+  MARKERS=$(aws s3api list-object-versions --bucket "$BUCKET" \
+    --query '{Objects: DeleteMarkers[].{Key:Key,VersionId:VersionId}}' --output json 2>/dev/null || echo '{"Objects":null}')
+  if echo "$MARKERS" | grep -q '"Key"'; then
+    aws s3api delete-objects --bucket "$BUCKET" --delete "$MARKERS" > /dev/null 2>&1 || true
+  fi
+
+  # Delete bucket
+  aws s3 rb "s3://$BUCKET" 2>/dev/null && ok "Deleted CDK bucket" || true
+
+  # Delete CDK ECR repo
+  aws ecr delete-repository --repository-name "cdk-hnb659fds-container-assets-${ACCOUNT_ID}-us-east-1" --force > /dev/null 2>&1 || true
+
+  # Delete the stack
   aws cloudformation delete-stack --stack-name CDKToolkit
   info "Waiting for CDK Bootstrap deletion..."
+  ATTEMPTS=0
   while true; do
     STATUS=$(aws cloudformation describe-stacks --stack-name CDKToolkit \
       --query "Stacks[0].StackStatus" --output text 2>&1)
     if echo "$STATUS" | grep -q "does not exist"; then
+      echo ""
       ok "CDK Bootstrap deleted"
       break
     elif echo "$STATUS" | grep -q "FAILED"; then
-      warn "CDK Bootstrap delete failed. Delete manually in console."
+      echo ""
+      warn "CDK Bootstrap delete failed. May need manual cleanup in console."
       break
     else
       printf "."
+      ATTEMPTS=$((ATTEMPTS + 1))
+      if [[ $ATTEMPTS -ge 20 ]]; then
+        echo ""
+        warn "Timed out. CDK Bootstrap may still be deleting."
+        break
+      fi
       sleep 15
     fi
   done
 fi
 
 # ═══════════════════════════════════════════════════════════════════════════
+#  Step 5: Final Verification
+# ═══════════════════════════════════════════════════════════════════════════
+step "5. Final Verification"
+CLEAN=true
+
+aws cloudformation describe-stacks --stack-name Prompt2TestStack > /dev/null 2>&1 && { warn "Stack still exists"; CLEAN=false; } || ok "Stack: gone"
+aws cloudformation describe-stacks --stack-name CDKToolkit > /dev/null 2>&1 && { warn "CDKToolkit still exists"; CLEAN=false; } || ok "CDKToolkit: gone"
+aws ecr describe-repositories --repository-names prompt2test-agent > /dev/null 2>&1 && { warn "ECR agent still exists"; CLEAN=false; } || ok "ECR: gone"
+aws dynamodb describe-table --table-name prompt2test-config > /dev/null 2>&1 && { warn "DynamoDB still exists"; CLEAN=false; } || ok "DynamoDB: gone"
+
+POOLS=$(aws cognito-idp list-user-pools --max-results 10 --query "UserPools[?Name=='prompt2test-users'].Id" --output text 2>/dev/null)
+[[ -n "$POOLS" ]] && { warn "Cognito pool still exists: $POOLS"; CLEAN=false; } || ok "Cognito: gone"
+
+RUNTIMES=$(aws bedrock-agentcore-control list-agent-runtimes --query "agentRuntimes[*].agentRuntimeName" --output text 2>/dev/null)
+[[ -n "$RUNTIMES" ]] && { warn "AgentCore still exists: $RUNTIMES"; CLEAN=false; } || ok "AgentCore: gone"
+
+aws s3api head-bucket --bucket "cdk-hnb659fds-assets-${ACCOUNT_ID}-us-east-1" > /dev/null 2>&1 && { warn "CDK S3 bucket still exists"; CLEAN=false; } || ok "CDK S3: gone"
+
+# ═══════════════════════════════════════════════════════════════════════════
 #  Done
 # ═══════════════════════════════════════════════════════════════════════════
 echo ""
-echo -e "${G}${W}"
-echo "  +========================================================+"
-echo "  |   Teardown Complete!                                     |"
-echo "  +========================================================+"
-echo -e "${N}"
-echo "  All Prompt2Test resources have been removed from account $ACCOUNT_ID."
+if $CLEAN; then
+  echo -e "${G}${W}"
+  echo "  +========================================================+"
+  echo "  |   Teardown Complete - Account is clean!                  |"
+  echo "  +========================================================+"
+  echo -e "${N}"
+else
+  echo -e "${Y}${W}"
+  echo "  +========================================================+"
+  echo "  |   Teardown finished with warnings - check above         |"
+  echo "  +========================================================+"
+  echo -e "${N}"
+fi
+echo "  Account: $ACCOUNT_ID"
 echo "  To redeploy: bash deploy.sh $AWS_PROFILE"
 echo ""
