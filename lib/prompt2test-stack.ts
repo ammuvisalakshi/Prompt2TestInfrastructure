@@ -148,6 +148,16 @@ export class Prompt2TestStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     })
 
+    // Phase 4: Selector memory — caches element selectors per URL pattern
+    const selectorsTable = new dynamodb.Table(this, 'SelectorsTable', {
+      tableName: 'prompt2test-selectors',
+      partitionKey: { name: 'pk', type: dynamodb.AttributeType.STRING },
+      sortKey:      { name: 'sk', type: dynamodb.AttributeType.STRING },
+      billingMode:  dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+      timeToLiveAttribute: 'ttl',
+    })
+
 
     // ══════════════════════════════════════════════════════════════════════
     // 4. DB SCHEMA INIT (Custom Resource — runs once after Aurora is ready)
@@ -702,6 +712,11 @@ def handler(event, context):
             actions: ['dynamodb:Query', 'dynamodb:GetItem'],
             resources: [configTable.tableArn],
           }),
+          new iam.PolicyStatement({
+            sid: 'AllowSelectorMemory',
+            actions: ['dynamodb:Query', 'dynamodb:GetItem', 'dynamodb:PutItem', 'dynamodb:UpdateItem'],
+            resources: [selectorsTable.tableArn],
+          }),
         ]}),
         PlaywrightTaskManagement: new iam.PolicyDocument({ statements: [
           new iam.PolicyStatement({
@@ -772,6 +787,11 @@ def handler(event, context):
               'dynamodb:DeleteItem',
             ],
             resources: [configTable.tableArn],
+          }),
+          new iam.PolicyStatement({
+            sid: 'SelectorMemoryReadWrite',
+            actions: ['dynamodb:Query', 'dynamodb:GetItem', 'dynamodb:PutItem', 'dynamodb:UpdateItem', 'dynamodb:Scan'],
+            resources: [selectorsTable.tableArn],
           }),
         ]}),
         BedrockAgent: new iam.PolicyDocument({ statements: [
