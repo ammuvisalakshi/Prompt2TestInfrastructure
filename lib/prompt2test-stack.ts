@@ -161,7 +161,7 @@ export class Prompt2TestStack extends cdk.Stack {
 
     // Phase 5: Visual regression — stores baseline screenshots and diff images
     const visualBaselinesBucket = new s3.Bucket(this, 'VisualBaselinesBucket', {
-      bucketName: 'prompt2test-visual-baselines',
+      bucketName: `prompt2test-visual-baselines-${this.account}`,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
       lifecycleRules: [{
         prefix: 'diffs/',

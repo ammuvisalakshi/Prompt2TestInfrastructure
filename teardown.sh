@@ -116,10 +116,11 @@ aws dynamodb delete-table --table-name prompt2test-selectors > /dev/null 2>&1 \
   || info "DynamoDB prompt2test-selectors already deleted"
 
 # S3 (visual regression baselines)
-aws s3 rm s3://prompt2test-visual-baselines --recursive > /dev/null 2>&1 || true
-aws s3 rb s3://prompt2test-visual-baselines > /dev/null 2>&1 \
-  && ok "Deleted S3: prompt2test-visual-baselines" \
-  || info "S3 prompt2test-visual-baselines already deleted"
+VB_BUCKET="prompt2test-visual-baselines-${ACCOUNT_ID}"
+aws s3 rm "s3://$VB_BUCKET" --recursive > /dev/null 2>&1 || true
+aws s3 rb "s3://$VB_BUCKET" > /dev/null 2>&1 \
+  && ok "Deleted S3: $VB_BUCKET" \
+  || info "S3 $VB_BUCKET already deleted"
 
 # Cognito user pools
 POOL_IDS=$(aws cognito-idp list-user-pools --max-results 20 \
@@ -219,7 +220,7 @@ aws cloudformation describe-stacks --stack-name CDKToolkit > /dev/null 2>&1 && {
 aws ecr describe-repositories --repository-names prompt2test-agent > /dev/null 2>&1 && { warn "ECR agent still exists"; CLEAN=false; } || ok "ECR: gone"
 aws dynamodb describe-table --table-name prompt2test-config > /dev/null 2>&1 && { warn "DynamoDB config still exists"; CLEAN=false; } || ok "DynamoDB config: gone"
 aws dynamodb describe-table --table-name prompt2test-selectors > /dev/null 2>&1 && { warn "DynamoDB selectors still exists"; CLEAN=false; } || ok "DynamoDB selectors: gone"
-aws s3api head-bucket --bucket prompt2test-visual-baselines > /dev/null 2>&1 && { warn "S3 visual baselines still exists"; CLEAN=false; } || ok "S3 visual baselines: gone"
+aws s3api head-bucket --bucket "prompt2test-visual-baselines-${ACCOUNT_ID}" > /dev/null 2>&1 && { warn "S3 visual baselines still exists"; CLEAN=false; } || ok "S3 visual baselines: gone"
 
 POOLS=$(aws cognito-idp list-user-pools --max-results 10 --query "UserPools[?Name=='prompt2test-users'].Id" --output text 2>/dev/null)
 [[ -n "$POOLS" ]] && { warn "Cognito pool still exists: $POOLS"; CLEAN=false; } || ok "Cognito: gone"

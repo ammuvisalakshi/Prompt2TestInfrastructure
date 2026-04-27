@@ -176,11 +176,12 @@ aws dynamodb describe-table --table-name prompt2test-selectors > /dev/null 2>&1 
   }
 
 # S3: visual regression baselines (Phase 5)
-aws s3api head-bucket --bucket prompt2test-visual-baselines > /dev/null 2>&1 \
-  && info "S3 prompt2test-visual-baselines already exists" \
+VB_BUCKET="prompt2test-visual-baselines-${ACCOUNT_ID}"
+aws s3api head-bucket --bucket "$VB_BUCKET" > /dev/null 2>&1 \
+  && info "S3 $VB_BUCKET already exists" \
   || {
-    aws s3 mb s3://prompt2test-visual-baselines --region us-east-1 > /dev/null 2>&1
-    ok "Created S3: prompt2test-visual-baselines"
+    aws s3 mb "s3://$VB_BUCKET" --region us-east-1 > /dev/null 2>&1
+    ok "Created S3: $VB_BUCKET"
   }
 
 # ── Capture CDK outputs ──────────────────────────────────────────────────────
