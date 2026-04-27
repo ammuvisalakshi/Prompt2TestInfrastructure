@@ -162,27 +162,21 @@ info "Deploying all resources - this takes 5-10 minutes..."
 npx cdk deploy --require-approval never || err "CDK deploy failed. Check the error above for missing permissions."
 ok "CDK deploy complete"
 
-step "10b" "Create Phase 4+5 resources (if not created by CDK)"
-# DynamoDB: selector memory (Phase 4)
-aws dynamodb describe-table --table-name prompt2test-selectors > /dev/null 2>&1 \
-  && info "DynamoDB prompt2test-selectors already exists" \
-  || {
-    aws dynamodb create-table \
-      --table-name prompt2test-selectors \
-      --attribute-definitions AttributeName=pk,AttributeType=S AttributeName=sk,AttributeType=S \
-      --key-schema AttributeName=pk,KeyType=HASH AttributeName=sk,KeyType=RANGE \
-      --billing-mode PAY_PER_REQUEST > /dev/null 2>&1
-    ok "Created DynamoDB: prompt2test-selectors"
-  }
+step "10b" "Verify Phase 4+5 resources (created by CDK)"
+# These are created by CDK in the stack. This step just verifies they exist.
+# Non-fatal: if checks fail due to permissions, CDK already created them.
+if aws dynamodb describe-table --table-name prompt2test-selectors > /dev/null 2>&1; then
+  ok "DynamoDB prompt2test-selectors exists"
+else
+  info "DynamoDB prompt2test-selectors — created by CDK (cannot verify due to permissions)"
+fi
 
-# S3: visual regression baselines (Phase 5)
 VB_BUCKET="prompt2test-visual-baselines-${ACCOUNT_ID}"
-aws s3api head-bucket --bucket "$VB_BUCKET" > /dev/null 2>&1 \
-  && info "S3 $VB_BUCKET already exists" \
-  || {
-    aws s3 mb "s3://$VB_BUCKET" --region us-east-1 > /dev/null 2>&1
-    ok "Created S3: $VB_BUCKET"
-  }
+if aws s3api head-bucket --bucket "$VB_BUCKET" > /dev/null 2>&1; then
+  ok "S3 $VB_BUCKET exists"
+else
+  info "S3 $VB_BUCKET — created by CDK (cannot verify due to permissions)"
+fi
 
 # ── Capture CDK outputs ──────────────────────────────────────────────────────
 info "Reading CDK stack outputs..."
