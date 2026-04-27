@@ -59,7 +59,8 @@
       "Action": [
         "dynamodb:CreateTable", "dynamodb:DeleteTable", "dynamodb:DescribeTable",
         "dynamodb:UpdateTable", "dynamodb:TagResource",
-        "dynamodb:Query", "dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:DeleteItem"
+        "dynamodb:Query", "dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:DeleteItem",
+        "dynamodb:UpdateItem", "dynamodb:Scan"
       ],
       "Resource": "arn:aws:dynamodb:*:*:table/prompt2test-*"
     },
