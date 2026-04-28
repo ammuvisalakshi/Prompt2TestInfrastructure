@@ -241,6 +241,19 @@ STATEMENTS = [
   "CREATE INDEX IF NOT EXISTS idx_rr_tc    ON run_records(test_case_id)",
   "CREATE INDEX IF NOT EXISTS idx_rr_env   ON run_records(env)",
   "CREATE INDEX IF NOT EXISTS idx_embed    ON test_cases USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100)",
+  // Phase: Test case versioning
+  """CREATE TABLE IF NOT EXISTS test_case_versions (
+    id              TEXT PRIMARY KEY,
+    test_case_id    TEXT REFERENCES test_cases(id) ON DELETE CASCADE,
+    version_number  INTEGER NOT NULL,
+    version_type    TEXT NOT NULL,
+    s3_key          TEXT NOT NULL,
+    changed_by      TEXT DEFAULT '',
+    changed_at      TIMESTAMPTZ DEFAULT NOW(),
+    change_reason   TEXT DEFAULT '',
+    summary         TEXT DEFAULT ''
+  )""",
+  "CREATE INDEX IF NOT EXISTS idx_tcv_tcid ON test_case_versions(test_case_id, version_type, version_number)",
 ]
 
 def handler(event, context):
