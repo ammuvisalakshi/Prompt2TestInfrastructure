@@ -171,12 +171,6 @@ else
   info "DynamoDB prompt2test-selectors — created by CDK (cannot verify due to permissions)"
 fi
 
-VB_BUCKET="prompt2test-visual-baselines-${ACCOUNT_ID}"
-if aws s3api head-bucket --bucket "$VB_BUCKET" > /dev/null 2>&1; then
-  ok "S3 $VB_BUCKET exists"
-else
-  info "S3 $VB_BUCKET — created by CDK (cannot verify due to permissions)"
-fi
 
 # ── Capture CDK outputs ──────────────────────────────────────────────────────
 info "Reading CDK stack outputs..."

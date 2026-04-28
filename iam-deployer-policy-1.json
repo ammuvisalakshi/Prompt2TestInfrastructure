@@ -36,17 +36,6 @@
       "Resource": ["arn:aws:s3:::cdk-*", "arn:aws:ssm:*:*:parameter/cdk-bootstrap/*", "arn:aws:ecr:*:*:repository/cdk-*"]
     },
     {
-      "Sid": "S3VisualBaselines",
-      "Effect": "Allow",
-      "Action": [
-        "s3:CreateBucket", "s3:DeleteBucket", "s3:PutBucketPolicy",
-        "s3:PutLifecycleConfiguration", "s3:PutBucketPublicAccessBlock",
-        "s3:GetBucketLocation", "s3:GetObject", "s3:PutObject",
-        "s3:DeleteObject", "s3:ListBucket"
-      ],
-      "Resource": ["arn:aws:s3:::prompt2test-visual-baselines-*", "arn:aws:s3:::prompt2test-visual-baselines-*/*"]
-    },
-    {
       "Sid": "IAM",
       "Effect": "Allow",
       "Action": [

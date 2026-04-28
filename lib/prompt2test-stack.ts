@@ -16,7 +16,6 @@ import * as cr         from 'aws-cdk-lib/custom-resources'
 import * as logs       from 'aws-cdk-lib/aws-logs'
 import * as amplify    from 'aws-cdk-lib/aws-amplify'
 import * as dynamodb   from 'aws-cdk-lib/aws-dynamodb'
-import * as s3         from 'aws-cdk-lib/aws-s3'
 
 
 export interface Prompt2TestStackProps extends cdk.StackProps {
@@ -159,15 +158,6 @@ export class Prompt2TestStack extends cdk.Stack {
       timeToLiveAttribute: 'ttl',
     })
 
-    // Phase 5: Visual regression — stores baseline screenshots and diff images
-    const visualBaselinesBucket = new s3.Bucket(this, 'VisualBaselinesBucket', {
-      bucketName: `prompt2test-visual-baselines-${this.account}`,
-      removalPolicy: cdk.RemovalPolicy.RETAIN,
-      lifecycleRules: [{
-        prefix: 'diffs/',
-        expiration: cdk.Duration.days(30),  // diff images expire after 30 days
-      }],
-    })
 
 
     // ══════════════════════════════════════════════════════════════════════
@@ -327,11 +317,6 @@ def handler(event, context):
             actions: ['dynamodb:Query', 'dynamodb:GetItem', 'dynamodb:PutItem'],
             resources: [configTable.tableArn],
           }),
-          new iam.PolicyStatement({
-            sid: 'S3Versioning',
-            actions: ['s3:GetObject', 's3:PutObject', 's3:ListBucket'],
-            resources: [visualBaselinesBucket.bucketArn, `${visualBaselinesBucket.bucketArn}/*`],
-          }),
         ]}),
       },
     })
@@ -339,7 +324,6 @@ def handler(event, context):
     const lambdaEnv = {
       CLUSTER_ARN: auroraCluster.clusterArn,
       SECRET_ARN:  dbSecret.secretArn,
-      VERSIONS_BUCKET: visualBaselinesBucket.bucketName,
     }
 
     // Placeholder code — the Lambda pipeline replaces this on first run
@@ -746,13 +730,6 @@ def handler(event, context):
             sid: 'AllowSelectorMemory',
             actions: ['dynamodb:Query', 'dynamodb:GetItem', 'dynamodb:PutItem', 'dynamodb:UpdateItem'],
             resources: [selectorsTable.tableArn],
-          }),
-        ]}),
-        VisualBaselines: new iam.PolicyDocument({ statements: [
-          new iam.PolicyStatement({
-            sid: 'AllowVisualBaselines',
-            actions: ['s3:GetObject', 's3:PutObject', 's3:ListBucket'],
-            resources: [visualBaselinesBucket.bucketArn, `${visualBaselinesBucket.bucketArn}/*`],
           }),
         ]}),
         PlaywrightTaskManagement: new iam.PolicyDocument({ statements: [
