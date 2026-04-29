@@ -664,7 +664,7 @@ def handler(event, context):
         actionName:    'GitHub',
         connectionArn: props.githubConnectionArn,
         owner:         props.githubOwner,
-        repo:          'Prompt2TestMCPTemplate',
+        repo:          'Prompt2TestRESTMCP',
         branch:        'master',
         output:        restMcpArtifact,
       })],
