@@ -60,6 +60,11 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 [[ -f "lib/prompt2test-stack.ts" ]] || err "Run this script from the root of the Prompt2TestInfrastructure repo (lib/prompt2test-stack.ts not found)."
 
+# ── Pull latest from git ────────────────────────────────────────────────────
+step "0" "Pull latest code from git"
+git pull --ff-only 2>&1 || warn "Git pull failed — using local files"
+ok "Using latest code from git"
+
 # ════════════════════════════════════════════════════════════════════════════
 #  PHASE 1 — PREREQUISITE CHECKS
 # ════════════════════════════════════════════════════════════════════════════
