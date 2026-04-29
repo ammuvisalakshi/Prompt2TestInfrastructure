@@ -44,6 +44,29 @@ read -r CONFIRM
 [[ "$CONFIRM" == "DELETE" ]] || { echo "  Aborted."; exit 0; }
 
 # ═══════════════════════════════════════════════════════════════════════════
+#  Step 0: Stop all ECS tasks (must happen before stack delete)
+# ═══════════════════════════════════════════════════════════════════════════
+step "0. Stop ECS tasks"
+ECS_TASKS=$(aws ecs list-tasks --cluster prompt2test-playwright-cluster \
+  --query 'taskArns[]' --output text 2>/dev/null || echo "")
+if [[ -n "$ECS_TASKS" && "$ECS_TASKS" != "None" ]]; then
+  for TASK in $ECS_TASKS; do
+    aws ecs stop-task --cluster prompt2test-playwright-cluster --task "$TASK" --reason "Teardown" > /dev/null 2>&1
+  done
+  TASK_COUNT=$(echo "$ECS_TASKS" | wc -w)
+  ok "Stopped $TASK_COUNT ECS tasks"
+  info "Waiting 15s for tasks to stop..."
+  sleep 15
+else
+  info "No running ECS tasks"
+fi
+
+# Delete ECS cluster (before stack delete to avoid ClusterContainsTasksException)
+aws ecs delete-cluster --cluster prompt2test-playwright-cluster > /dev/null 2>&1 \
+  && ok "Deleted ECS cluster" \
+  || info "ECS cluster already deleted"
+
+# ═══════════════════════════════════════════════════════════════════════════
 #  Step 1: Delete AgentCore Runtime
 # ═══════════════════════════════════════════════════════════════════════════
 step "1. AgentCore Runtime"
