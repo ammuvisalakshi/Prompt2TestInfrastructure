@@ -123,7 +123,7 @@ fi
 step "3. Retained Resources (ECR, DynamoDB, Cognito, Logs)"
 
 # ECR repos
-for REPO in prompt2test-agent prompt2test-playwright-mcp; do
+for REPO in prompt2test-agent prompt2test-playwright-mcp prompt2test-rest-mcp; do
   aws ecr delete-repository --repository-name "$REPO" --force > /dev/null 2>&1 \
     && ok "Deleted ECR: $REPO" \
     || info "ECR $REPO already deleted"

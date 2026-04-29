@@ -205,7 +205,7 @@ echo "  +-------------------------------------------------------------+"
 phase "PHASE 4 - Deploy Lambda Code & Build Docker Images (~5-10 min each)"
 
 step 11 "Trigger all 3 CodePipelines"
-for P in prompt2test-lambda prompt2test-playwright-mcp prompt2test-agent; do
+for P in prompt2test-lambda prompt2test-playwright-mcp prompt2test-rest-mcp prompt2test-agent; do
   aws codepipeline start-pipeline-execution --name "$P" > /dev/null 2>&1 \
     || warn "Could not start pipeline $P (may not exist yet if CDK just created it)"
   info "Started $P"
@@ -214,7 +214,7 @@ ok "All pipelines triggered"
 
 echo ""
 info "Polling pipelines - waiting for Succeeded..."
-for P in prompt2test-lambda prompt2test-playwright-mcp prompt2test-agent; do
+for P in prompt2test-lambda prompt2test-playwright-mcp prompt2test-rest-mcp prompt2test-agent; do
   printf "   %-38s" "$P"
   ATTEMPTS=0
   MAX_ATTEMPTS=60  # 60 * 15s = 15 min max wait per pipeline

@@ -363,6 +363,12 @@ def handler(event, context):
       lifecycleRules: [{ maxImageCount: 5, description: 'Keep last 5 images' }],
     })
 
+    const restMcpRepo = new ecr.Repository(this, 'RestMcpRepo', {
+      repositoryName: 'prompt2test-rest-mcp',
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+      lifecycleRules: [{ maxImageCount: 5, description: 'Keep last 5 images' }],
+    })
+
     const playwrightRepo = new ecr.Repository(this, 'PlaywrightRepo', {
       repositoryName: 'prompt2test-playwright-mcp',
       removalPolicy: cdk.RemovalPolicy.RETAIN,
@@ -406,6 +412,7 @@ def handler(event, context):
       containerName: 'playwright-mcp',
       image: ecs.ContainerImage.fromEcrRepository(playwrightRepo, 'latest'),
       environment: { BROWSER_MODE: 'headed' },
+      essential: true,
       portMappings: [
         { containerPort: 80,   name: 'http'   },
         { containerPort: 443,  name: 'caddy'  },
@@ -415,6 +422,20 @@ def handler(event, context):
       ],
       logging: ecs.LogDrivers.awsLogs({
         streamPrefix: 'playwright',
+        logRetention: logs.RetentionDays.ONE_WEEK,
+      }),
+    })
+
+    // REST API MCP — sidecar for API testing (runs alongside Playwright)
+    taskDef.addContainer('rest-mcp', {
+      containerName: 'rest-mcp',
+      image: ecs.ContainerImage.fromEcrRepository(restMcpRepo, 'latest'),
+      essential: false,  // don't kill the task if REST MCP crashes
+      portMappings: [
+        { containerPort: 3001, name: 'rest-mcp' },
+      ],
+      logging: ecs.LogDrivers.awsLogs({
+        streamPrefix: 'rest-mcp',
         logRetention: logs.RetentionDays.ONE_WEEK,
       }),
     })
@@ -594,6 +615,66 @@ def handler(event, context):
         actionName: 'DockerBuild',
         project:    playwrightBuild,
         input:      playwrightArtifact,
+      })],
+    })
+
+    // ── 9b2. REST MCP pipeline ────────────────────────────────────────────
+    const restMcpBuildRole = new iam.Role(this, 'RestMcpBuildRole', {
+      assumedBy: new iam.ServicePrincipal('codebuild.amazonaws.com'),
+      inlinePolicies: {
+        ecr: new iam.PolicyDocument({ statements: [
+          new iam.PolicyStatement({ actions: ['ecr:*'],                   resources: [restMcpRepo.repositoryArn] }),
+          new iam.PolicyStatement({ actions: ['ecr:GetAuthorizationToken'], resources: ['*'] }),
+          new iam.PolicyStatement({ actions: ['logs:*'],                  resources: ['*'] }),
+        ]}),
+      },
+    })
+
+    const restMcpBuild = new codebuild.PipelineProject(this, 'RestMcpBuild', {
+      projectName: 'prompt2test-rest-mcp-build',
+      environment: {
+        buildImage:  codebuild.LinuxArmBuildImage.AMAZON_LINUX_2_STANDARD_3_0,
+        privileged:  true,
+      },
+      environmentVariables: {
+        ECR_REPO_URI:    { value: restMcpRepo.repositoryUri },
+        AWS_ACCOUNT_ID:  { value: this.account },
+      },
+      buildSpec: codebuild.BuildSpec.fromObject({
+        version: '0.2',
+        phases: {
+          pre_build: { commands: [
+            'aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com',
+          ]},
+          build:     { commands: ['docker build -t $ECR_REPO_URI:latest .'] },
+          post_build: { commands: ['docker push $ECR_REPO_URI:latest'] },
+        },
+      }),
+      role: restMcpBuildRole,
+      logging: { cloudWatch: { logGroup: new logs.LogGroup(this, 'RestMcpBuildLogs', { retention: logs.RetentionDays.ONE_WEEK }) } },
+    })
+
+    const restMcpArtifact = new codepipeline.Artifact()
+    const restMcpPipeline = new codepipeline.Pipeline(this, 'RestMcpPipeline', {
+      pipelineName: 'prompt2test-rest-mcp',
+    })
+    restMcpPipeline.addStage({
+      stageName: 'Source',
+      actions: [new cpactions.CodeStarConnectionsSourceAction({
+        actionName:    'GitHub',
+        connectionArn: props.githubConnectionArn,
+        owner:         props.githubOwner,
+        repo:          'Prompt2TestMCPTemplate',
+        branch:        'master',
+        output:        restMcpArtifact,
+      })],
+    })
+    restMcpPipeline.addStage({
+      stageName: 'Build',
+      actions: [new cpactions.CodeBuildAction({
+        actionName: 'DockerBuild',
+        project:    restMcpBuild,
+        input:      restMcpArtifact,
       })],
     })
 
