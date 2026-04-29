@@ -343,12 +343,13 @@ aws amplify update-app \
 ok "All VITE_ env vars set on Amplify"
 
 step "13c" "Trigger Amplify rebuild with env vars"
-aws amplify start-job --app-id "$AMPLIFY_APP_ID" --branch-name master --job-type RELEASE > /dev/null 2>&1
-info "Rebuild triggered - waiting for completion..."
+AMPLIFY_JOB_ID=$(aws amplify start-job --app-id "$AMPLIFY_APP_ID" --branch-name master --job-type RELEASE \
+  --query 'jobSummary.jobId' --output text 2>/dev/null || echo "")
+info "Rebuild triggered (job $AMPLIFY_JOB_ID) - waiting for completion..."
 ATTEMPTS=0
 while true; do
-  STATUS=$(aws amplify list-jobs --app-id "$AMPLIFY_APP_ID" --branch-name master --max-items 1 \
-    --query 'jobSummaries[0].status' --output text 2>/dev/null || echo "Unknown")
+  STATUS=$(aws amplify get-job --app-id "$AMPLIFY_APP_ID" --branch-name master --job-id "$AMPLIFY_JOB_ID" \
+    --query 'job.summary.status' --output text 2>/dev/null || echo "Unknown")
   case "$STATUS" in
     SUCCEED) ok "Amplify build succeeded"; break ;;
     FAILED)  warn "Amplify build failed. Check console for details."; break ;;
